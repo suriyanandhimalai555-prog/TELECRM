@@ -165,6 +165,8 @@ export async function initDb() {
         stage TEXT NOT NULL,
         revenue REAL DEFAULT 0,
         next_followup TIMESTAMP,
+        company TEXT,
+        tags TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -234,6 +236,38 @@ export async function initDb() {
     `;
     await client.query(auditLogsTable);
 
+    // WhatsApp messages table
+    const whatsappMessagesTable = `
+      CREATE TABLE IF NOT EXISTS whatsapp_messages (
+        id ${connectionString ? 'SERIAL PRIMARY KEY' : 'INTEGER PRIMARY KEY AUTOINCREMENT'},
+        message_id TEXT UNIQUE,
+        from_number TEXT,
+        to_number TEXT,
+        message_text TEXT,
+        direction TEXT,
+        status TEXT,
+        contact_name TEXT,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        is_read BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    await client.query(whatsappMessagesTable);
+
+    // WhatsApp templates table
+    const whatsappTemplatesTable = `
+      CREATE TABLE IF NOT EXISTS whatsapp_templates (
+        id ${connectionString ? 'SERIAL PRIMARY KEY' : 'INTEGER PRIMARY KEY AUTOINCREMENT'},
+        name TEXT UNIQUE NOT NULL,
+        category TEXT,
+        language TEXT,
+        components TEXT,
+        status TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    await client.query(whatsappTemplatesTable);
+
     // User Projects table (Many-to-Many)
     const userProjectsTable = `
       CREATE TABLE IF NOT EXISTS user_projects (
@@ -269,12 +303,20 @@ export async function initDb() {
     try {
       if (connectionString) {
         await db.query('ALTER TABLE leads ADD COLUMN IF NOT EXISTS project_id INTEGER');
+        await db.query('ALTER TABLE leads ADD COLUMN IF NOT EXISTS company TEXT');
+        await db.query('ALTER TABLE leads ADD COLUMN IF NOT EXISTS tags TEXT');
         await db.query('ALTER TABLE tasks ADD COLUMN IF NOT EXISTS project_id INTEGER');
       } else {
         // SQLite doesn't support ADD COLUMN IF NOT EXISTS
         const leadsInfo = await db.query("PRAGMA table_info(leads)");
         if (!leadsInfo.rows.some((col: any) => col.name === 'project_id')) {
           await db.query('ALTER TABLE leads ADD COLUMN project_id INTEGER');
+        }
+        if (!leadsInfo.rows.some((col: any) => col.name === 'company')) {
+          await db.query('ALTER TABLE leads ADD COLUMN company TEXT');
+        }
+        if (!leadsInfo.rows.some((col: any) => col.name === 'tags')) {
+          await db.query('ALTER TABLE leads ADD COLUMN tags TEXT');
         }
         const tasksInfo = await db.query("PRAGMA table_info(tasks)");
         if (!tasksInfo.rows.some((col: any) => col.name === 'project_id')) {

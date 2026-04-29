@@ -180,8 +180,10 @@ export default function Leads() {
       setShowModal(false);
       setEditingLead(null);
       fetchLeads();
-    } catch (error) {
-      console.error('Failed to save lead');
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || error?.message || 'Failed to save lead';
+      alert(msg);
+      console.error('Failed to save lead:', msg);
     }
   };
 

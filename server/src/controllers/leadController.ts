@@ -61,11 +61,15 @@ export const createLead = async (req: AuthRequest, res: Response) => {
 
   try {
     const finalOwnerId = owner_id || req.user.id;
+    const finalRevenue = Number(revenue) || 0;
+    const finalNextFollowup = next_followup ? next_followup : null;
+    const finalProjectId = project_id || null;
+
     const result = await db.query(`
       INSERT INTO leads (owner_id, contact_name, mobile, whatsapp, email, source, stage, revenue, next_followup, project_id, company, tags)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING id
-    `, [finalOwnerId, contact_name, mobile, whatsapp, email, source, stage, revenue || 0, next_followup, project_id || null, company || '', tags || '']);
+    `, [finalOwnerId, contact_name, mobile, whatsapp, email, source, stage, finalRevenue, finalNextFollowup, finalProjectId, company || '', tags || '']);
 
     const leadId = result.rows[0].id;
 
@@ -81,6 +85,7 @@ export const createLead = async (req: AuthRequest, res: Response) => {
     const newLeadResult = await db.query('SELECT * FROM leads WHERE id = $1', [leadId]);
     res.status(201).json(newLeadResult.rows[0]);
   } catch (error) {
+    console.error('createLead error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -90,15 +95,20 @@ export const updateLead = async (req: AuthRequest, res: Response) => {
   const { contact_name, mobile, whatsapp, email, source, stage, revenue, next_followup, owner_id, project_id, company, tags } = req.body;
 
   try {
+    const finalRevenue = Number(revenue) || 0;
+    const finalNextFollowup = next_followup ? next_followup : null;
+    const finalProjectId = project_id || null;
+
     await db.query(`
       UPDATE leads 
       SET contact_name = $1, mobile = $2, whatsapp = $3, email = $4, source = $5, stage = $6, revenue = $7, next_followup = $8, owner_id = $9, project_id = $10, company = $11, tags = $12, updated_at = CURRENT_TIMESTAMP
       WHERE id = $13
-    `, [contact_name, mobile, whatsapp, email, source, stage, revenue, next_followup, owner_id, project_id, company, tags, id]);
+    `, [contact_name, mobile, whatsapp, email, source, stage, finalRevenue, finalNextFollowup, owner_id, finalProjectId, company, tags, id]);
 
     const updatedLeadResult = await db.query('SELECT * FROM leads WHERE id = $1', [id]);
     res.json(updatedLeadResult.rows[0]);
   } catch (error) {
+    console.error('updateLead error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
