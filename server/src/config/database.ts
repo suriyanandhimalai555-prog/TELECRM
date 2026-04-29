@@ -5,7 +5,31 @@ import path from 'path';
 
 dotenv.config();
 
-const connectionString = process.env.DATABASE_URL;
+function normalizeDatabaseUrl(rawUrl?: string) {
+  if (!rawUrl) return rawUrl;
+  const prefixMatch = rawUrl.match(/^(postgres(?:ql)?:\/\/)/);
+  if (!prefixMatch) return rawUrl;
+
+  const prefix = prefixMatch[1];
+  const remainder = rawUrl.slice(prefix.length);
+  const lastAt = remainder.lastIndexOf('@');
+
+  if (lastAt <= 0) return rawUrl;
+
+  const authPart = remainder.slice(0, lastAt);
+  const hostPart = remainder.slice(lastAt + 1);
+
+  if (!authPart.includes(':')) return rawUrl;
+  const [user, pass] = authPart.split(/:(.+)/);
+
+  if (pass.includes('@') && !pass.includes('%40')) {
+    return `${prefix}${user}:${encodeURIComponent(pass)}@${hostPart}`;
+  }
+
+  return rawUrl;
+}
+
+const connectionString = normalizeDatabaseUrl(process.env.DATABASE_URL);
 let sqliteDb: any = null;
 let isInitializing = false;
 
