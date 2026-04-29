@@ -57,15 +57,19 @@ export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const fetchStats = useCallback(async () => {
     try {
       setRefreshing(true);
+      setError(null);
       const res = await api.get('/reports/dashboard-stats');
       setStats(res.data);
-    } catch (error) {
-      console.error('Failed to fetch stats');
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || error?.message || 'Unknown error';
+      console.error('Failed to fetch stats:', msg);
+      setError(msg);
     } finally {
       setLoading(false);
       setTimeout(() => setRefreshing(false), 1000);
@@ -95,6 +99,11 @@ export default function Dashboard() {
       <div className="text-center">
         <h2 className="text-xl font-black text-gray-900 uppercase tracking-tighter italic">Connection Lost</h2>
         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-2">Operational Data Stream Interrupted</p>
+        {error && (
+          <p className="text-[10px] font-bold text-red-400 mt-2 max-w-sm mx-auto break-words">
+            Error: {error}
+          </p>
+        )}
       </div>
       <button 
         onClick={() => fetchStats()}
