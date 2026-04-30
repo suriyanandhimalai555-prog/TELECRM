@@ -32,4 +32,4 @@ export const query = async (text: string, params?: any[]) => {
   return result;
 };
 
-export default { query };
+export default pool;
