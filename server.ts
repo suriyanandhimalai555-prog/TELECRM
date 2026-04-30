@@ -78,7 +78,11 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   res.status(500).json({ message: 'Internal Server Error', error: err.message });
 });
 export default app;
-if (process.env.VERCEL !== '1') {
+
+const isMain = import.meta.url === `file://${process.argv[1]}`;
+if (isMain && process.env.VERCEL !== '1') {
   const PORT = Number(process.env.PORT) || 3000;
-  httpServer.listen(PORT, '0.0.0.0', () => { console.log(`Server running on http://localhost:${PORT}`); });
+  httpServer.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
 }
