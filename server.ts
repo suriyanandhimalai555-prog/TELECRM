@@ -7,6 +7,7 @@ import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 import cors from 'cors';
+import fs from 'fs';
 import db, { initDb } from './server/src/config/database';
 
 // Routes
@@ -37,7 +38,7 @@ app.use(cors({
       'https://avgcrm.com',
       'https://www.avgcrm.com',
     ];
-    if (!origin || allowed.includes(origin) || origin.endsWith('.vercel.app')) {
+    if (!origin || allowed.includes(origin) || origin.endsWith('.vercel.app') || origin.endsWith('.railway.app')) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -81,21 +82,21 @@ const initialize = async () => {
       const hashedPassword = bcrypt.hashSync('password', salt);
 
       await db.query('INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4)', [
-        'admin@cratiocrm.com',
+        'admin@avgcrm.com',
         hashedPassword,
         'Admin User',
         'ADMIN'
       ]);
 
       await db.query('INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4)', [
-        'manager@cratiocrm.com',
+        'manager@avgcrm.com',
         hashedPassword,
         'Manager User',
         'MANAGER'
       ]);
 
       await db.query('INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4)', [
-        'employee@cratiocrm.com',
+        'employee@avgcrm.com',
         hashedPassword,
         'Employee User',
         'EMPLOYEE'
@@ -143,10 +144,25 @@ if (process.env.NODE_ENV !== 'production') {
   });
   app.use(vite.middlewares);
 } else {
-  const distPath = path.join(process.cwd(), 'dist');
+  // Try multiple possible dist paths for Railway/Vercel compatibility
+  const possiblePaths = [
+    path.join(__dirname, 'dist'),
+    path.join(process.cwd(), 'dist'),
+    '/app/dist',
+  ];
+
+  const distPath = possiblePaths.find(p => fs.existsSync(p)) || path.join(process.cwd(), 'dist');
+  console.log(`Serving static files from: ${distPath}`);
+  console.log(`Dist exists: ${fs.existsSync(distPath)}`);
+
   app.use(express.static(distPath));
   app.get('*', (req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'));
+    const indexPath = path.join(distPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(404).send(`index.html not found. Checked: ${distPath}`);
+    }
   });
 }
 
