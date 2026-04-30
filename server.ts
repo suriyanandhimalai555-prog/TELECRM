@@ -23,11 +23,41 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 const httpServer = createServer(app);
-app.use(cors({ origin: '*', credentials: true, methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], allowedHeaders: ['Content-Type', 'Authorization'] }));
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://avgcrm.com',
+  'https://www.avgcrm.com',
+  'https://telecrm-pearl.vercel.app',
+];
+const corsOptions = {
+  origin: (origin: string | undefined, callback: Function) => {
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app') || origin.endsWith('.railway.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+app.use(cors(corsOptions));
 const isVercel = process.env.VERCEL === '1';
 let io: any = null;
 if (!isVercel) {
-  io = new Server(httpServer, { cors: { origin: '*', methods: ['GET', 'POST'] } });
+  io = new Server(httpServer, {
+    cors: {
+      origin: (origin: string | undefined, callback: Function) => {
+        if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app') || origin.endsWith('.railway.app')) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+      methods: ['GET', 'POST'],
+    },
+  });
   io.on('connection', (socket: any) => { socket.on('disconnect', () => {}); });
 }
 const initialize = async () => {
@@ -38,9 +68,9 @@ const initialize = async () => {
     if (userCount === 0) {
       const salt = bcrypt.genSaltSync(10);
       const hashedPassword = bcrypt.hashSync('password', salt);
-      await db.query('INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4)', ['admin@avgcrm.com', hashedPassword, 'Admin User', 'ADMIN']);
-      await db.query('INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4)', ['manager@avgcrm.com', hashedPassword, 'Manager User', 'MANAGER']);
-      await db.query('INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4)', ['employee@avgcrm.com', hashedPassword, 'Employee User', 'EMPLOYEE']);
+      await db.query('INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4)', ['admin@avgcrm.com', hashedPassword, 'Admin User', 'admin']);
+      await db.query('INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4)', ['manager@avgcrm.com', hashedPassword, 'Manager User', 'manager']);
+      await db.query('INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4)', ['employee@avgcrm.com', hashedPassword, 'Employee User', 'employee']);
       console.log('Demo users seeded');
     }
   } catch (err) { console.error('Initialization error:', err); }

@@ -1,5 +1,4 @@
-import pkg from 'pg';
-const { Pool } = pkg;
+import { Pool } from 'pg';
 import dotenv from 'dotenv';
 import path from 'path';
 
@@ -60,10 +59,23 @@ async function getSqliteDb() {
   }
 }
 
-const pool = connectionString ? new Pool({
-  connectionString,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+const pool = process.env.DATABASE_URL ? new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 }) : null;
+
+export const query = async (text: string, params?: any[]) => {
+  if (!pool) {
+    throw new Error('PostgreSQL pool has not been initialized because DATABASE_URL is missing.');
+  }
+  try {
+    const result = await pool.query(text, params);
+    return result;
+  } catch (err) {
+    console.error('DB Query Error:', text, err);
+    throw err;
+  }
+};
 
 // Wrapper to handle queries safely across both PG and SQLite
 const db = {
