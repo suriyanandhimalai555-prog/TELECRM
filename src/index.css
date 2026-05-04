@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&display=swap");
 
 @theme {
   --color-aura-red: #ef4444;
@@ -11,11 +12,16 @@
   --color-dark-bg: #f9fafb;
   --color-dark-card: #ffffff;
   --color-dark-border: #e5e7eb;
+  --font-family-sans: "Times New Roman", "IM Fell English", Times, serif;
 }
 
 @layer base {
   body {
     @apply bg-gray-50 text-gray-900;
+    font-family: "Times New Roman", "IM Fell English", Times, serif;
+  }
+  * {
+    font-family: "Times New Roman", "IM Fell English", Times, serif;
   }
 }
 
@@ -27,7 +33,6 @@
     box-shadow: 0 0 15px var(--color-aura-red);
     transform: translateY(-2px);
   }
-
   .ui-screen-flash {
     position: fixed;
     inset: 0;
@@ -35,11 +40,9 @@
     pointer-events: none;
     animation: flash 0.3s ease-out forwards;
   }
-
   .ui-shunpo-slide {
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
-
   .ui-hadouken-ripple {
     position: relative;
     overflow: hidden;
@@ -64,17 +67,14 @@
     opacity: 0.3;
     transition: 0s;
   }
-
   .ui-observation:hover {
     @apply scale-[1.02] shadow-lg;
     border-left: 4px solid var(--color-aura-red);
   }
-
   .pattern-grid {
     background-image: radial-gradient(circle, #e5e7eb 1px, transparent 1px);
     background-size: 20px 20px;
   }
-
   .custom-scrollbar::-webkit-scrollbar {
     width: 4px;
     height: 4px;
@@ -85,7 +85,6 @@
   .custom-scrollbar::-webkit-scrollbar-thumb {
     @apply bg-aura-red/20 rounded-full hover:bg-aura-red/40 transition-colors;
   }
-
   .ui-standard-spinner {
     @apply animate-spin w-10 h-10 border-4 border-aura-red border-t-transparent rounded-full;
   }
@@ -95,12 +94,10 @@
   0% { background-color: white; opacity: 0.8; }
   100% { background-color: transparent; opacity: 0; }
 }
-
 @keyframes flash-red {
   0% { background-color: #dc2626; opacity: 0.5; }
   100% { background-color: transparent; opacity: 0; }
 }
-
 .anime-flash-red {
   animation: flash-red 0.3s ease-out forwards;
 }
