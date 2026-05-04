@@ -32,21 +32,33 @@ const allowedOrigins = [
   'https://avgcrm.com',
   'https://www.avgcrm.com',
   'https://telecrm-pearl.vercel.app',
+  'https://telecrm-production.up.railway.app',
 ];
+
+const isOriginAllowed = (origin: string | undefined): boolean => {
+  if (!origin) return true;
+  if (allowedOrigins.includes(origin)) return true;
+  if (origin.endsWith('.vercel.app')) return true;
+  if (origin.endsWith('.railway.app')) return true;
+  if (origin.endsWith('.avgcrm.com')) return true;
+  return false;
+};
 
 const corsOptions = {
   origin: (origin: string | undefined, callback: Function) => {
-    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app') || origin.endsWith('.railway.app')) {
+    if (isOriginAllowed(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
+// ✅ Handle preflight requests for ALL routes
+app.options('*', cors(corsOptions));
 app.use(cors(corsOptions));
 
 const isVercel = process.env.VERCEL === '1';
@@ -56,7 +68,7 @@ if (!isVercel) {
   io = new Server(httpServer, {
     cors: {
       origin: (origin: string | undefined, callback: Function) => {
-        if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app') || origin.endsWith('.railway.app')) {
+        if (isOriginAllowed(origin)) {
           callback(null, true);
         } else {
           callback(new Error('Not allowed by CORS'));
@@ -116,7 +128,6 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/projects', projectRoutes);
 
-// ✅ Async IIFE fixes the top-level await crash on Vercel
 (async () => {
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');
