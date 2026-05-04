@@ -5,13 +5,15 @@ dotenv.config();
 
 let pool: InstanceType<typeof Pool>;
 
-// If DATABASE_URL is set and it's a real remote URL, use it directly
-// Otherwise fall back to individual params (safer for special chars in password)
 if (process.env.DATABASE_URL) {
-  const useSsl = !process.env.DATABASE_URL.includes('localhost');
+  const isLocal = process.env.DATABASE_URL.includes('localhost') || 
+                  process.env.DATABASE_URL.includes('127.0.0.1');
   pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: useSsl ? { rejectUnauthorized: false } : false,
+    ssl: isLocal ? false : { rejectUnauthorized: false },
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000,
+    max: 10,
   });
 } else {
   pool = new Pool({
@@ -20,9 +22,18 @@ if (process.env.DATABASE_URL) {
     database: process.env.DB_NAME     || 'telecrm',
     user:     process.env.DB_USER     || 'postgres',
     password: process.env.DB_PASSWORD || 'AVG@123',
-    ssl: false,
+    ssl: process.env.DB_HOST && !process.env.DB_HOST.includes('localhost') 
+         ? { rejectUnauthorized: false } 
+         : false,
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000,
+    max: 10,
   });
 }
+
+pool.on('error', (err) => {
+  console.error('Unexpected DB pool error:', err);
+});
 
 export const initDb = async () => {
   await pool.query(`
