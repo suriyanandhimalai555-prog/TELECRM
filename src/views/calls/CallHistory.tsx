@@ -169,7 +169,7 @@ export default function CallHistory() {
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}>
-          <h1 className="text-2xl font-black text-gray-900 border-l-4 border-aura-red pl-3 uppercase tracking-tight italic">Extraction <span className="text-aura-red">History</span></h1>
+          <h1 className="text-2xl font-black text-gray-900 border-l-4 border-aura-red pl-3 uppercase tracking-tight">Extraction <span className="text-aura-red">History</span></h1>
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-1 ml-1">Reviewing engagement records from the void</p>
         </motion.div>
         
@@ -275,7 +275,7 @@ export default function CallHistory() {
                          call.type === 'OUTGOING' ? <PhoneOutgoing size={14} /> : <PhoneMissed size={14} />}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-xs font-black text-gray-900 lowercase tracking-tight italic">
+                    <td className="px-6 py-4 text-xs font-black text-gray-900 lowercase tracking-tight">
                        {call.lead_name || 'Classified Identity'}
                     </td>
                     <td className="px-6 py-4 text-[10px] font-black text-aura-red uppercase tracking-tighter">{call.agent_name}</td>
@@ -289,7 +289,7 @@ export default function CallHistory() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-[9px] font-bold text-gray-500 uppercase tracking-widest">{call.outcome || 'No Signal'}</td>
-                    <td className="px-6 py-4 text-[9px] font-semibold text-gray-400 font-mono italic">
+                    <td className="px-6 py-4 text-[9px] font-semibold text-gray-400 font-mono">
                       {new Date(call.start_time).toLocaleString()}
                     </td>
                     <td className="px-6 py-4">

@@ -132,7 +132,7 @@ export default function Campaigns() {
                       <Target size={20} />
                     </div>
                     <div>
-                      <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight leading-tight italic">{campaign.name}</h3>
+                      <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight leading-tight">{campaign.name}</h3>
                       <span className="text-[9px] font-black text-aura-red uppercase tracking-widest block mt-0.5">{campaign.type.replace('_', ' ')}</span>
                     </div>
                   </div>

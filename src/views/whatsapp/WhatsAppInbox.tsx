@@ -269,7 +269,7 @@ export default function WhatsAppInbox() {
         {/* Sidebar Header */}
         <div className="p-6 border-b border-gray-100 bg-white">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-black text-gray-900 uppercase italic tracking-tighter">Whats <span className="text-aura-red">App</span></h2>
+            <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Whats <span className="text-aura-red">App</span></h2>
             <div className="flex items-center space-x-2">
                <motion.button whileHover={{ scale: 1.1 }} className="p-2 text-gray-400 hover:text-aura-red transition-colors">
                   <Filter size={18} />
@@ -464,7 +464,7 @@ export default function WhatsAppInbox() {
             <div className="w-32 h-32 bg-gray-100 rounded-[3rem] flex items-center justify-center text-gray-300 mb-8 transform rotate-12">
                <MessageSquare size={64} strokeWidth={1} />
             </div>
-            <h3 className="text-2xl font-black text-gray-900 uppercase italic tracking-tighter mb-4">Inbox <span className="text-aura-red">Inactive</span></h3>
+            <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter mb-4">Inbox <span className="text-aura-red">Inactive</span></h3>
             <p className="max-w-xs text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] leading-relaxed">
               Select a conversation from the sidebar to start messaging.
             </p>
@@ -491,7 +491,7 @@ export default function WhatsAppInbox() {
             >
               <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                 <div>
-                   <h3 className="text-xl font-black text-gray-900 uppercase italic tracking-tighter">Message <span className="text-aura-red">Templates</span></h3>
+                   <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter">Message <span className="text-aura-red">Templates</span></h3>
                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Select a pre-approved message template</p>
                 </div>
                 <div className="flex items-center space-x-3">
@@ -561,13 +561,13 @@ export default function WhatsAppInbox() {
                             {selectedTemplate.components?.map((comp: any, idx: number) => (
                               <div key={idx} className="mb-4 last:mb-0">
                                  {comp.type === 'HEADER' && comp.format === 'TEXT' && (
-                                   <div className="text-sm font-black text-gray-900 mb-2 uppercase italic">{comp.text}</div>
+                                   <div className="text-sm font-black text-gray-900 mb-2 uppercase">{comp.text}</div>
                                  )}
                                  {comp.type === 'BODY' && (
                                    <div className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">{comp.text}</div>
                                  )}
                                  {comp.type === 'FOOTER' && (
-                                   <div className="text-[10px] text-gray-400 mt-2 italic">{comp.text}</div>
+                                   <div className="text-[10px] text-gray-400 mt-2">{comp.text}</div>
                                  )}
                                  {comp.type === 'BUTTONS' && (
                                    <div className="mt-4 space-y-2">

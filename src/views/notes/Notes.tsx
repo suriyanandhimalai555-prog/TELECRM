@@ -115,8 +115,8 @@ export default function Notes() {
       {flash === 'red' && <div className="ui-screen-flash bg-aura-red/30" />}
 
       <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-        <h1 className="text-4xl font-black text-gray-900 border-l-8 border-aura-red pl-4 uppercase italic tracking-tighter">Notes <span className="text-aura-red">Archive</span></h1>
-        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] mt-2 italic px-5 leading-none">Recording the ancient echoes of interaction</p>
+        <h1 className="text-4xl font-black text-gray-900 border-l-8 border-aura-red pl-4 uppercase tracking-tighter">Notes <span className="text-aura-red">Archive</span></h1>
+        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] mt-2 px-5 leading-none">Recording the ancient echoes of interaction</p>
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1 overflow-hidden">
@@ -129,7 +129,7 @@ export default function Notes() {
           <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 ui-aura-glow relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-10 bg-aura-red/5 rounded-full transform translate-x-1/2 -translate-y-1/2 group-hover:scale-150 transition-transform duration-700" />
             
-            <h3 className="text-xl font-black text-gray-900 mb-8 flex items-center uppercase italic border-b border-gray-100 pb-4">
+            <h3 className="text-xl font-black text-gray-900 mb-8 flex items-center uppercase border-b border-gray-100 pb-4">
               <Plus size={24} className="mr-3 text-aura-red" />
               Add New Note
             </h3>
@@ -152,7 +152,7 @@ export default function Notes() {
                     type="button"
                     onClick={() => setNewNote({...newNote, type: 'FOLLOW_UP'})}
                     className={cn(
-                      "flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all italic",
+                      "flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all",
                       newNote.type === 'FOLLOW_UP' 
                         ? "bg-aura-red text-white border-aura-red shadow-lg shadow-aura-red/20 scale-105" 
                         : "bg-gray-50 border-gray-100 text-gray-500 hover:border-aura-red/30"
@@ -164,7 +164,7 @@ export default function Notes() {
                     type="button"
                     onClick={() => setNewNote({...newNote, type: 'WHATSAPP'})}
                     className={cn(
-                      "flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all italic",
+                      "flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all",
                       newNote.type === 'WHATSAPP' 
                         ? "bg-aura-green text-white border-aura-green shadow-lg shadow-aura-green/20 scale-105" 
                         : "bg-gray-50 border-gray-100 text-gray-500 hover:border-aura-green/30"
@@ -189,7 +189,7 @@ export default function Notes() {
                 whileTap={{ scale: 0.95 }}
                 type="submit"
                 disabled={saving}
-                className="w-full flex items-center justify-center py-4 px-6 bg-aura-red text-white rounded-xl font-black uppercase italic text-xs tracking-[0.2em] shadow-lg shadow-aura-red/20 disabled:opacity-50"
+                className="w-full flex items-center justify-center py-4 px-6 bg-aura-red text-white rounded-xl font-black uppercase text-xs tracking-[0.2em] shadow-lg shadow-aura-red/20 disabled:opacity-50"
               >
                 {saving ? (
                   <RefreshCw size={18} className="animate-spin mr-3" />
@@ -218,7 +218,7 @@ export default function Notes() {
                 placeholder="Search notes..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-6 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none text-sm font-black italic text-gray-900 placeholder-gray-400 transition-all"
+                className="w-full pl-12 pr-6 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none text-sm font-black text-gray-900 placeholder-gray-400 transition-all"
               />
             </div>
             <div className="ml-4 p-2 bg-gray-50 rounded-xl text-gray-400 border border-gray-100">
@@ -248,10 +248,10 @@ export default function Notes() {
                         {note.type === 'WHATSAPP' ? <MessageSquare size={22} /> : <StickyNote size={22} />}
                       </div>
                       <div>
-                        <h4 className="text-lg font-black text-gray-900 italic tracking-tighter uppercase leading-none">
+                        <h4 className="text-lg font-black text-gray-900 tracking-tighter uppercase leading-none">
                           {note.lead_name ? `Client: ${note.lead_name}` : 'General Resonance'}
                         </h4>
-                        <div className="flex items-center text-[10px] text-gray-400 uppercase tracking-[0.2em] font-black mt-2 italic">
+                        <div className="flex items-center text-[10px] text-gray-400 uppercase tracking-[0.2em] font-black mt-2">
                           <Clock size={12} className="mr-2 text-aura-red" />
                           {new Date(note.created_at).toLocaleString()} • Observer {note.user_name}
                         </div>
@@ -272,13 +272,13 @@ export default function Notes() {
                   </div>
                   <div className="relative">
                     <div className="absolute left-0 top-0 w-1 h-full bg-gray-100 rounded-full" />
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap leading-[1.8] font-bold italic pl-6">
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap leading-[1.8] font-bold pl-6">
                       {note.content}
                     </p>
                   </div>
                   <div className="mt-6 pt-6 border-t border-gray-50 flex items-center justify-end space-x-2">
                      <Zap size={14} className="text-aura-red/20" />
-                     <span className="text-[9px] font-black text-gray-300 uppercase italic tracking-widest">Energy Stabilized</span>
+                     <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest">Energy Stabilized</span>
                   </div>
                 </motion.div>
               ))}
@@ -290,7 +290,7 @@ export default function Notes() {
                 ) : (
                   <>
                     <Zap size={48} className="text-gray-100 mb-4" />
-                    <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.4em] italic leading-none">The Void Reflects Nothingness</p>
+                    <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.4em] leading-none">The Void Reflects Nothingness</p>
                   </>
                 )}
               </div>

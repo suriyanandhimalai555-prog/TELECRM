@@ -296,7 +296,7 @@ export default function Reports() {
                   <tbody className="divide-y divide-gray-50">
                     {teamData.map((agent, idx) => (
                       <motion.tr key={idx} className="text-xs group hover:bg-gray-50 transition-colors">
-                        <td className="py-4 px-3 font-black text-gray-900 uppercase italic">{agent.name}</td>
+                        <td className="py-4 px-3 font-black text-gray-900 uppercase">{agent.name}</td>
                         <td className="py-4 px-3 text-center font-bold text-gray-500">{agent.total_calls}</td>
                         <td className="py-4 px-3 text-center">
                           <span className="bg-aura-red/5 text-aura-red px-2 py-0.5 rounded-full font-black text-[9px]">{agent.connected_calls}</span>

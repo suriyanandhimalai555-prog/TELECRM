@@ -50,7 +50,7 @@ const PowerCounter = ({ value }: { value: number }) => {
     return controls.stop;
   }, [value, count]);
 
-  return <motion.span className="text-4xl font-black bg-gradient-to-br from-aura-red to-gray-500 bg-clip-text text-transparent tracking-tighter italic">{rounded}</motion.span>;
+  return <motion.span className="text-4xl font-black bg-gradient-to-br from-aura-red to-gray-500 bg-clip-text text-transparent tracking-tighter">{rounded}</motion.span>;
 };
 
 export default function Dashboard() {
@@ -97,7 +97,7 @@ export default function Dashboard() {
     <div className="flex flex-col items-center justify-center h-screen space-y-6 bg-gray-50">
       <Activity className="text-aura-red animate-pulse" size={48} />
       <div className="text-center">
-        <h2 className="text-xl font-black text-gray-900 uppercase tracking-tighter italic">Connection Lost</h2>
+        <h2 className="text-xl font-black text-gray-900 uppercase tracking-tighter">Connection Lost</h2>
         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-2">Operational Data Stream Interrupted</p>
         {error && (
           <p className="text-[10px] font-bold text-red-400 mt-2 max-w-sm mx-auto break-words">
@@ -142,7 +142,7 @@ export default function Dashboard() {
 
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-          <h1 className="text-4xl font-black text-gray-900 border-l-4 border-aura-red pl-4 uppercase tracking-tighter italic">AVG <span className="text-aura-red">DASHBOARD</span></h1>
+          <h1 className="text-4xl font-black text-gray-900 border-l-4 border-aura-red pl-4 uppercase tracking-tighter">AVG <span className="text-aura-red">DASHBOARD</span></h1>
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mt-2 ml-1">Live Operational Framework</p>
         </motion.div>
         
@@ -205,7 +205,7 @@ export default function Dashboard() {
                   <item.icon className={cn(item.color, "mr-3")} size={18} />
                   <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-tighter">{item.label}</span>
                 </div>
-                <span className="text-sm font-black text-gray-900 font-mono italic">{item.value}</span>
+                <span className="text-sm font-black text-gray-900 font-mono">{item.value}</span>
               </div>
             ))}
           </div>
@@ -276,7 +276,7 @@ export default function Dashboard() {
                      call.type === 'OUTGOING' ? <PhoneOutgoing size={16} /> : <PhoneMissed size={16} />}
                   </div>
                   <div>
-                    <p className="text-xs font-black text-gray-900 leading-tight uppercase italic">{call.lead_name || 'Classified Identity'}</p>
+                    <p className="text-xs font-black text-gray-900 leading-tight uppercase">{call.lead_name || 'Classified Identity'}</p>
                     <p className="text-[9px] text-gray-400 font-bold uppercase mt-1 tracking-widest">{call.caller}</p>
                   </div>
                 </div>
@@ -335,7 +335,7 @@ export default function Dashboard() {
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                <p className="text-[10px] font-black text-gray-400 uppercase">Core Logic</p>
-               <p className="text-xl font-black text-gray-900 italic">SUCCESS</p>
+               <p className="text-xl font-black text-gray-900">SUCCESS</p>
             </div>
           </div>
         </motion.div>

@@ -350,7 +350,7 @@ export default function Tasks() {
                           {task.project_name}
                         </div>
                       )}
-                      <div className="flex items-center text-[9px] font-black text-aura-red uppercase italic tracking-wider">
+                      <div className="flex items-center text-[9px] font-black text-aura-red uppercase tracking-wider">
                         {task.user_name}
                       </div>
                     </div>

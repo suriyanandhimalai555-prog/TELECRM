@@ -235,7 +235,7 @@ export default function Projects() {
                       </div>
                     ))
                   ) : (
-                    <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest italic">No assignment</span>
+                    <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest">No assignment</span>
                   )}
                 </div>
               </div>

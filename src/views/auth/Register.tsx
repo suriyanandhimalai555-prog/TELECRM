@@ -37,7 +37,7 @@ export default function Register() {
             <UserPlus size={24} />
           </div>
         </div>
-        <h2 className="mt-6 text-center text-3xl font-black text-gray-900 uppercase tracking-tighter italic">
+        <h2 className="mt-6 text-center text-3xl font-black text-gray-900 uppercase tracking-tighter">
           AVG<span className="text-aura-red">CRM</span> <span className="text-xs align-top bg-aura-red text-white px-1 ml-1 rounded">PRO</span>
         </h2>
         <p className="mt-2 text-center text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">
