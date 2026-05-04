@@ -1,12 +1,28 @@
 import pkg from 'pg';
 const { Pool } = pkg;
+import dotenv from 'dotenv';
+dotenv.config();
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production'
-    ? { rejectUnauthorized: false }
-    : false,
-});
+let pool: InstanceType<typeof Pool>;
+
+// If DATABASE_URL is set and it's a real remote URL, use it directly
+// Otherwise fall back to individual params (safer for special chars in password)
+if (process.env.DATABASE_URL) {
+  const useSsl = !process.env.DATABASE_URL.includes('localhost');
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: useSsl ? { rejectUnauthorized: false } : false,
+  });
+} else {
+  pool = new Pool({
+    host:     process.env.DB_HOST     || 'localhost',
+    port:     Number(process.env.DB_PORT) || 5432,
+    database: process.env.DB_NAME     || 'telecrm',
+    user:     process.env.DB_USER     || 'postgres',
+    password: process.env.DB_PASSWORD || 'AVG@123',
+    ssl: false,
+  });
+}
 
 export const initDb = async () => {
   await pool.query(`
@@ -24,7 +40,72 @@ export const initDb = async () => {
       created_at TIMESTAMP DEFAULT NOW()
     )
   `);
-  console.log('✅ DB initialized');
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS leads (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255),
+      email VARCHAR(255),
+      phone VARCHAR(50),
+      status VARCHAR(50) DEFAULT 'new',
+      assigned_to INTEGER REFERENCES users(id),
+      created_by INTEGER REFERENCES users(id),
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS calls (
+      id SERIAL PRIMARY KEY,
+      lead_id INTEGER REFERENCES leads(id),
+      user_id INTEGER REFERENCES users(id),
+      duration INTEGER,
+      notes TEXT,
+      status VARCHAR(50),
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS tasks (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(255),
+      description TEXT,
+      assigned_to INTEGER REFERENCES users(id),
+      created_by INTEGER REFERENCES users(id),
+      due_date TIMESTAMP,
+      status VARCHAR(50) DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS campaigns (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255),
+      description TEXT,
+      status VARCHAR(50) DEFAULT 'draft',
+      created_by INTEGER REFERENCES users(id),
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS notes (
+      id SERIAL PRIMARY KEY,
+      content TEXT,
+      lead_id INTEGER REFERENCES leads(id),
+      user_id INTEGER REFERENCES users(id),
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS projects (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255),
+      description TEXT,
+      status VARCHAR(50) DEFAULT 'active',
+      created_by INTEGER REFERENCES users(id),
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+  console.log('✅ DB initialized successfully');
 };
 
 export const query = async (text: string, params?: any[]) => {
@@ -32,4 +113,6 @@ export const query = async (text: string, params?: any[]) => {
   return result;
 };
 
-export default pool;
+export const connect = () => pool.connect();
+
+export default { query, connect };

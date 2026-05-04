@@ -227,7 +227,7 @@ export default function Projects() {
                     users.filter(u => u.assigned_projects?.includes(project.id)).map(u => (
                       <div key={u.id} className="group/avatar relative">
                         <div className="w-7 h-7 rounded-lg bg-aura-red/5 text-aura-red border border-aura-red/20 flex items-center justify-center text-[10px] font-black uppercase shadow-sm">
-                          {u.name.charAt(0)}
+                          {u?.name?.charAt(0)}
                         </div>
                         <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 opacity-0 group-hover/avatar:opacity-100 transition-opacity bg-gray-900 text-white text-[8px] font-black uppercase px-2 py-0.5 rounded-md pointer-events-none whitespace-nowrap z-20">
                           {u.name}

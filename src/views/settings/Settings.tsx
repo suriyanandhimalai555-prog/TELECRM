@@ -205,7 +205,7 @@ export default function Settings() {
               >
                 <div className="flex items-center space-x-6">
                   <div className="w-20 h-20 rounded-2xl bg-aura-red/5 flex items-center justify-center text-aura-red text-3xl font-black border border-aura-red/10">
-                    {user?.name.charAt(0)}
+                    {user?.name?.charAt(0)}
                   </div>
                   <div>
                     <h3 className="text-xl font-black text-gray-900 tracking-tight uppercase">{user?.name}</h3>

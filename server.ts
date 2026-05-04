@@ -3,7 +3,6 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 import cors from 'cors';
@@ -66,7 +65,9 @@ if (!isVercel) {
       methods: ['GET', 'POST'],
     },
   });
-  io.on('connection', (socket: any) => { socket.on('disconnect', () => {}); });
+  io.on('connection', (socket: any) => {
+    socket.on('disconnect', () => {});
+  });
 }
 
 let dbConnected = false;
@@ -86,18 +87,22 @@ const initialize = async () => {
       console.log('Demo users seeded');
     }
   } catch (err) {
-    dbConnected = false;
     console.error('Initialization error:', err);
   }
 };
 
-initialize().catch(err => console.error('Background initialization failed:', err));
+const initializePromise = initialize();
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-app.get('/api/health', (req, res) => { res.json({ status: 'ok', environment: process.env.NODE_ENV }); });
-app.get('/api/ping', (req, res) => { res.json({ pong: true, timestamp: new Date().toISOString() }); });
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', environment: process.env.NODE_ENV, db: dbConnected ? 'connected' : 'disconnected' });
+});
+
+app.get('/api/ping', (req, res) => {
+  res.json({ pong: true, timestamp: new Date().toISOString() });
+});
 
 app.use((req: any, res, next) => { req.io = io; next(); });
 
@@ -111,21 +116,31 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/projects', projectRoutes);
 
+// ✅ Async IIFE fixes the top-level await crash on Vercel
 (async () => {
   if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({ server: { middlewareMode: true }, appType: 'spa' });
     app.use(vite.middlewares);
   } else {
-    const possiblePaths = [path.join(__dirname, 'dist'), path.join(process.cwd(), 'dist'), '/app/dist'];
+    const possiblePaths = [
+      path.join(__dirname, 'dist'),
+      path.join(process.cwd(), 'dist'),
+      '/app/dist',
+    ];
     const distPath = possiblePaths.find(p => fs.existsSync(p)) || path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       const indexPath = path.join(distPath, 'index.html');
-      if (fs.existsSync(indexPath)) { res.sendFile(indexPath); }
-      else { res.status(404).send(`index.html not found at ${distPath}`); }
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        res.status(404).send(`index.html not found at ${distPath}`);
+      }
     });
   }
 })();
+
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Global Error:', err);
   res.status(500).json({ message: 'Internal Server Error', error: err.message });
@@ -135,16 +150,21 @@ export default app;
 
 const isMain = import.meta.url === `file://${process.argv[1]}`;
 if (isMain && process.env.VERCEL !== '1') {
-  const PORT = Number(process.env.PORT) || 3000;
-  httpServer.listen(PORT, '0.0.0.0', () => {
-    const banner = `
-    ╔══════════════════════════════════╗
-    ║   AVG CRM Server Started         ║
-    ║   URL  : http://localhost:${PORT}${' '.repeat(Math.max(0, 10 - String(PORT).length))}║
-    ║   ENV  : ${process.env.NODE_ENV || 'development'}${' '.repeat(Math.max(0, 15 - (process.env.NODE_ENV || 'development').length))}║
-    ║   DB   : ${dbConnected ? 'connected' : 'check env'}${' '.repeat(Math.max(0, 13 - (dbConnected ? 'connected' : 'check env').length))}║
-    ╚══════════════════════════════════╝
-    `;
-    console.log(banner);
-  });
+  initializePromise
+    .then(() => {
+      const PORT = Number(process.env.PORT) || 3000;
+      httpServer.listen(PORT, '0.0.0.0', () => {
+        console.log(`
+╔══════════════════════════════════╗`);
+        console.log(`║   AVG CRM Server Started          ║`);
+        console.log(`║   URL : http://localhost:${PORT}    ║`);
+        console.log(`║   ENV : ${process.env.NODE_ENV || 'development'}             ║`);
+        console.log(`║   DB  : ${dbConnected ? 'connected ✅' : 'check DATABASE_URL ❌'}  ║`);
+        console.log(`╚══════════════════════════════════╝
+`);
+      });
+    })
+    .catch(err => {
+      console.error('Server failed to start because initialization failed:', err);
+    });
 }

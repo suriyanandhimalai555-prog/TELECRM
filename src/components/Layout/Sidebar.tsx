@@ -114,7 +114,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           !isOpen && "justify-center"
         )}>
           <div className="w-9 h-9 rounded-lg bg-aura-red/5 text-aura-red font-black text-sm border border-aura-red/10 flex items-center justify-center">
-            {user?.name.charAt(0)}
+            {user?.name?.charAt(0)}
           </div>
           {isOpen && (
             <div className="ml-3 overflow-hidden">

@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import db from '../config/database';
-import fetch from 'node-fetch';
 
 const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID || '1023163197557145';
 const VERIFY_TOKEN = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || 'avgcrm_webhook_2024';
