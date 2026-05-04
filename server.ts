@@ -17,6 +17,7 @@ import noteRoutes from './server/src/routes/noteRoutes';
 import reportRoutes from './server/src/routes/reportRoutes';
 import settingsRoutes from './server/src/routes/settingsRoutes';
 import projectRoutes from './server/src/routes/projectRoutes';
+import whatsappRoutes from './server/src/routes/whatsappRoutes';
 
 dotenv.config();
 
@@ -127,6 +128,7 @@ app.use('/api/notes', noteRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
 
 (async () => {
   if (process.env.NODE_ENV !== 'production') {
