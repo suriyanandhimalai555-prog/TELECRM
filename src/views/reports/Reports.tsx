@@ -33,7 +33,7 @@ import {
   Cell
 } from 'recharts';
 
-const COLORS = ['#EF4444', '#F87171', '#FCA5A5', '#F59E0B', '#7F1D1D'];
+const COLORS = ['#EF4444', '#FCA5A5', '#F59E0B', '#FEE2E2', '#7F1D1D'];
 
 export default function Reports() {
   const { user } = useAuth();
@@ -71,7 +71,9 @@ export default function Reports() {
     }
   }, [user?.role]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const exportCSV = () => {
     if (!stats) return;
@@ -105,6 +107,7 @@ export default function Reports() {
     doc.save(`report_${new Date().toISOString()}.pdf`);
   };
 
+  // Get correct chart data based on active tab
   const getMainChartData = () => {
     if (reportType === 'whatsapp') return whatsappSummary;
     if (reportType === 'leads') return conversionData;
@@ -134,24 +137,11 @@ export default function Reports() {
     );
   }
 
-  const darkTooltipStyle = {
-    backgroundColor: '#111827',
-    borderRadius: '12px',
-    border: '1px solid #374151',
-    fontWeight: 900,
-    textTransform: 'uppercase' as const,
-    fontSize: '9px',
-    color: '#F9FAFB'
-  };
-
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
-          <h1 className="text-2xl font-black text-gray-900 border-l-4 border-aura-red pl-3 uppercase tracking-tight">
-            Report & <span className="text-aura-red">Analytics</span>
-          </h1>
+          <h1 className="text-2xl font-black text-gray-900 border-l-4 border-aura-red pl-3 uppercase tracking-tight">Report & <span className="text-aura-red">Analytics</span></h1>
           <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">Deep dive into performance metrics</p>
         </motion.div>
         <div className="flex items-center gap-3">
@@ -166,27 +156,26 @@ export default function Reports() {
         </div>
       </div>
 
-      {/* Tab Bar - Dark */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-gray-900 p-4 rounded-2xl border border-gray-800 flex flex-wrap items-center gap-4">
-        <div className="flex items-center space-x-1 bg-gray-800 p-1 rounded-xl">
+        className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-wrap items-center gap-4">
+        <div className="flex items-center space-x-1 bg-gray-50/50 p-1 rounded-xl border border-gray-100">
           {[
-            { id: 'calls', label: 'Calls' },
-            { id: 'whatsapp', label: 'WhatsApp' },
-            { id: 'leads', label: 'Leads' },
-            { id: 'projects', label: 'Projects' },
-            { id: 'team', label: 'Team' },
+            { id: 'calls', label: 'Calls', icon: Phone },
+            { id: 'whatsapp', label: 'WhatsApp', icon: MessageSquare },
+            { id: 'leads', label: 'Leads', icon: Users },
+            { id: 'projects', label: 'Projects', icon: Briefcase },
+            { id: 'team', label: 'Team', icon: Zap },
           ].map(type => (
             <button key={type.id} onClick={() => setReportType(type.id)}
               className={cn(
-                "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                reportType === type.id ? "bg-aura-red text-white shadow-sm" : "text-gray-400 hover:text-gray-200"
+                "flex items-center px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                reportType === type.id ? "bg-white text-aura-red shadow-sm ring-1 ring-aura-red/10" : "text-gray-400 hover:text-gray-600"
               )}>
               {type.label}
             </button>
           ))}
         </div>
-        <div className="flex items-center space-x-2 ml-auto px-3 py-1.5 bg-gray-800 rounded-lg border border-gray-700">
+        <div className="flex items-center space-x-2 ml-auto px-3 py-1.5 bg-white rounded-lg border border-gray-100">
           <Calendar size={16} className="text-aura-red" />
           <select value={dateRange} onChange={(e) => setDateRange(e.target.value)}
             className="bg-transparent border-none focus:ring-0 text-[10px] font-black text-gray-400 uppercase tracking-widest cursor-pointer">
@@ -198,41 +187,42 @@ export default function Reports() {
         </div>
       </motion.div>
 
-      {/* Stats Cards - Dark */}
+      {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: 'Total Leads', value: stats.totalLeads },
-            { label: 'Connected Calls', value: stats.connectedCalls },
-            { label: 'Avg Duration', value: `${Math.round(stats.avgDuration)}s` },
-            { label: 'WhatsApp', value: stats.whatsappNotes },
+            { label: 'Total Leads', value: stats.totalLeads, icon: Users },
+            { label: 'Connected Calls', value: stats.connectedCalls, icon: Phone },
+            { label: 'Avg Duration', value: `${Math.round(stats.avgDuration)}s`, icon: TrendingUp },
+            { label: 'WhatsApp', value: stats.whatsappNotes, icon: MessageSquare },
           ].map((card, i) => (
             <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-              className="bg-gray-900 p-4 rounded-2xl border border-gray-800">
-              <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">{card.label}</p>
-              <p className="text-2xl font-black text-white mt-1">{card.value ?? 0}</p>
+              className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{card.label}</p>
+              <p className="text-2xl font-black text-gray-900 mt-1">{card.value ?? 0}</p>
             </motion.div>
           ))}
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Main Bar Chart - Dark */}
+        {/* Main Chart */}
         <motion.div initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}
-          className="bg-gray-900 p-6 rounded-2xl border border-gray-800">
+          className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-black text-white uppercase tracking-tighter">{getMainChartTitle()}</h3>
+            <h3 className="text-sm font-black text-gray-900 uppercase tracking-tighter">{getMainChartTitle()}</h3>
             <BarChart3 className="text-aura-red" size={18} />
           </div>
           <div className="h-72 flex items-center justify-center">
             {getMainChartData().length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={getMainChartData()}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1f2937" />
-                  <XAxis dataKey="date" stroke="#4b5563" fontSize={9} fontWeight={900} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#4b5563" fontSize={9} fontWeight={900} tickLine={false} axisLine={false} />
-                  <Tooltip cursor={{ fill: 'rgba(239,68,68,0.08)' }} contentStyle={darkTooltipStyle} />
-                  <Legend iconType="circle" wrapperStyle={{ color: '#9ca3af', fontSize: '9px', fontWeight: 900 }} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                  <XAxis dataKey="date" stroke="#9ca3af" fontSize={9} fontWeight={900} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#9ca3af" fontSize={9} fontWeight={900} tickLine={false} axisLine={false} />
+                  <Tooltip cursor={{ fill: 'rgba(239, 68, 68, 0.05)' }}
+                    contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #f3f4f6', fontWeight: 900, textTransform: 'uppercase', fontSize: '9px', color: '#111827' }} />
+                  <Legend iconType="circle" />
                   {reportType === 'whatsapp' ? (
                     <>
                       <Bar dataKey="inbound" name="Received" fill="#EF4444" radius={[4, 4, 0, 0]} />
@@ -250,8 +240,8 @@ export default function Reports() {
               </ResponsiveContainer>
             ) : (
               <div className="flex flex-col items-center justify-center space-y-3">
-                <div className="w-16 h-16 rounded-full bg-aura-red/10 flex items-center justify-center border border-aura-red/20">
-                  <RefreshCw className="text-aura-red" size={24} />
+                <div className="w-16 h-16 rounded-full bg-aura-red/5 flex items-center justify-center border border-aura-red/10">
+                  <RefreshCw className="text-aura-red animate-spin-slow" size={24} />
                 </div>
                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">No data available</p>
               </div>
@@ -259,11 +249,11 @@ export default function Reports() {
           </div>
         </motion.div>
 
-        {/* Pie Chart - Dark */}
+        {/* Pie Chart */}
         <motion.div initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}
-          className="bg-gray-900 p-6 rounded-2xl border border-gray-800">
+          className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-black text-white uppercase tracking-tighter">
+            <h3 className="text-sm font-black text-gray-900 uppercase tracking-tighter">
               {reportType === 'projects' ? 'Project Distribution' : reportType === 'leads' ? 'Lead Pipeline' : 'Conversion Pipeline'}
             </h3>
             <Dna className="text-aura-red" size={18} />
@@ -276,83 +266,82 @@ export default function Reports() {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={darkTooltipStyle} />
-                <Legend verticalAlign="bottom" align="center" iconType="circle"
-                  wrapperStyle={{ color: '#9ca3af', fontSize: '9px', fontWeight: 900 }} />
+                <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #F3F4F6', fontWeight: 900, textTransform: 'uppercase', fontSize: '9px' }} />
+                <Legend verticalAlign="bottom" align="center" iconType="circle" />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </motion.div>
 
-        {/* Team Table - Dark */}
+        {/* Team Performance Table - shows for all non-employee roles, highlighted when team tab active */}
         {user?.role !== 'employee' && (
           <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className={cn("bg-gray-900 p-6 rounded-2xl border lg:col-span-2 transition-all",
-              reportType === 'team' ? "border-aura-red/50" : "border-gray-800")}>
+            className={cn("bg-white p-6 rounded-2xl shadow-sm border lg:col-span-2 transition-all",
+              reportType === 'team' ? "border-aura-red/30 shadow-aura-red/10" : "border-gray-100")}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-sm font-black text-white uppercase tracking-tighter">Team Performance</h3>
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tighter">Team Performance</h3>
               <Zap className="text-aura-red" size={18} />
             </div>
             {teamData.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="text-[9px] font-black text-gray-500 uppercase tracking-widest border-b border-gray-800">
+                    <tr className="text-[9px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50">
                       <th className="pb-4 px-3">Agent</th>
                       <th className="pb-4 px-3 text-center">Total Calls</th>
                       <th className="pb-4 px-3 text-center">Connected</th>
                       <th className="pb-4 px-3 text-right">Duration (Mins)</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-800">
+                  <tbody className="divide-y divide-gray-50">
                     {teamData.map((agent, idx) => (
-                      <motion.tr key={idx} className="text-xs hover:bg-gray-800 transition-colors">
-                        <td className="py-4 px-3 font-black text-white uppercase italic">{agent.name}</td>
-                        <td className="py-4 px-3 text-center font-bold text-gray-400">{agent.total_calls}</td>
+                      <motion.tr key={idx} className="text-xs group hover:bg-gray-50 transition-colors">
+                        <td className="py-4 px-3 font-black text-gray-900 uppercase italic">{agent.name}</td>
+                        <td className="py-4 px-3 text-center font-bold text-gray-500">{agent.total_calls}</td>
                         <td className="py-4 px-3 text-center">
-                          <span className="bg-aura-red/20 text-aura-red px-2 py-0.5 rounded-full font-black text-[9px]">{agent.connected_calls}</span>
+                          <span className="bg-aura-red/5 text-aura-red px-2 py-0.5 rounded-full font-black text-[9px]">{agent.connected_calls}</span>
                         </td>
-                        <td className="py-4 px-3 text-right font-bold text-gray-400">{Math.round(agent.total_duration / 60)}</td>
+                        <td className="py-4 px-3 text-right font-bold text-gray-500">{Math.round(agent.total_duration / 60)}</td>
                       </motion.tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             ) : (
-              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest text-center py-8">No team data available</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center py-8">No team data available</p>
             )}
           </motion.div>
         )}
 
-        {/* Projects Table - Dark */}
+        {/* Projects Table - shows when projects tab active */}
         {reportType === 'projects' && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className="bg-gray-900 p-6 rounded-2xl border border-aura-red/30 lg:col-span-2">
+            className="bg-white p-6 rounded-2xl shadow-sm border border-aura-red/30 lg:col-span-2">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-sm font-black text-white uppercase tracking-tighter">Project Breakdown</h3>
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tighter">Project Breakdown</h3>
               <Briefcase className="text-aura-red" size={18} />
             </div>
             {projectData.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="text-[9px] font-black text-gray-500 uppercase tracking-widest border-b border-gray-800">
+                    <tr className="text-[9px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50">
                       <th className="pb-4 px-3">Project</th>
                       <th className="pb-4 px-3 text-right">Value</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-800">
+                  <tbody className="divide-y divide-gray-50">
                     {projectData.map((project, idx) => (
-                      <tr key={idx} className="text-xs hover:bg-gray-800 transition-colors">
-                        <td className="py-4 px-3 font-black text-white uppercase">{project.name}</td>
-                        <td className="py-4 px-3 text-right font-bold text-gray-400">{project.value}</td>
+                      <tr key={idx} className="text-xs hover:bg-gray-50 transition-colors">
+                        <td className="py-4 px-3 font-black text-gray-900 uppercase">{project.name}</td>
+                        <td className="py-4 px-3 text-right font-bold text-gray-500">{project.value}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             ) : (
-              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest text-center py-8">No project data available</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center py-8">No project data available</p>
             )}
           </motion.div>
         )}
