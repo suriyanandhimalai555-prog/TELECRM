@@ -107,10 +107,11 @@ export default function Reports() {
     doc.save(`report_${new Date().toISOString()}.pdf`);
   };
 
-  // Get correct chart data based on active tab
   const getMainChartData = () => {
     if (reportType === 'whatsapp') return whatsappSummary;
     if (reportType === 'leads') return conversionData;
+    if (reportType === 'projects') return projectData;
+    if (reportType === 'team') return teamData;
     return summaryData;
   };
 
@@ -122,11 +123,50 @@ export default function Reports() {
     return 'Call Distribution';
   };
 
+  const getXAxisKey = () => {
+    if (reportType === 'projects') return 'name';
+    if (reportType === 'team') return 'name';
+    if (reportType === 'leads') return 'name';
+    return 'date';
+  };
+
   const getPieChartData = () => {
     if (reportType === 'projects') return projectData;
     if (reportType === 'leads') return conversionData;
+    if (reportType === 'team') return teamData.map((d: any) => ({ name: d.name, value: d.total_calls || 0 }));
     if (reportType === 'whatsapp') return whatsappSummary.map((d: any) => ({ name: d.date, value: (d.inbound || 0) + (d.outbound || 0) }));
     return conversionData;
+  };
+
+  const renderBars = () => {
+    if (reportType === 'whatsapp') {
+      return (
+        <>
+          <Bar dataKey="inbound" name="Received" fill="#EF4444" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="outbound" name="Sent" fill="#7F1D1D" radius={[4, 4, 0, 0]} />
+        </>
+      );
+    }
+    if (reportType === 'leads') {
+      return <Bar dataKey="value" name="Leads" fill="#EF4444" radius={[4, 4, 0, 0]} />;
+    }
+    if (reportType === 'projects') {
+      return <Bar dataKey="value" name="Projects" fill="#EF4444" radius={[4, 4, 0, 0]} />;
+    }
+    if (reportType === 'team') {
+      return (
+        <>
+          <Bar dataKey="total_calls" name="Total Calls" fill="#EF4444" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="connected_calls" name="Connected" fill="#7F1D1D" radius={[4, 4, 0, 0]} />
+        </>
+      );
+    }
+    return (
+      <>
+        <Bar dataKey="connected" name="Connected" fill="#EF4444" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="failed" name="Failed" fill="#7F1D1D" radius={[4, 4, 0, 0]} />
+      </>
+    );
   };
 
   if (loading) {
@@ -141,22 +181,32 @@ export default function Reports() {
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
-          <h1 className="text-2xl font-black text-gray-900 border-l-4 border-aura-red pl-3 uppercase tracking-tight">Report & <span className="text-aura-red">Analytics</span></h1>
-          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">Deep dive into performance metrics</p>
+          <h1 className="text-2xl font-black text-gray-900 border-l-4 border-aura-red pl-3 uppercase tracking-tight">
+            Report & <span className="text-aura-red">Analytics</span>
+          </h1>
+          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">
+            Deep dive into performance metrics
+          </p>
         </motion.div>
         <div className="flex items-center gap-3">
-          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={exportCSV}
+          <motion.button
+            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+            onClick={exportCSV}
             className="flex items-center px-4 py-2 bg-white border border-gray-100 rounded-xl text-[10px] font-black text-gray-500 hover:bg-aura-red hover:text-white transition-all uppercase tracking-widest shadow-sm">
             <TableIcon size={16} className="mr-2" />Export CSV
           </motion.button>
-          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={exportPDF}
+          <motion.button
+            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+            onClick={exportPDF}
             className="flex items-center px-4 py-2 bg-aura-red text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-aura-red/20">
             <FileText size={16} className="mr-2" />Export PDF
           </motion.button>
         </div>
       </div>
 
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+      {/* Tab Bar */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
         className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-wrap items-center gap-4">
         <div className="flex items-center space-x-1 bg-gray-50/50 p-1 rounded-xl border border-gray-100">
           {[
@@ -166,10 +216,14 @@ export default function Reports() {
             { id: 'projects', label: 'Projects', icon: Briefcase },
             { id: 'team', label: 'Team', icon: Zap },
           ].map(type => (
-            <button key={type.id} onClick={() => setReportType(type.id)}
+            <button
+              key={type.id}
+              onClick={() => setReportType(type.id)}
               className={cn(
                 "flex items-center px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                reportType === type.id ? "bg-white text-aura-red shadow-sm ring-1 ring-aura-red/10" : "text-gray-400 hover:text-gray-600"
+                reportType === type.id
+                  ? "bg-white text-aura-red shadow-sm ring-1 ring-aura-red/10"
+                  : "text-gray-400 hover:text-gray-600"
               )}>
               {type.label}
             </button>
@@ -177,7 +231,9 @@ export default function Reports() {
         </div>
         <div className="flex items-center space-x-2 ml-auto px-3 py-1.5 bg-white rounded-lg border border-gray-100">
           <Calendar size={16} className="text-aura-red" />
-          <select value={dateRange} onChange={(e) => setDateRange(e.target.value)}
+          <select
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value)}
             className="bg-transparent border-none focus:ring-0 text-[10px] font-black text-gray-400 uppercase tracking-widest cursor-pointer">
             <option value="today">Today</option>
             <option value="7d">Last 7 Days</option>
@@ -196,7 +252,10 @@ export default function Reports() {
             { label: 'Avg Duration', value: `${Math.round(stats.avgDuration)}s`, icon: TrendingUp },
             { label: 'WhatsApp', value: stats.whatsappNotes, icon: MessageSquare },
           ].map((card, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
               className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{card.label}</p>
               <p className="text-2xl font-black text-gray-900 mt-1">{card.value ?? 0}</p>
@@ -206,8 +265,9 @@ export default function Reports() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Main Chart */}
-        <motion.div initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}
+        {/* Main Bar Chart */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}
           className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-sm font-black text-gray-900 uppercase tracking-tighter">{getMainChartTitle()}</h3>
@@ -218,24 +278,22 @@ export default function Reports() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={getMainChartData()}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                  <XAxis dataKey="date" stroke="#9ca3af" fontSize={9} fontWeight={900} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#9ca3af" fontSize={9} fontWeight={900} tickLine={false} axisLine={false} />
-                  <Tooltip cursor={{ fill: 'rgba(239, 68, 68, 0.05)' }}
-                    contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #f3f4f6', fontWeight: 900, textTransform: 'uppercase', fontSize: '9px', color: '#111827' }} />
+                  <XAxis
+                    dataKey={getXAxisKey()}
+                    stroke="#9ca3af" fontSize={9} fontWeight={900}
+                    tickLine={false} axisLine={false} />
+                  <YAxis
+                    stroke="#9ca3af" fontSize={9} fontWeight={900}
+                    tickLine={false} axisLine={false} />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(239, 68, 68, 0.05)' }}
+                    contentStyle={{
+                      backgroundColor: '#ffffff', borderRadius: '12px',
+                      border: '1px solid #f3f4f6', fontWeight: 900,
+                      textTransform: 'uppercase', fontSize: '9px', color: '#111827'
+                    }} />
                   <Legend iconType="circle" />
-                  {reportType === 'whatsapp' ? (
-                    <>
-                      <Bar dataKey="inbound" name="Received" fill="#EF4444" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="outbound" name="Sent" fill="#7F1D1D" radius={[4, 4, 0, 0]} />
-                    </>
-                  ) : reportType === 'leads' ? (
-                    <Bar dataKey="value" name="Leads" fill="#EF4444" radius={[4, 4, 0, 0]} />
-                  ) : (
-                    <>
-                      <Bar dataKey="connected" name="Connected" fill="#EF4444" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="failed" name="Failed" fill="#7F1D1D" radius={[4, 4, 0, 0]} />
-                    </>
-                  )}
+                  {renderBars()}
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -250,34 +308,59 @@ export default function Reports() {
         </motion.div>
 
         {/* Pie Chart */}
-        <motion.div initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}
           className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-sm font-black text-gray-900 uppercase tracking-tighter">
-              {reportType === 'projects' ? 'Project Distribution' : reportType === 'leads' ? 'Lead Pipeline' : 'Conversion Pipeline'}
+              {reportType === 'projects' ? 'Project Distribution'
+                : reportType === 'leads' ? 'Lead Pipeline'
+                : reportType === 'team' ? 'Team Distribution'
+                : reportType === 'whatsapp' ? 'WhatsApp Volume'
+                : 'Conversion Pipeline'}
             </h3>
             <Dna className="text-aura-red" size={18} />
           </div>
           <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={getPieChartData()} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={5} dataKey="value">
-                  {getPieChartData().map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #F3F4F6', fontWeight: 900, textTransform: 'uppercase', fontSize: '9px' }} />
-                <Legend verticalAlign="bottom" align="center" iconType="circle" />
-              </PieChart>
-            </ResponsiveContainer>
+            {getPieChartData().length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={getPieChartData()}
+                    cx="50%" cy="50%"
+                    innerRadius={60} outerRadius={90}
+                    paddingAngle={5} dataKey="value">
+                    {getPieChartData().map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: '12px', border: '1px solid #F3F4F6',
+                      fontWeight: 900, textTransform: 'uppercase', fontSize: '9px'
+                    }} />
+                  <Legend verticalAlign="bottom" align="center" iconType="circle" />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center space-y-3">
+                <div className="w-16 h-16 rounded-full bg-aura-red/5 flex items-center justify-center border border-aura-red/10">
+                  <RefreshCw className="text-aura-red animate-spin-slow" size={24} />
+                </div>
+                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">No data available</p>
+              </div>
+            )}
           </div>
         </motion.div>
 
-        {/* Team Performance Table - shows for all non-employee roles, highlighted when team tab active */}
+        {/* Team Performance Table */}
         {user?.role !== 'employee' && (
-          <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className={cn("bg-white p-6 rounded-2xl shadow-sm border lg:col-span-2 transition-all",
-              reportType === 'team' ? "border-aura-red/30 shadow-aura-red/10" : "border-gray-100")}>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className={cn(
+              "bg-white p-6 rounded-2xl shadow-sm border lg:col-span-2 transition-all",
+              reportType === 'team' ? "border-aura-red/30 shadow-aura-red/10" : "border-gray-100"
+            )}>
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-sm font-black text-gray-900 uppercase tracking-tighter">Team Performance</h3>
               <Zap className="text-aura-red" size={18} />
@@ -299,23 +382,30 @@ export default function Reports() {
                         <td className="py-4 px-3 font-black text-gray-900 uppercase">{agent.name}</td>
                         <td className="py-4 px-3 text-center font-bold text-gray-500">{agent.total_calls}</td>
                         <td className="py-4 px-3 text-center">
-                          <span className="bg-aura-red/5 text-aura-red px-2 py-0.5 rounded-full font-black text-[9px]">{agent.connected_calls}</span>
+                          <span className="bg-aura-red/5 text-aura-red px-2 py-0.5 rounded-full font-black text-[9px]">
+                            {agent.connected_calls}
+                          </span>
                         </td>
-                        <td className="py-4 px-3 text-right font-bold text-gray-500">{Math.round(agent.total_duration / 60)}</td>
+                        <td className="py-4 px-3 text-right font-bold text-gray-500">
+                          {Math.round(agent.total_duration / 60)}
+                        </td>
                       </motion.tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             ) : (
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center py-8">No team data available</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center py-8">
+                No team data available
+              </p>
             )}
           </motion.div>
         )}
 
-        {/* Projects Table - shows when projects tab active */}
+        {/* Projects Table */}
         {reportType === 'projects' && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             className="bg-white p-6 rounded-2xl shadow-sm border border-aura-red/30 lg:col-span-2">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-sm font-black text-gray-900 uppercase tracking-tighter">Project Breakdown</h3>
@@ -341,7 +431,9 @@ export default function Reports() {
                 </table>
               </div>
             ) : (
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center py-8">No project data available</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center py-8">
+                No project data available
+              </p>
             )}
           </motion.div>
         )}
