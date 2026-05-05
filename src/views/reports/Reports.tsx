@@ -7,8 +7,8 @@ import autoTable from 'jspdf-autotable';
 import { useAuth } from '../../hooks/useAuth';
 import {
   BarChart3, TrendingUp, Users, FileText,
-  Table as TableIcon, Calendar, RefreshCw,
-  Zap, Dna, Phone, Briefcase, MessageSquare
+  Table as TableIcon, Calendar,
+  RefreshCw, Zap, Dna, Phone, Briefcase, MessageSquare
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -17,119 +17,166 @@ import {
 
 const COLORS = ['#EF4444', '#FCA5A5', '#F59E0B', '#FEE2E2', '#7F1D1D'];
 
-const DATE_RANGES: Record<string, { label: string; startDate: string; endDate: string }> = {
-  today: {
-    label: 'Today',
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
-  },
-  '7d': {
-    label: 'Last 7 Days',
-    startDate: new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
-  },
-  '30d': {
-    label: 'Last 30 Days',
-    startDate: new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
-  },
-  '90d': {
-    label: 'Last 90 Days',
-    startDate: new Date(Date.now() - 90 * 86400000).toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
-  },
-};
+function getDateRange(key: string): { label: string; startDate: string; endDate: string } {
+  const today = new Date();
+  const fmt = (d: Date) => d.toISOString().split('T')[0];
+  const ago = (days: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() - days);
+    return d;
+  };
+  switch (key) {
+    case 'today':  return { label: 'Today',        startDate: fmt(today),    endDate: fmt(today) };
+    case '7d':     return { label: 'Last 7 Days',  startDate: fmt(ago(7)),   endDate: fmt(today) };
+    case '30d':    return { label: 'Last 30 Days', startDate: fmt(ago(30)),  endDate: fmt(today) };
+    case '90d':    return { label: 'Last 90 Days', startDate: fmt(ago(90)),  endDate: fmt(today) };
+    case 'all':    return { label: 'All Time',      startDate: '2020-01-01', endDate: fmt(today) };
+    default:       return { label: 'Last 30 Days', startDate: fmt(ago(30)),  endDate: fmt(today) };
+  }
+}
 
 export default function Reports() {
   const { user } = useAuth();
-  const [dateRange, setDateRange] = useState('7d');
+  // ← default changed to 'all' so data always shows on first load
+  const [dateRange, setDateRange] = useState('all');
   const [reportType, setReportType] = useState('calls');
   const [loading, setLoading] = useState(true);
   const [allData, setAllData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // ── Single API call with date filter ──────────────────────────────────────
+  // ── Single API call ────────────────────────────────────────────────────────
   const fetchData = useCallback(async (range: string) => {
     setLoading(true);
+    setError(null);
     try {
-      const { startDate, endDate } = DATE_RANGES[range] || DATE_RANGES['7d'];
+      const { startDate, endDate } = getDateRange(range);
       const res = await api.get(`/reports/all?startDate=${startDate}&endDate=${endDate}`);
       setAllData(res.data);
-    } catch (error) {
-      console.error('Failed to fetch report data');
+    } catch (err: any) {
+      console.error('Failed to fetch report data', err);
+      setError(err?.response?.data?.detail || 'Failed to load report data');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchData(dateRange);
-  }, [dateRange, fetchData]);
+  useEffect(() => { fetchData(dateRange); }, [dateRange, fetchData]);
 
-  // ── Derived data from allData ─────────────────────────────────────────────
-  const stats      = allData?.stats;
-  const calls      = allData?.calls;
-  const whatsapp   = allData?.whatsapp;
-  const leads      = allData?.leads;
-  const projects   = allData?.projects;
-  const team       = allData?.team;
+  // ── Derived data ───────────────────────────────────────────────────────────
+  const stats    = allData?.stats;
+  const calls    = allData?.calls;
+  const whatsapp = allData?.whatsapp;
+  const leads    = allData?.leads;
+  const projects = allData?.projects;
+  const team     = allData?.team;
 
-  // ── Chart helpers ─────────────────────────────────────────────────────────
-  const getMainChartData = () => {
-    if (reportType === 'calls')     return calls?.summary || [];
-    if (reportType === 'whatsapp')  return whatsapp?.summary || [];
-    if (reportType === 'leads')     return leads?.byStage || [];
-    if (reportType === 'projects')  return projects?.distribution || [];
-    if (reportType === 'team')      return team?.performance || [];
-    return [];
+  // Normalise backend rows → { name, value } for charts
+  // Backend returns: calls.summary   = [{ date, total, connected, failed }]
+  //                  leads.byStage   = [{ stage, count }]
+  //                  leads.byStatus  = [{ status, count }]
+  //                  projects.distribution = [{ status, count }]
+  //                  team.performance = [{ name, total_calls, connected_calls, total_leads, total_duration }]
+  //                  whatsapp.summary = { total_messages, inbound, outbound }  ← single object not array
+
+  const normaliseLeadStage = () =>
+    (leads?.byStage || []).map((r: any) => ({ name: r.stage || 'Unknown', value: Number(r.count) }));
+
+  const normaliseLeadStatus = () =>
+    (leads?.byStatus || []).map((r: any) => ({ name: r.status || 'Unknown', value: Number(r.count) }));
+
+  const normaliseProjects = () =>
+    (projects?.distribution || []).map((r: any) => ({ name: r.status || 'Unknown', value: Number(r.count) }));
+
+  const normaliseTeamPie = () =>
+    (team?.performance || []).map((r: any) => ({ name: r.name, value: Number(r.total_calls) || 0 }));
+
+  const normaliseWaPie = () => {
+    const wa = whatsapp?.summary;
+    if (!wa) return [];
+    return [
+      { name: 'Inbound',  value: Number(wa.inbound)  || 0 },
+      { name: 'Outbound', value: Number(wa.outbound) || 0 },
+    ];
   };
 
-  const getMainChartTitle = () => {
-    if (reportType === 'whatsapp')  return 'WhatsApp Engagement';
-    if (reportType === 'leads')     return 'Lead Status Distribution';
-    if (reportType === 'projects')  return 'Project Overview';
-    if (reportType === 'team')      return 'Team Call Performance';
-    return 'Call Distribution';
+  // ── Chart data by tab ──────────────────────────────────────────────────────
+  const getBarData = () => {
+    switch (reportType) {
+      case 'calls':    return calls?.summary    || [];
+      case 'whatsapp': return normaliseWaPie();   // bar shows inbound/outbound
+      case 'leads':    return normaliseLeadStage();
+      case 'projects': return normaliseProjects();
+      case 'team':     return team?.performance  || [];
+      default:         return [];
+    }
+  };
+
+  const getPieData = () => {
+    switch (reportType) {
+      case 'calls':    return (calls?.summary || []).map((r: any) => ({ name: r.date, value: Number(r.total) || 0 }));
+      case 'whatsapp': return normaliseWaPie();
+      case 'leads':    return normaliseLeadStage();
+      case 'projects': return normaliseProjects();
+      case 'team':     return normaliseTeamPie();
+      default:         return [];
+    }
+  };
+
+  const getBarTitle = () => {
+    switch (reportType) {
+      case 'whatsapp': return 'WhatsApp Engagement';
+      case 'leads':    return 'Lead Stage Breakdown';
+      case 'projects': return 'Project Status Overview';
+      case 'team':     return 'Team Call Performance';
+      default:         return 'Call Distribution';
+    }
+  };
+
+  const getPieTitle = () => {
+    switch (reportType) {
+      case 'projects': return 'Project Distribution';
+      case 'leads':    return 'Lead Pipeline';
+      case 'team':     return 'Team Distribution';
+      case 'whatsapp': return 'WhatsApp Volume';
+      default:         return 'Conversion Pipeline';
+    }
   };
 
   const getXAxisKey = () => {
-    if (reportType === 'calls')    return 'date';
-    if (reportType === 'whatsapp') return 'date';
-    return 'name';
-  };
-
-  const getPieChartData = () => {
-    if (reportType === 'leads')    return leads?.byStage || [];
-    if (reportType === 'projects') return projects?.distribution || [];
-    if (reportType === 'team')     return (team?.performance || []).map((d: any) => ({ name: d.name, value: d.total_calls || 0 }));
-    if (reportType === 'whatsapp') return (whatsapp?.summary || []).map((d: any) => ({ name: d.date, value: (d.inbound || 0) + (d.outbound || 0) }));
-    return (calls?.summary || []).map((d: any) => ({ name: d.date, value: d.total || 0 }));
+    switch (reportType) {
+      case 'calls':    return 'date';
+      case 'team':     return 'name';
+      default:         return 'name';   // leads/projects/whatsapp all use name now
+    }
   };
 
   const renderBars = () => {
-    if (reportType === 'whatsapp') return (
-      <>
-        <Bar dataKey="inbound"  name="Received" fill="#EF4444" radius={[4,4,0,0]} />
-        <Bar dataKey="outbound" name="Sent"     fill="#7F1D1D" radius={[4,4,0,0]} />
-      </>
-    );
-    if (reportType === 'leads' || reportType === 'projects') return (
-      <Bar dataKey="value" name={reportType === 'leads' ? 'Leads' : 'Projects'} fill="#EF4444" radius={[4,4,0,0]} />
-    );
-    if (reportType === 'team') return (
-      <>
-        <Bar dataKey="total_calls"     name="Total Calls" fill="#EF4444" radius={[4,4,0,0]} />
-        <Bar dataKey="connected_calls" name="Connected"   fill="#7F1D1D" radius={[4,4,0,0]} />
-      </>
-    );
-    return (
-      <>
-        <Bar dataKey="connected" name="Connected" fill="#EF4444" radius={[4,4,0,0]} />
-        <Bar dataKey="failed"    name="Failed"    fill="#7F1D1D" radius={[4,4,0,0]} />
-      </>
-    );
+    switch (reportType) {
+      case 'whatsapp': return (
+        <>
+          <Bar dataKey="value" name="Messages" fill="#EF4444" radius={[4,4,0,0]} />
+        </>
+      );
+      case 'leads':
+      case 'projects': return (
+        <Bar dataKey="value" name={reportType === 'leads' ? 'Leads' : 'Projects'} fill="#EF4444" radius={[4,4,0,0]} />
+      );
+      case 'team': return (
+        <>
+          <Bar dataKey="total_calls"     name="Total Calls" fill="#EF4444" radius={[4,4,0,0]} />
+          <Bar dataKey="connected_calls" name="Connected"   fill="#7F1D1D" radius={[4,4,0,0]} />
+        </>
+      );
+      default: return (      // calls
+        <>
+          <Bar dataKey="connected" name="Connected" fill="#EF4444" radius={[4,4,0,0]} />
+          <Bar dataKey="failed"    name="Failed"    fill="#7F1D1D" radius={[4,4,0,0]} />
+        </>
+      );
+    }
   };
 
-  // ── Export helpers ────────────────────────────────────────────────────────
+  // ── Export ─────────────────────────────────────────────────────────────────
   const exportCSV = () => {
     if (!stats) return;
     const data = [
@@ -149,7 +196,7 @@ export default function Reports() {
   const exportPDF = () => {
     if (!stats) return;
     const doc = new jsPDF();
-    doc.text(`CRM Report — ${DATE_RANGES[dateRange]?.label}`, 14, 15);
+    doc.text(`CRM Report — ${getDateRange(dateRange).label}`, 14, 15);
     autoTable(doc, {
       head: [['Metric', 'Value']],
       body: [
@@ -163,7 +210,7 @@ export default function Reports() {
     doc.save(`report_${dateRange}_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ── Loading / Error states ─────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -171,6 +218,22 @@ export default function Reports() {
       </div>
     );
   }
+
+  if (error) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center gap-4">
+        <p className="text-sm font-black text-red-500 uppercase tracking-widest">{error}</p>
+        <button
+          onClick={() => fetchData(dateRange)}
+          className="px-4 py-2 bg-aura-red text-white rounded-xl text-[10px] font-black uppercase tracking-widest">
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  const barData = getBarData();
+  const pieData = getPieData();
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -224,13 +287,14 @@ export default function Reports() {
           ))}
         </div>
 
-        {/* Date range — triggers a fresh API call */}
+        {/* Date range selector */}
         <div className="flex items-center space-x-2 ml-auto px-3 py-1.5 bg-white rounded-lg border border-gray-100">
           <Calendar size={16} className="text-aura-red" />
           <select
             value={dateRange}
             onChange={e => setDateRange(e.target.value)}
             className="bg-transparent border-none focus:ring-0 text-[10px] font-black text-gray-400 uppercase tracking-widest cursor-pointer">
+            <option value="all">All Time</option>
             <option value="today">Today</option>
             <option value="7d">Last 7 Days</option>
             <option value="30d">Last 30 Days</option>
@@ -243,8 +307,8 @@ export default function Reports() {
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: 'Total Leads',     value: stats.totalLeads,       icon: Users },
-            { label: 'Connected Calls', value: stats.connectedCalls,   icon: Phone },
+            { label: 'Total Leads',     value: stats.totalLeads,        icon: Users },
+            { label: 'Connected Calls', value: stats.connectedCalls,    icon: Phone },
             { label: 'Avg Duration',    value: `${stats.avgDuration}s`, icon: TrendingUp },
             { label: 'WhatsApp',        value: stats.whatsappMessages,  icon: MessageSquare },
           ].map((card, i) => (
@@ -260,34 +324,30 @@ export default function Reports() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Main Bar Chart */}
+        {/* Bar Chart */}
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}
           className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-black text-gray-900 uppercase tracking-tighter">{getMainChartTitle()}</h3>
+            <h3 className="text-sm font-black text-gray-900 uppercase tracking-tighter">{getBarTitle()}</h3>
             <BarChart3 className="text-aura-red" size={18} />
           </div>
           <div className="h-72 flex items-center justify-center">
-            {getMainChartData().length > 0 ? (
+            {barData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={getMainChartData()}>
+                <BarChart data={barData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                   <XAxis dataKey={getXAxisKey()} stroke="#9ca3af" fontSize={9} fontWeight={900} tickLine={false} axisLine={false} />
                   <YAxis stroke="#9ca3af" fontSize={9} fontWeight={900} tickLine={false} axisLine={false} />
-                  <Tooltip cursor={{ fill: 'rgba(239,68,68,0.05)' }}
+                  <Tooltip
+                    cursor={{ fill: 'rgba(239,68,68,0.05)' }}
                     contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: '1px solid #f3f4f6', fontWeight: 900, textTransform: 'uppercase', fontSize: '9px', color: '#111827' }} />
                   <Legend iconType="circle" />
                   {renderBars()}
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex flex-col items-center justify-center space-y-3">
-                <div className="w-16 h-16 rounded-full bg-aura-red/5 flex items-center justify-center border border-aura-red/10">
-                  <RefreshCw className="text-aura-red" size={24} />
-                </div>
-                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">No data for this period</p>
-              </div>
+              <NoData />
             )}
           </div>
         </motion.div>
@@ -297,22 +357,16 @@ export default function Reports() {
           initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}
           className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-black text-gray-900 uppercase tracking-tighter">
-              {reportType === 'projects' ? 'Project Distribution'
-                : reportType === 'leads'    ? 'Lead Pipeline'
-                : reportType === 'team'     ? 'Team Distribution'
-                : reportType === 'whatsapp' ? 'WhatsApp Volume'
-                : 'Conversion Pipeline'}
-            </h3>
+            <h3 className="text-sm font-black text-gray-900 uppercase tracking-tighter">{getPieTitle()}</h3>
             <Dna className="text-aura-red" size={18} />
           </div>
           <div className="h-72">
-            {getPieChartData().length > 0 ? (
+            {pieData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={getPieChartData()} cx="50%" cy="50%"
+                  <Pie data={pieData} cx="50%" cy="50%"
                     innerRadius={60} outerRadius={90} paddingAngle={5} dataKey="value">
-                    {getPieChartData().map((_: any, index: number) => (
+                    {pieData.map((_: any, index: number) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -321,12 +375,7 @@ export default function Reports() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center space-y-3">
-                <div className="w-16 h-16 rounded-full bg-aura-red/5 flex items-center justify-center border border-aura-red/10">
-                  <RefreshCw className="text-aura-red" size={24} />
-                </div>
-                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">No data for this period</p>
-              </div>
+              <div className="h-full flex items-center justify-center"><NoData /></div>
             )}
           </div>
         </motion.div>
@@ -356,7 +405,7 @@ export default function Reports() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {team.performance.map((agent: any, idx: number) => (
+                    {(team?.performance || []).map((agent: any, idx: number) => (
                       <motion.tr key={idx} className="text-xs group hover:bg-gray-50 transition-colors">
                         <td className="py-4 px-3 font-black text-gray-900 uppercase">{agent.name}</td>
                         <td className="py-4 px-3 text-center font-bold text-gray-500">{agent.total_calls}</td>
@@ -375,9 +424,7 @@ export default function Reports() {
                 </table>
               </div>
             ) : (
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center py-8">
-                No team data for this period
-              </p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center py-8">No team data</p>
             )}
           </motion.div>
         )}
@@ -391,17 +438,17 @@ export default function Reports() {
               <h3 className="text-sm font-black text-gray-900 uppercase tracking-tighter">Project Breakdown</h3>
               <Briefcase className="text-aura-red" size={18} />
             </div>
-            {(projects?.distribution || []).length > 0 ? (
+            {normaliseProjects().length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
                     <tr className="text-[9px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-50">
-                      <th className="pb-4 px-3">Project</th>
-                      <th className="pb-4 px-3 text-right">Leads</th>
+                      <th className="pb-4 px-3">Status</th>
+                      <th className="pb-4 px-3 text-right">Count</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {projects.distribution.map((project: any, idx: number) => (
+                    {normaliseProjects().map((project: any, idx: number) => (
                       <tr key={idx} className="text-xs hover:bg-gray-50 transition-colors">
                         <td className="py-4 px-3 font-black text-gray-900 uppercase">{project.name}</td>
                         <td className="py-4 px-3 text-right font-bold text-gray-500">{project.value}</td>
@@ -411,13 +458,22 @@ export default function Reports() {
                 </table>
               </div>
             ) : (
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center py-8">
-                No project data for this period
-              </p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center py-8">No project data</p>
             )}
           </motion.div>
         )}
       </div>
+    </div>
+  );
+}
+
+function NoData() {
+  return (
+    <div className="flex flex-col items-center justify-center space-y-3">
+      <div className="w-16 h-16 rounded-full bg-aura-red/5 flex items-center justify-center border border-aura-red/10">
+        <RefreshCw className="text-aura-red" size={24} />
+      </div>
+      <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">No data for this period</p>
     </div>
   );
 }
