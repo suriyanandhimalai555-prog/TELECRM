@@ -175,6 +175,17 @@ export default function WhatsAppInbox() {
     setMessages(prev => prev.map(m => m.message_id === message_id ? { ...m, status } : m));
   }, []);
 
+  // ✅ Auto-refresh polling
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchConversations();
+      if (selectedContact) {
+        fetchMessages(selectedContact.contact_number);
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [fetchConversations, fetchMessages, selectedContact]);
+
   useEffect(() => {
     fetchConversations();
     fetchTemplates();
@@ -190,11 +201,33 @@ export default function WhatsAppInbox() {
     };
   }, [fetchConversations, fetchTemplates, handleMessage, handleRead, handleStatus]);
 
+  // ✅ Auto-refresh polling
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchConversations();
+      if (selectedContact) {
+        fetchMessages(selectedContact.contact_number);
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [fetchConversations, fetchMessages, selectedContact]);
+
   useEffect(() => {
     if (selectedContact) {
       fetchMessages(selectedContact.contact_number);
     }
   }, [selectedContact, fetchMessages]);
+
+  // ✅ Auto-refresh polling
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchConversations();
+      if (selectedContact) {
+        fetchMessages(selectedContact.contact_number);
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [fetchConversations, fetchMessages, selectedContact]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
