@@ -3,7 +3,7 @@ import db from '../config/database';
 
 const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID || '1023163197557145';
 const VERIFY_TOKEN = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || 'avgcrm_webhook_2024';
-const WHATSAPP_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN || 'EAAVOsb7mp3QBRYyJ6BYNRGOkUOE7s0ZB0CDEMTOGFyAFKKjxhNbCNGfOdHYq24MnRH5durJ4ZArz2wjs6eW17n83TKpDAU3u5vu9PRonRvFihqDBkMdjjNaLAKxdjDCg2T3BTAIkfqjGgIx6Hp0ZCVdopnps1lTIVVifpHqQHtSA0KHmvb8OMUZAHCu0HSgKLQZDZD';
+const WHATSAPP_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN || '';
 const WABA_ID = process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || '27198788186399333';
 
 export const getTemplates = async (req: Request, res: Response) => {
@@ -103,7 +103,7 @@ export const sendTemplate = async (req: Request, res: Response) => {
 };
 
 export const bulkSendMessage = async (req: Request, res: Response) => {
-  const { contacts, message } = req.body; // contacts: [{ phone, name }]
+  const { contacts, message } = req.body;
   const authReq = req as any;
   const userId = authReq.user?.id;
 
@@ -157,7 +157,6 @@ export const sendMessage = async (req: Request, res: Response) => {
   if (!to || !message) return res.status(400).json({ error: 'to and message required' });
 
   try {
-    // Fetch user keys
     const { rows: userRows } = await db.query('SELECT whatsapp_token, whatsapp_phone_id FROM users WHERE id = $1', [userId]);
     const userKeys = userRows[0];
 
@@ -187,14 +186,12 @@ export const sendMessage = async (req: Request, res: Response) => {
 
     const msgId = data.messages?.[0]?.id;
 
-    // Save to DB
     const { rows: savedRows } = await db.query(
       `INSERT INTO whatsapp_messages(message_id, from_number, to_number, message_text, direction, status, contact_name, is_read)
        VALUES($1, $2, $3, $4, 'outbound', 'sent', $5, true) RETURNING *`,
       [msgId, PHONE_NUMBER_ID, phone, message, contactName || '']
     );
 
-    // Emit socket event
     const reqWithIo = req as any;
     if (reqWithIo.io) {
       reqWithIo.io.emit('whatsapp:message', savedRows[0]);
@@ -257,7 +254,8 @@ export const getConversations = async (req: Request, res: Response) => {
     
     const params: any[] = [];
     if (search) {
-      query += ` AND (contact_name LIKE $1 OR contact_number LIKE $1 OR last_message LIKE $1)`;
+      // ✅ Fixed: use message_text instead of alias last_message
+      query += ` AND (contact_name ILIKE $1 OR contact_number ILIKE $1 OR message_text ILIKE $1)`;
       params.push(`%${search}%`);
     }
 
@@ -335,7 +333,6 @@ export const handleWebhook = async (req: Request, res: Response) => {
               );
             }
 
-            // Emit socket event
             const reqWithIo = req as any;
             if (reqWithIo.io && savedRows?.length > 0) {
               reqWithIo.io.emit('whatsapp:message', savedRows[0]);
@@ -343,7 +340,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
           }
         }
 
-        // Status updates (sent → delivered → read)
+        // Status updates
         if (val.statuses) {
           for (const s of val.statuses) {
             await db.query(
@@ -351,7 +348,6 @@ export const handleWebhook = async (req: Request, res: Response) => {
               [s.status, s.id]
             );
 
-            // Emit status update
             const reqWithIo = req as any;
             if (reqWithIo.io) {
               reqWithIo.io.emit('whatsapp:status', { message_id: s.id, status: s.status });
@@ -379,7 +375,6 @@ export const markAsRead = async (req: Request, res: Response) => {
       [phoneClean]
     );
 
-    // Emit socket event
     const reqWithIo = req as any;
     if (reqWithIo.io) {
       reqWithIo.io.emit('whatsapp:read', { phone: phoneClean });
