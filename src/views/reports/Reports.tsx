@@ -86,7 +86,7 @@ export default function Reports() {
       setProjectData(Array.isArray(projectRes.data) ? projectRes.data : []);
       setWhatsappSummary(Array.isArray(waSummaryRes.data) ? waSummaryRes.data : []);
 
-      if (user?.role !== 'employee') {
+      if (user?.role !== 'EMPLOYEE') {
         const teamRes = await api.get('/reports/team-performance').catch(() => ({ data: [] }));
         setTeamData(Array.isArray(teamRes.data) ? teamRes.data : []);
       }
@@ -157,14 +157,16 @@ export default function Reports() {
     return Array.isArray(conversionData) ? conversionData : [];
   };
 
-  const darkTooltipStyle = {
-    backgroundColor: '#111827',
+  const tooltipStyle = {
+    backgroundColor: '#ffffff',
     borderRadius: '12px',
-    border: '1px solid #374151',
+    border: '1px solid #e5e7eb',
+    boxShadow: '0 10px 30px rgba(15, 23, 42, 0.08)',
     fontWeight: 900,
     textTransform: 'uppercase' as const,
     fontSize: '9px',
-    color: '#F9FAFB'
+    color: '#111827',
+    padding: '12px'
   };
 
   if (loading) {
@@ -210,8 +212,8 @@ export default function Reports() {
 
       {/* Tab Bar */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-gray-900 p-4 rounded-2xl border border-gray-800 flex flex-wrap items-center gap-4">
-        <div className="flex items-center space-x-1 bg-gray-800 p-1 rounded-xl">
+        className="bg-white p-4 rounded-2xl border border-gray-100 flex flex-wrap items-center gap-4 shadow-sm">
+        <div className="flex items-center space-x-1 bg-gray-100 p-1 rounded-xl border border-gray-200">
           {[
             { id: 'calls', label: 'Calls' },
             { id: 'whatsapp', label: 'WhatsApp' },
@@ -227,10 +229,10 @@ export default function Reports() {
             </button>
           ))}
         </div>
-        <div className="flex items-center space-x-2 ml-auto px-3 py-1.5 bg-gray-800 rounded-lg border border-gray-700">
+        <div className="flex items-center space-x-2 ml-auto px-3 py-1.5 bg-gray-100 rounded-lg border border-gray-200">
           <Calendar size={16} className="text-aura-red" />
           <select value={dateRange} onChange={(e) => setDateRange(e.target.value)}
-            className="bg-transparent border-none focus:ring-0 text-[10px] font-black text-gray-400 uppercase tracking-widest cursor-pointer">
+            className="bg-transparent border-none focus:ring-0 text-[10px] font-black text-gray-700 uppercase tracking-widest cursor-pointer">
             <option value="all">All Time</option>
             <option value="today">Today</option>
             <option value="7d">Last 7 Days</option>
@@ -250,9 +252,9 @@ export default function Reports() {
             { label: 'WhatsApp', value: stats.whatsappNotes ?? 0 },
           ].map((card, i) => (
             <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-              className="bg-gray-900 p-4 rounded-2xl border border-gray-800">
+              className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
               <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">{card.label}</p>
-              <p className="text-2xl font-black text-white mt-1">{card.value}</p>
+              <p className="text-2xl font-black text-gray-900 mt-1">{card.value}</p>
             </motion.div>
           ))}
         </div>
@@ -261,19 +263,19 @@ export default function Reports() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Main Bar Chart */}
         <motion.div initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}
-          className="bg-gray-900 p-6 rounded-2xl border border-gray-800">
+          className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-black text-white uppercase tracking-tighter">{getMainChartTitle()}</h3>
+            <h3 className="text-sm font-black text-gray-900 uppercase tracking-tighter">{getMainChartTitle()}</h3>
             <BarChart3 className="text-aura-red" size={18} />
           </div>
           <div className="h-72 flex items-center justify-center">
             {getMainChartData().length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={getMainChartData()}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1f2937" />
-                  <XAxis dataKey="date" stroke="#4b5563" fontSize={9} fontWeight={900} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#4b5563" fontSize={9} fontWeight={900} tickLine={false} axisLine={false} />
-                  <Tooltip cursor={{ fill: 'rgba(239,68,68,0.08)' }} contentStyle={darkTooltipStyle} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} fontWeight={900} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#6b7280" fontSize={9} fontWeight={900} tickLine={false} axisLine={false} />
+                  <Tooltip cursor={{ fill: 'rgba(239,68,68,0.08)' }} contentStyle={tooltipStyle} />
                   <Legend iconType="circle" wrapperStyle={{ color: '#9ca3af', fontSize: '9px', fontWeight: 900 }} />
                   {reportType === 'whatsapp' ? (
                     <>
@@ -303,9 +305,9 @@ export default function Reports() {
 
         {/* Pie Chart */}
         <motion.div initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}
-          className="bg-gray-900 p-6 rounded-2xl border border-gray-800">
+          className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-black text-white uppercase tracking-tighter">
+            <h3 className="text-sm font-black text-gray-900 uppercase tracking-tighter">
               {reportType === 'projects' ? 'Project Distribution' : reportType === 'leads' ? 'Lead Pipeline' : 'Conversion Pipeline'}
             </h3>
             <Dna className="text-aura-red" size={18} />
@@ -327,7 +329,7 @@ export default function Reports() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={darkTooltipStyle} />
+                  <Tooltip contentStyle={tooltipStyle} />
                   <Legend
                     verticalAlign="bottom"
                     align="center"
@@ -348,35 +350,35 @@ export default function Reports() {
         </motion.div>
 
         {/* Team Table */}
-        {user?.role !== 'employee' && (
+        {user?.role !== 'EMPLOYEE' && (
           <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className={`bg-gray-900 p-6 rounded-2xl border lg:col-span-2 transition-all ${
-              reportType === 'team' ? 'border-aura-red/50' : 'border-gray-800'
+            className={`bg-white p-6 rounded-2xl border lg:col-span-2 shadow-sm transition-all ${
+              reportType === 'team' ? 'border-aura-red/50' : 'border-gray-100'
             }`}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-sm font-black text-white uppercase tracking-tighter">Team Performance</h3>
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-tighter">Team Performance</h3>
               <Zap className="text-aura-red" size={18} />
             </div>
             {teamData.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="text-[9px] font-black text-gray-500 uppercase tracking-widest border-b border-gray-800">
+                    <tr className="text-[9px] font-black text-gray-500 uppercase tracking-widest border-b border-gray-200">
                       <th className="pb-4 px-3">Agent</th>
                       <th className="pb-4 px-3 text-center">Total Calls</th>
                       <th className="pb-4 px-3 text-center">Connected</th>
                       <th className="pb-4 px-3 text-right">Duration (Mins)</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-800">
+                  <tbody className="divide-y divide-gray-200">
                     {teamData.map((agent: any, idx: number) => (
-                      <tr key={idx} className="text-xs hover:bg-gray-800 transition-colors">
-                        <td className="py-4 px-3 font-black text-white uppercase">{agent.name}</td>
-                        <td className="py-4 px-3 text-center font-bold text-gray-400">{agent.total_calls}</td>
+                      <tr key={idx} className="text-xs hover:bg-gray-50 transition-colors">
+                        <td className="py-4 px-3 font-black text-gray-900 uppercase">{agent.name}</td>
+                        <td className="py-4 px-3 text-center font-bold text-gray-600">{agent.total_calls}</td>
                         <td className="py-4 px-3 text-center">
                           <span className="bg-aura-red/20 text-aura-red px-2 py-0.5 rounded-full font-black text-[9px]">{agent.connected_calls}</span>
                         </td>
-                        <td className="py-4 px-3 text-right font-bold text-gray-400">{Math.round((agent.total_duration || 0) / 60)}</td>
+                        <td className="py-4 px-3 text-right font-bold text-gray-600">{Math.round((agent.total_duration || 0) / 60)}</td>
                       </tr>
                     ))}
                   </tbody>
