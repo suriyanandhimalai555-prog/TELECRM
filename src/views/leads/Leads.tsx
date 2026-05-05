@@ -15,7 +15,9 @@ import {
   Edit2, 
   Trash2,
   Calendar,
-  X
+  X,
+  Users,
+  CheckSquare
 } from 'lucide-react';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import Papa from 'papaparse';
@@ -32,6 +34,9 @@ export default function Leads() {
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [bulkMessage, setBulkMessage] = useState('');
   const [sendingBulk, setSendingBulk] = useState(false);
+  const [showMassEditModal, setShowMassEditModal] = useState(false);
+  const [massEditData, setMassEditData] = useState<{ stage?: string; owner_id?: string; project_id?: string }>({});
+  const [savingMassEdit, setSavingMassEdit] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -145,6 +150,29 @@ export default function Leads() {
       alert('Failed to send bulk messages');
     } finally {
       setSendingBulk(false);
+    }
+  };
+
+  const handleMassEdit = async () => {
+    if (selectedLeadIds.length === 0 || savingMassEdit) return;
+    const payload: Record<string, any> = {};
+    if (massEditData.stage) payload.stage = massEditData.stage;
+    if (massEditData.owner_id) payload.owner_id = Number(massEditData.owner_id);
+    if (massEditData.project_id !== undefined) payload.project_id = massEditData.project_id ? Number(massEditData.project_id) : null;
+    if (Object.keys(payload).length === 0) return;
+    setSavingMassEdit(true);
+    try {
+      await Promise.all(selectedLeadIds.map(id => api.put(`/leads/${id}`, payload)));
+      triggerFlash('white');
+      setShowMassEditModal(false);
+      setMassEditData({});
+      setSelectedLeadIds([]);
+      fetchLeads();
+    } catch (error) {
+      console.error('Mass edit failed');
+      alert('Failed to update some leads');
+    } finally {
+      setSavingMassEdit(false);
     }
   };
 
@@ -276,15 +304,26 @@ export default function Leads() {
         
         <div className="flex items-center gap-3">
           {selectedLeadIds.length > 0 && (
-            <motion.button 
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              onClick={() => setShowBulkModal(true)}
-              className="flex items-center px-4 py-2 bg-aura-gold text-white rounded-xl text-[10px] font-black uppercase shadow-lg shadow-aura-gold/20"
-            >
-              <MessageSquare size={14} className="mr-2" />
-              Bulk Message ({selectedLeadIds.length})
-            </motion.button>
+            <>
+              <motion.button 
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                onClick={() => { setMassEditData({}); setShowMassEditModal(true); }}
+                className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase shadow-lg shadow-indigo-600/20"
+              >
+                <CheckSquare size={14} className="mr-2" />
+                Mass Edit ({selectedLeadIds.length})
+              </motion.button>
+              <motion.button 
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                onClick={() => setShowBulkModal(true)}
+                className="flex items-center px-4 py-2 bg-aura-gold text-white rounded-xl text-[10px] font-black uppercase shadow-lg shadow-aura-gold/20"
+              >
+                <MessageSquare size={14} className="mr-2" />
+                Bulk Message ({selectedLeadIds.length})
+              </motion.button>
+            </>
           )}
           {(user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
             <>
@@ -571,6 +610,46 @@ export default function Leads() {
                       {['WEBSITE', 'FACEBOOK', 'GOOGLE', 'REFERRAL', 'INBOUND_CALL', 'OUTBOUND_CALL'].map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
+                  {(user?.role === 'ADMIN' || user?.role === 'MANAGER') && users.length > 0 && (
+                    <div>
+                      <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Employee (Assigned To)</label>
+                      <select
+                        value={formData.owner_id}
+                        onChange={(e) => setFormData({...formData, owner_id: Number(e.target.value)})}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-xs font-bold appearance-none"
+                      >
+                        {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                      </select>
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Stage</label>
+                    <select
+                      value={formData.stage}
+                      onChange={(e) => setFormData({...formData, stage: e.target.value})}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-xs font-bold appearance-none"
+                    >
+                      {['NEW', 'CONTACTED', 'FOLLOW_UP', 'HOT', 'RECENTLY_WON', 'LOST'].map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Revenue</label>
+                    <input
+                      type="number"
+                      value={formData.revenue}
+                      onChange={(e) => setFormData({...formData, revenue: Number(e.target.value)})}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-xs font-bold focus:outline-aura-red"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Next Follow-up</label>
+                    <input
+                      type="date"
+                      value={formData.next_followup}
+                      onChange={(e) => setFormData({...formData, next_followup: e.target.value})}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-xs font-bold focus:outline-aura-red"
+                    />
+                  </div>
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
                   <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-xs font-bold text-gray-400 uppercase hover:text-gray-600 transition-colors">Discard</button>
@@ -584,7 +663,77 @@ export default function Leads() {
         )}
       </AnimatePresence>
 
-      <ConfirmationModal 
+      {/* Mass Edit Modal */}
+      <AnimatePresence>
+        {showMassEditModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowMassEditModal(false)} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative z-10 border border-gray-100">
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-indigo-50/50">
+                <div>
+                  <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Mass Edit</h3>
+                  <p className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest mt-0.5">Updating {selectedLeadIds.length} leads — only filled fields will be changed</p>
+                </div>
+                <button onClick={() => setShowMassEditModal(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Stage</label>
+                  <select
+                    value={massEditData.stage || ''}
+                    onChange={(e) => setMassEditData({ ...massEditData, stage: e.target.value || undefined })}
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-xs font-bold appearance-none"
+                  >
+                    <option value="">— No Change —</option>
+                    {['NEW', 'CONTACTED', 'FOLLOW_UP', 'HOT', 'RECENTLY_WON', 'LOST'].map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+                {(user?.role === 'ADMIN' || user?.role === 'MANAGER') && users.length > 0 && (
+                  <div>
+                    <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Assign Employee</label>
+                    <select
+                      value={massEditData.owner_id || ''}
+                      onChange={(e) => setMassEditData({ ...massEditData, owner_id: e.target.value || undefined })}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-xs font-bold appearance-none"
+                    >
+                      <option value="">— No Change —</option>
+                      {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                    </select>
+                  </div>
+                )}
+                <div>
+                  <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Project</label>
+                  <select
+                    value={massEditData.project_id ?? ''}
+                    onChange={(e) => setMassEditData({ ...massEditData, project_id: e.target.value === '' ? undefined : e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-xs font-bold appearance-none"
+                  >
+                    <option value="">— No Change —</option>
+                    <option value="0">No Project</option>
+                    {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+                <div className="flex justify-end gap-3 pt-2">
+                  <button type="button" onClick={() => setShowMassEditModal(false)} className="px-4 py-2 text-xs font-bold text-gray-400 uppercase hover:text-gray-600">Cancel</button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleMassEdit}
+                    disabled={savingMassEdit || (!massEditData.stage && !massEditData.owner_id && massEditData.project_id === undefined)}
+                    className="px-6 py-2 bg-indigo-600 text-white text-[10px] font-black uppercase rounded-lg shadow-lg shadow-indigo-600/20 disabled:opacity-40"
+                  >
+                    {savingMassEdit ? 'Saving...' : `Apply to ${selectedLeadIds.length} Leads`}
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <ConfirmationModal
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={handleDelete}
