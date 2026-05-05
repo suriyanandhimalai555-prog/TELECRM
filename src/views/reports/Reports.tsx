@@ -148,7 +148,7 @@ export default function Reports() {
     return 'Call Distribution';
   };
 
-  const getPieChartData = () => {
+  const getPieChartData = (): any[] => {
     if (reportType === 'projects') return Array.isArray(projectData) ? projectData : [];
     if (reportType === 'leads') return Array.isArray(conversionData) ? conversionData : [];
     if (reportType === 'whatsapp') return Array.isArray(whatsappSummary)
@@ -311,18 +311,39 @@ export default function Reports() {
             <Dna className="text-aura-red" size={18} />
           </div>
           <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={getPieChartData()} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={5} dataKey="value">
-                  {getPieChartData().map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={darkTooltipStyle} />
-                <Legend verticalAlign="bottom" align="center" iconType="circle"
-                  wrapperStyle={{ color: '#9ca3af', fontSize: '9px', fontWeight: 900 }} />
-              </PieChart>
-            </ResponsiveContainer>
+            {getPieChartData().length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={getPieChartData()}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {getPieChartData().map((_: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={darkTooltipStyle} />
+                  <Legend
+                    verticalAlign="bottom"
+                    align="center"
+                    iconType="circle"
+                    wrapperStyle={{ color: '#9ca3af', fontSize: '9px', fontWeight: 900 }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full space-y-3">
+                <div className="w-16 h-16 rounded-full bg-aura-red/10 flex items-center justify-center border border-aura-red/20">
+                  <RefreshCw className="text-aura-red" size={24} />
+                </div>
+                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">No data available</p>
+              </div>
+            )}
           </div>
         </motion.div>
 
