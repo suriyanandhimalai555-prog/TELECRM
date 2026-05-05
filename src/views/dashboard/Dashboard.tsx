@@ -118,7 +118,7 @@ export default function Dashboard() {
     { name: 'Total Contacts', value: stats.totalContacts || 0, icon: Users, color: 'bg-aura-red', filter: 'all', path: '/leads' },
     { name: 'Sent Today', value: stats.messagesToday || 0, icon: PhoneOutgoing, color: 'bg-green-600', filter: 'all', path: '/whatsapp' },
     { name: 'Unread WA', value: stats.unreadWhatsAppCount || 0, icon: MessageSquare, color: 'bg-fbbf24', filter: 'unread', path: '/whatsapp' },
-    { name: 'Calls Made', value: stats.totalCalls, icon: Phone, color: 'bg-aura-red', filter: 'all', path: '/calls' },
+    { name: 'Calls Made', value: stats.totalCalls || 0, icon: Phone, color: 'bg-aura-red', filter: 'all', path: '/calls' },
   ];
 
   const formatDuration = (seconds: number) => {
@@ -126,6 +126,10 @@ export default function Dashboard() {
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  // ✅ Safe arrays - never undefined
+  const recentCalls = Array.isArray(stats.recentCalls) ? stats.recentCalls : [];
+  const callTypeBreakdown = Array.isArray(stats.callTypeBreakdown) ? stats.callTypeBreakdown : [];
 
   return (
     <div className="space-y-8 relative pb-12">
@@ -193,9 +197,9 @@ export default function Dashboard() {
           </h3>
           <div className="space-y-3">
             {[
-              { label: 'Total Engagement Time', value: formatDuration(stats.totalDuration), icon: History, color: 'text-aura-red' },
-              { label: 'Average Signal Strength', value: formatDuration(stats.avgDuration), icon: Zap, color: 'text-aura-red' },
-              { label: 'Pending Directives', value: stats.dailyTasks, icon: CheckSquare, color: 'text-green-600' }
+              { label: 'Total Engagement Time', value: formatDuration(stats.totalDuration || 0), icon: History, color: 'text-aura-red' },
+              { label: 'Average Signal Strength', value: formatDuration(stats.avgDuration || 0), icon: Zap, color: 'text-aura-red' },
+              { label: 'Pending Directives', value: stats.dailyTasks || 0, icon: CheckSquare, color: 'text-green-600' }
             ].map((item) => (
               <div 
                 key={item.label}
@@ -221,23 +225,32 @@ export default function Dashboard() {
             <Activity className="mr-3 text-aura-red" size={18} /> Engagement Velocity
           </h3>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.callTypeBreakdown}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                <XAxis dataKey="type" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 900, fill: '#6b7280' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 900, fill: '#6b7280' }} />
-                <Tooltip 
-                  cursor={{ fill: 'rgba(239, 68, 68, 0.05)' }}
-                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #f3f4f6', borderRadius: '12px', color: '#111827', fontSize: '10px', fontWeight: 900 }}
-                />
-                <Bar 
-                  dataKey="count" 
-                  fill="#ef4444" 
-                  radius={[4, 4, 0, 0]}
-                  animationDuration={1500}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+            {callTypeBreakdown.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={callTypeBreakdown}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                  <XAxis dataKey="type" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 900, fill: '#6b7280' }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 900, fill: '#6b7280' }} />
+                  <Tooltip 
+                    cursor={{ fill: 'rgba(239, 68, 68, 0.05)' }}
+                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #f3f4f6', borderRadius: '12px', color: '#111827', fontSize: '10px', fontWeight: 900 }}
+                  />
+                  <Bar 
+                    dataKey="count" 
+                    fill="#ef4444" 
+                    radius={[4, 4, 0, 0]}
+                    animationDuration={1500}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full space-y-3">
+                <div className="w-16 h-16 rounded-full bg-aura-red/10 flex items-center justify-center border border-aura-red/20">
+                  <Activity className="text-aura-red" size={24} />
+                </div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">No call data available</p>
+              </div>
+            )}
           </div>
         </motion.div>
       </div>
@@ -261,7 +274,7 @@ export default function Dashboard() {
             </button>
           </div>
           <div className="divide-y divide-gray-50 max-h-[350px] overflow-y-auto no-scrollbar">
-            {stats.recentCalls.map((call) => (
+            {recentCalls.length > 0 ? recentCalls.map((call) => (
               <div 
                 key={call.id}
                 className="p-5 hover:bg-gray-50/50 transition-all flex items-center justify-between group"
@@ -288,7 +301,14 @@ export default function Dashboard() {
                   )}>{call.status}</span>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="flex flex-col items-center justify-center py-16 space-y-3">
+                <div className="w-16 h-16 rounded-full bg-aura-red/10 flex items-center justify-center border border-aura-red/20">
+                  <History className="text-aura-red" size={24} />
+                </div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">No recent calls</p>
+              </div>
+            )}
           </div>
         </motion.div>
 
