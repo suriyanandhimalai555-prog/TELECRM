@@ -123,6 +123,10 @@ export const initDb = async () => {
     )
   `);
 
+  // ✅ Add missing columns to users table
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp_token TEXT`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp_phone_id VARCHAR(100)`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp_waba_id VARCHAR(100)`);
   // ✅ Drop and recreate whatsapp_messages with correct schema
   await pool.query(`DROP TABLE IF EXISTS whatsapp_messages CASCADE`);
   
