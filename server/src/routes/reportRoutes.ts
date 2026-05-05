@@ -4,6 +4,11 @@ import { authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
 
+// ✅ NEW: Single endpoint that returns ALL report data in one call
+// Usage: GET /api/reports/all?startDate=2026-01-01&endDate=2026-12-31
+router.get('/all', authenticateToken, reportController.getAllReports);
+
+// Legacy endpoints (kept for backward compatibility)
 router.get('/stats', authenticateToken, reportController.getStats);
 router.get('/dashboard-stats', authenticateToken, reportController.getDashboardStats);
 router.get('/call-summary', authenticateToken, reportController.getCallSummary);
