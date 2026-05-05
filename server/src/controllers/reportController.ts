@@ -2,13 +2,6 @@ import { Response } from 'express';
 import db from '../config/database';
 import { AuthRequest } from '../middleware/auth';
 
-// Real calls columns (from callController.ts):
-//   agent_id, lead_id, caller, start_time, end_time,
-//   duration_seconds, type, campaign_id, status, feedback, notes, outcome
-// Real leads columns:  assigned_to, stage, status, created_at
-// Real projects columns: owner_id, status, created_at
-// Real users columns: id, name, role, reporting_to
-
 // ─── Single combined endpoint ─────────────────────────────────────────────────
 export const getAllReports = async (req: AuthRequest, res: Response) => {
   if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
@@ -43,22 +36,16 @@ export const getAllReports = async (req: AuthRequest, res: Response) => {
       ? `AND u.id IN (SELECT id FROM users WHERE reporting_to = ${userId})`
       : `AND u.id = ${userId}`;
 
-    // ── 1. Stats ──────────────────────────────────────────────────────────────
     const [statsLeads, statsCalls, statsWa] = await Promise.all([
-      db.query(`
-        SELECT COUNT(*) AS total FROM leads l
-        WHERE 1=1 ${leadScopeJ} ${dateLeads}`),
+      db.query(`SELECT COUNT(*) AS total FROM leads l WHERE 1=1 ${leadScopeJ} ${dateLeads}`),
       db.query(`
         SELECT
           COUNT(*) AS total,
           SUM(CASE WHEN c.status = 'connected' THEN 1 ELSE 0 END) AS connected,
           COALESCE(SUM(c.duration_seconds), 0) AS total_duration,
           COALESCE(AVG(CASE WHEN c.status = 'connected' THEN c.duration_seconds END), 0) AS avg_duration
-        FROM calls c
-        WHERE 1=1 ${callScopeJ} ${dateCalls}`),
-      db.query(`
-        SELECT COUNT(*) AS total FROM whatsapp_messages
-        WHERE 1=1 ${dateWa}`),
+        FROM calls c WHERE 1=1 ${callScopeJ} ${dateCalls}`),
+      db.query(`SELECT COUNT(*) AS total FROM whatsapp_messages WHERE 1=1 ${dateWa}`),
     ]);
 
     const stats = {
@@ -69,63 +56,41 @@ export const getAllReports = async (req: AuthRequest, res: Response) => {
       whatsappMessages: parseInt(statsWa.rows[0]?.total              || '0'),
     };
 
-    // ── 2. Calls summary ──────────────────────────────────────────────────────
     const [callSummary, callTypes] = await Promise.all([
       db.query(`
-        SELECT
-          DATE(start_time) AS date,
-          COUNT(*) AS total,
+        SELECT DATE(start_time) AS date, COUNT(*) AS total,
           SUM(CASE WHEN status = 'connected' THEN 1 ELSE 0 END) AS connected,
           SUM(CASE WHEN status != 'connected' THEN 1 ELSE 0 END) AS failed
-        FROM calls
-        WHERE 1=1 ${callScope} ${dateCallsP}
-        GROUP BY DATE(start_time)
-        ORDER BY date DESC
-        LIMIT 30`),
+        FROM calls WHERE 1=1 ${callScope} ${dateCallsP}
+        GROUP BY DATE(start_time) ORDER BY date DESC LIMIT 30`),
       db.query(`
         SELECT COALESCE(type, 'Unknown') AS type, COUNT(*) AS count
-        FROM calls
-        WHERE 1=1 ${callScope} ${dateCallsP}
-        GROUP BY type`),
+        FROM calls WHERE 1=1 ${callScope} ${dateCallsP} GROUP BY type`),
     ]);
 
-    // ── 3. WhatsApp ───────────────────────────────────────────────────────────
     const waSummary = await db.query(`
-      SELECT
-        COUNT(*) AS total_messages,
+      SELECT COUNT(*) AS total_messages,
         SUM(CASE WHEN direction = 'inbound'  THEN 1 ELSE 0 END) AS inbound,
         SUM(CASE WHEN direction = 'outbound' THEN 1 ELSE 0 END) AS outbound
-      FROM whatsapp_messages
-      WHERE 1=1 ${dateWa}`
+      FROM whatsapp_messages WHERE 1=1 ${dateWa}`
     ).catch(() => ({ rows: [{ total_messages: 0, inbound: 0, outbound: 0 }] }));
 
-    // ── 4. Leads ──────────────────────────────────────────────────────────────
     const [byStage, byStatus] = await Promise.all([
-      db.query(`
-        SELECT COALESCE(stage, 'Unknown') AS stage, COUNT(*) AS count
-        FROM leads WHERE 1=1 ${leadScope} ${dateLeadsP}
-        GROUP BY stage ORDER BY count DESC`),
-      db.query(`
-        SELECT COALESCE(status, 'Unknown') AS status, COUNT(*) AS count
-        FROM leads WHERE 1=1 ${leadScope} ${dateLeadsP}
-        GROUP BY status ORDER BY count DESC`),
+      db.query(`SELECT COALESCE(stage, 'Unknown') AS stage, COUNT(*) AS count FROM leads WHERE 1=1 ${leadScope} ${dateLeadsP} GROUP BY stage ORDER BY count DESC`),
+      db.query(`SELECT COALESCE(status, 'Unknown') AS status, COUNT(*) AS count FROM leads WHERE 1=1 ${leadScope} ${dateLeadsP} GROUP BY status ORDER BY count DESC`),
     ]);
 
-    // ── 5. Projects ───────────────────────────────────────────────────────────
     const dateProjP = startDate && endDate ? `AND DATE(created_at) BETWEEN '${startDate}' AND '${endDate}'` : '';
     const projectDist = await db.query(`
       SELECT COALESCE(status, 'Unknown') AS status, COUNT(*) AS count
-      FROM projects WHERE 1=1 ${projectScope} ${dateProjP}
-      GROUP BY status ORDER BY count DESC`
+      FROM projects WHERE 1=1 ${projectScope} ${dateProjP} GROUP BY status ORDER BY count DESC`
     ).catch(() => ({ rows: [] }));
 
-    // ── 6. Team ───────────────────────────────────────────────────────────────
     const tl = startDate && endDate ? `AND DATE(l.created_at) BETWEEN '${startDate}' AND '${endDate}'` : '';
     const tc = startDate && endDate ? `AND DATE(c.start_time) BETWEEN '${startDate}' AND '${endDate}'` : '';
 
     const teamPerf = await db.query(`
-      SELECT
-        u.id, u.name, u.role,
+      SELECT u.id, u.name, u.role,
         COUNT(DISTINCT l.id) AS total_leads,
         COUNT(DISTINCT c.id) AS total_calls,
         SUM(CASE WHEN c.status = 'connected' THEN 1 ELSE 0 END) AS connected_calls,
@@ -134,8 +99,7 @@ export const getAllReports = async (req: AuthRequest, res: Response) => {
       LEFT JOIN leads l ON l.assigned_to = u.id ${tl}
       LEFT JOIN calls c ON c.agent_id    = u.id ${tc}
       WHERE u.role != 'ADMIN' ${teamScope}
-      GROUP BY u.id, u.name, u.role
-      ORDER BY total_calls DESC`);
+      GROUP BY u.id, u.name, u.role ORDER BY total_calls DESC`);
 
     return res.json({
       stats,
@@ -171,19 +135,73 @@ export const getStats = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// ─── FIXED: getDashboardStats now returns all fields the frontend needs ────────
 export const getDashboardStats = async (req: AuthRequest, res: Response) => {
   if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
   try {
-    const result = await db.query(`
-      SELECT
-        (SELECT COUNT(*) FROM leads)    AS "totalLeads",
-        (SELECT COUNT(*) FROM calls)    AS "totalCalls",
-        (SELECT COUNT(*) FROM calls WHERE status = 'connected') AS "connectedCalls",
-        (SELECT COUNT(*) FROM projects) AS "totalProjects"`);
-    return res.json(result.rows[0]);
+    const today = new Date().toISOString().split('T')[0];
+
+    const [mainStats, recentCallsRes, callTypeRes, tasksRes, unreadWaRes, msgTodayRes] = await Promise.all([
+      db.query(`
+        SELECT
+          (SELECT COUNT(*) FROM leads)    AS "totalContacts",
+          (SELECT COUNT(*) FROM calls)    AS "totalCalls",
+          (SELECT COUNT(*) FROM calls WHERE status = 'connected') AS "connectedCalls",
+          (SELECT COALESCE(SUM(duration_seconds), 0) FROM calls) AS "totalDuration",
+          (SELECT COALESCE(AVG(duration_seconds), 0) FROM calls WHERE status = 'connected') AS "avgDuration",
+          (SELECT COUNT(*) FROM projects) AS "totalProjects"
+      `),
+      db.query(`
+        SELECT
+          c.id, c.caller, c.type, c.status, c.duration_seconds,
+          c.start_time, c.agent_id,
+          u.name AS agent_name,
+          l.contact_name AS lead_name
+        FROM calls c
+        LEFT JOIN users u ON u.id = c.agent_id
+        LEFT JOIN leads l ON l.id = c.lead_id
+        ORDER BY c.start_time DESC
+        LIMIT 10
+      `),
+      db.query(`
+        SELECT COALESCE(type, 'Unknown') AS type, COUNT(*) AS count
+        FROM calls GROUP BY type ORDER BY count DESC
+      `),
+      db.query(`
+        SELECT COUNT(*) AS count FROM tasks
+        WHERE status != 'COMPLETED'
+      `).catch(() => ({ rows: [{ count: 0 }] })),
+      db.query(`
+        SELECT COUNT(DISTINCT contact_number) AS count
+        FROM whatsapp_messages
+        WHERE direction = 'inbound' AND read = false
+      `).catch(() => ({ rows: [{ count: 0 }] })),
+      db.query(`
+        SELECT COUNT(*) AS count
+        FROM whatsapp_messages
+        WHERE direction = 'outbound' AND DATE(created_at) = '${today}'
+      `).catch(() => ({ rows: [{ count: 0 }] })),
+    ]);
+
+    const row = mainStats.rows[0];
+
+    return res.json({
+      totalContacts:       parseInt(row?.totalContacts    || '0'),
+      totalCalls:          parseInt(row?.totalCalls       || '0'),
+      connectedCalls:      parseInt(row?.connectedCalls   || '0'),
+      totalDuration:       parseInt(row?.totalDuration    || '0'),
+      avgDuration:         Math.round(parseFloat(row?.avgDuration || '0')),
+      totalProjects:       parseInt(row?.totalProjects    || '0'),
+      messagesToday:       parseInt(msgTodayRes.rows[0]?.count   || '0'),
+      unreadWhatsAppCount: parseInt(unreadWaRes.rows[0]?.count   || '0'),
+      dailyTasks:          parseInt(tasksRes.rows[0]?.count      || '0'),
+      recentCalls:         recentCallsRes.rows || [],
+      callTypeBreakdown:   callTypeRes.rows || [],
+    });
+
   } catch (err) {
     console.error('getDashboardStats error:', err);
-    return res.status(500).json({ message: 'Server error' });
+    return res.status(500).json({ message: 'Server error', detail: (err as Error).message });
   }
 };
 
@@ -191,15 +209,10 @@ export const getCallSummary = async (req: AuthRequest, res: Response) => {
   if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
   try {
     const result = await db.query(`
-      SELECT
-        DATE(start_time) AS date,
-        COUNT(*) AS total,
+      SELECT DATE(start_time) AS date, COUNT(*) AS total,
         SUM(CASE WHEN status = 'connected' THEN 1 ELSE 0 END) AS connected,
         SUM(CASE WHEN status != 'connected' THEN 1 ELSE 0 END) AS failed
-      FROM calls
-      GROUP BY DATE(start_time)
-      ORDER BY date DESC
-      LIMIT 30`);
+      FROM calls GROUP BY DATE(start_time) ORDER BY date DESC LIMIT 30`);
     return res.json(result.rows);
   } catch (err) {
     console.error('getCallSummary error:', err);
@@ -211,7 +224,7 @@ export const getLeadConversion = async (req: AuthRequest, res: Response) => {
   if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
   try {
     const result = await db.query(
-      `SELECT stage, COUNT(*) AS count FROM leads GROUP BY stage ORDER BY count DESC`);
+      `SELECT stage AS name, COUNT(*) AS value FROM leads GROUP BY stage ORDER BY value DESC`);
     return res.json(result.rows);
   } catch (err) {
     console.error('getLeadConversion error:', err);
@@ -223,7 +236,7 @@ export const getProjectStats = async (req: AuthRequest, res: Response) => {
   if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
   try {
     const result = await db.query(
-      `SELECT status, COUNT(*) AS count FROM projects GROUP BY status`);
+      `SELECT status AS name, COUNT(*) AS value FROM projects GROUP BY status`);
     return res.json(result.rows);
   } catch (err) {
     console.error('getProjectStats error:', err);
@@ -235,8 +248,7 @@ export const getTeamPerformance = async (req: AuthRequest, res: Response) => {
   if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
   try {
     const result = await db.query(`
-      SELECT
-        u.id, u.name, u.role,
+      SELECT u.id, u.name, u.role,
         COUNT(DISTINCT l.id) AS total_leads,
         COUNT(DISTINCT c.id) AS total_calls,
         SUM(CASE WHEN c.status = 'connected' THEN 1 ELSE 0 END) AS connected_calls,
@@ -245,8 +257,7 @@ export const getTeamPerformance = async (req: AuthRequest, res: Response) => {
       LEFT JOIN leads l ON l.assigned_to = u.id
       LEFT JOIN calls c ON c.agent_id    = u.id
       WHERE u.role != 'ADMIN'
-      GROUP BY u.id, u.name, u.role
-      ORDER BY total_calls DESC`);
+      GROUP BY u.id, u.name, u.role ORDER BY total_calls DESC`);
     return res.json(result.rows);
   } catch (err) {
     console.error('getTeamPerformance error:', err);
@@ -258,12 +269,12 @@ export const getWhatsAppSummary = async (req: AuthRequest, res: Response) => {
   if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
   try {
     const result = await db.query(`
-      SELECT
-        COUNT(*) AS total_messages,
+      SELECT DATE(created_at) AS date,
         SUM(CASE WHEN direction = 'inbound'  THEN 1 ELSE 0 END) AS inbound,
         SUM(CASE WHEN direction = 'outbound' THEN 1 ELSE 0 END) AS outbound
-      FROM whatsapp_messages`);
-    return res.json(result.rows[0]);
+      FROM whatsapp_messages
+      GROUP BY DATE(created_at) ORDER BY date DESC LIMIT 30`);
+    return res.json(result.rows);
   } catch (err) {
     console.error('getWhatsAppSummary error:', err);
     return res.status(500).json({ message: 'Server error' });
