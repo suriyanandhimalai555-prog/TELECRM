@@ -128,7 +128,6 @@ export const initDb = async () => {
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp_phone_id VARCHAR(100)`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp_waba_id VARCHAR(100)`);
   // ✅ Drop and recreate whatsapp_messages with correct schema
-  await pool.query(`DROP TABLE IF EXISTS whatsapp_messages CASCADE`);
   
   await pool.query(`
     CREATE TABLE IF NOT EXISTS whatsapp_messages (
