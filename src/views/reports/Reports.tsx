@@ -5,32 +5,10 @@ import Papa from 'papaparse';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useAuth } from '../../hooks/useAuth';
+import { BarChart3, FileText, Table as TableIcon, Calendar, RefreshCw, Zap, Dna } from 'lucide-react';
 import {
-  BarChart3,
-  TrendingUp,
-  Users,
-  FileText,
-  Table as TableIcon,
-  Calendar,
-  RefreshCw,
-  Zap,
-  Dna,
-  Phone,
-  Briefcase,
-  MessageSquare
-} from 'lucide-react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-  PieChart,
-  Pie,
-  Cell
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, Legend, PieChart, Pie, Cell
 } from 'recharts';
 
 const COLORS = ['#EF4444', '#F87171', '#FCA5A5', '#F59E0B', '#7F1D1D'];
@@ -48,30 +26,10 @@ export default function Reports() {
   const [teamData, setTeamData] = useState<any[]>([]);
   const [whatsappSummary, setWhatsappSummary] = useState<any[]>([]);
 
-  const getDateRange = (range: string) => {
-    const now = new Date();
-    const end = now.toISOString().split('T')[0];
-    let start = '2020-01-01';
-    if (range === '7d') {
-      const d = new Date(now); d.setDate(d.getDate() - 7);
-      start = d.toISOString().split('T')[0];
-    } else if (range === '30d') {
-      const d = new Date(now); d.setDate(d.getDate() - 30);
-      start = d.toISOString().split('T')[0];
-    } else if (range === '90d') {
-      const d = new Date(now); d.setDate(d.getDate() - 90);
-      start = d.toISOString().split('T')[0];
-    } else if (range === 'today') {
-      start = end;
-    }
-    return { start, end };
-  };
-
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const { start, end } = getDateRange(dateRange);
       const [statsRes, summaryRes, conversionRes, projectRes, waSummaryRes] = await Promise.all([
         api.get('/reports/stats').catch(() => ({ data: null })),
         api.get('/reports/call-summary').catch(() => ({ data: [] })),
@@ -98,18 +56,15 @@ export default function Reports() {
     }
   }, [dateRange, user?.role]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const exportCSV = () => {
     if (!stats) return;
     const data = [
       { Metric: 'Total Leads', Value: stats.totalLeads },
       { Metric: 'Connected Calls', Value: stats.connectedCalls },
-      { Metric: 'Total Duration', Value: stats.totalDuration },
       { Metric: 'Avg Duration', Value: stats.avgDuration },
-      { Metric: 'WhatsApp Notes', Value: stats.whatsappNotes },
+      { Metric: 'WhatsApp', Value: stats.whatsappNotes ?? stats.whatsappMessages ?? 0 },
     ];
     const csv = Papa.unparse(data);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -123,70 +78,89 @@ export default function Reports() {
     if (!stats) return;
     const doc = new jsPDF();
     doc.text('CRM Performance Report', 14, 15);
-    const body = [
-      ['Total Leads', String(stats.totalLeads ?? 0)],
-      ['Connected Calls', String(stats.connectedCalls ?? 0)],
-      ['Total Duration', `${Math.round((stats.totalDuration ?? 0) / 60)} mins`],
-      ['Avg Duration', `${Math.round(stats.avgDuration ?? 0)} secs`],
-      ['WhatsApp Interactions', String(stats.whatsappNotes ?? 0)],
-    ];
-    autoTable(doc, { head: [['Metric', 'Value']], body, startY: 25 });
+    autoTable(doc, {
+      head: [['Metric', 'Value']],
+      body: [
+        ['Total Leads', String(stats.totalLeads ?? 0)],
+        ['Connected Calls', String(stats.connectedCalls ?? 0)],
+        ['Avg Duration', `${Math.round(stats.avgDuration ?? 0)} secs`],
+        ['WhatsApp', String(stats.whatsappNotes ?? stats.whatsappMessages ?? 0)],
+      ],
+      startY: 25
+    });
     doc.save(`report_${new Date().toISOString()}.pdf`);
   };
 
+  const tooltipStyle = {
+    backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e5e7eb',
+    boxShadow: '0 10px 30px rgba(15,23,42,0.08)', fontWeight: 900,
+    textTransform: 'uppercase' as const, fontSize: '9px', color: '#111827', padding: '12px'
+  };
+
+  // ✅ FIXED: correct dataKey per tab
   const getMainChartData = () => {
-    if (reportType === 'whatsapp') return Array.isArray(whatsappSummary) ? whatsappSummary : [];
-    if (reportType === 'leads') return Array.isArray(conversionData) ? conversionData : [];
-    return Array.isArray(summaryData) ? summaryData : [];
+    if (reportType === 'whatsapp') return whatsappSummary;
+    if (reportType === 'leads')    return conversionData;   // has: name, value
+    if (reportType === 'projects') return projectData;      // has: name, value
+    if (reportType === 'team')     return teamData;         // has: name, total_calls, connected_calls
+    return summaryData;                                     // has: date, connected, failed
   };
 
   const getMainChartTitle = () => {
     if (reportType === 'whatsapp') return 'WhatsApp Engagement';
-    if (reportType === 'leads') return 'Lead Status Distribution';
+    if (reportType === 'leads')    return 'Lead Stage Distribution';
     if (reportType === 'projects') return 'Project Overview';
-    if (reportType === 'team') return 'Team Call Performance';
+    if (reportType === 'team')     return 'Team Call Performance';
     return 'Call Distribution';
   };
 
   const getPieChartData = (): any[] => {
-    if (reportType === 'projects') return Array.isArray(projectData) ? projectData : [];
-    if (reportType === 'leads') return Array.isArray(conversionData) ? conversionData : [];
-    if (reportType === 'whatsapp') return Array.isArray(whatsappSummary)
-      ? whatsappSummary.map((d: any) => ({ name: d.date, value: (d.inbound || 0) + (d.outbound || 0) }))
-      : [];
-    return Array.isArray(conversionData) ? conversionData : [];
+    if (reportType === 'projects') return projectData;
+    if (reportType === 'leads')    return conversionData;
+    if (reportType === 'team')     return teamData.map((d: any) => ({ name: d.name, value: Number(d.total_calls) }));
+    if (reportType === 'whatsapp') return whatsappSummary.map((d: any) => ({ name: d.date, value: (d.inbound || 0) + (d.outbound || 0) }));
+    return conversionData;
   };
 
-  const tooltipStyle = {
-    backgroundColor: '#ffffff',
-    borderRadius: '12px',
-    border: '1px solid #e5e7eb',
-    boxShadow: '0 10px 30px rgba(15, 23, 42, 0.08)',
-    fontWeight: 900,
-    textTransform: 'uppercase' as const,
-    fontSize: '9px',
-    color: '#111827',
-    padding: '12px'
+  // ✅ FIXED: correct bars per tab
+  const renderBars = () => {
+    if (reportType === 'whatsapp') return (
+      <>
+        <Bar dataKey="inbound"  name="Received" fill="#EF4444" radius={[4,4,0,0]} />
+        <Bar dataKey="outbound" name="Sent"     fill="#7F1D1D" radius={[4,4,0,0]} />
+      </>
+    );
+    if (reportType === 'leads' || reportType === 'projects') return (
+      <Bar dataKey="value" name="Count" fill="#EF4444" radius={[4,4,0,0]} />
+    );
+    if (reportType === 'team') return (
+      <>
+        <Bar dataKey="total_calls"     name="Total Calls" fill="#EF4444" radius={[4,4,0,0]} />
+        <Bar dataKey="connected_calls" name="Connected"   fill="#7F1D1D" radius={[4,4,0,0]} />
+      </>
+    );
+    return (
+      <>
+        <Bar dataKey="connected" name="Connected" fill="#EF4444" radius={[4,4,0,0]} />
+        <Bar dataKey="failed"    name="Failed"    fill="#7F1D1D" radius={[4,4,0,0]} />
+      </>
+    );
   };
 
-  if (loading) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <div className="ui-standard-spinner" />
-      </div>
-    );
-  }
+  // ✅ FIXED: correct X axis key per tab
+  const getXAxisKey = () => {
+    if (reportType === 'leads' || reportType === 'projects') return 'name';
+    if (reportType === 'team') return 'name';
+    return 'date';
+  };
 
-  if (error) {
-    return (
-      <div className="h-full flex items-center justify-center flex-col gap-4">
-        <p className="text-red-500 font-bold">{error}</p>
-        <button onClick={fetchData} className="px-4 py-2 bg-aura-red text-white rounded-xl text-xs font-black uppercase">
-          Retry
-        </button>
-      </div>
-    );
-  }
+  if (loading) return <div className="h-full flex items-center justify-center"><div className="ui-standard-spinner" /></div>;
+  if (error)   return (
+    <div className="h-full flex items-center justify-center flex-col gap-4">
+      <p className="text-red-500 font-bold">{error}</p>
+      <button onClick={fetchData} className="px-4 py-2 bg-aura-red text-white rounded-xl text-xs font-black uppercase">Retry</button>
+    </div>
+  );
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -215,15 +189,15 @@ export default function Reports() {
         className="bg-white p-4 rounded-2xl border border-gray-100 flex flex-wrap items-center gap-4 shadow-sm">
         <div className="flex items-center space-x-1 bg-gray-100 p-1 rounded-xl border border-gray-200">
           {[
-            { id: 'calls', label: 'Calls' },
+            { id: 'calls',    label: 'Calls' },
             { id: 'whatsapp', label: 'WhatsApp' },
-            { id: 'leads', label: 'Leads' },
+            { id: 'leads',    label: 'Leads' },
             { id: 'projects', label: 'Projects' },
-            { id: 'team', label: 'Team' },
+            { id: 'team',     label: 'Team' },
           ].map(type => (
             <button key={type.id} onClick={() => setReportType(type.id)}
               className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                reportType === type.id ? 'bg-aura-red text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'
+                reportType === type.id ? 'bg-aura-red text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'
               }`}>
               {type.label}
             </button>
@@ -246,10 +220,10 @@ export default function Reports() {
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: 'Total Leads', value: stats.totalLeads ?? 0 },
+            { label: 'Total Leads',     value: stats.totalLeads ?? 0 },
             { label: 'Connected Calls', value: stats.connectedCalls ?? 0 },
-            { label: 'Avg Duration', value: `${Math.round(stats.avgDuration ?? 0)}s` },
-            { label: 'WhatsApp', value: stats.whatsappNotes ?? 0 },
+            { label: 'Avg Duration',    value: `${Math.round(stats.avgDuration ?? 0)}s` },
+            { label: 'WhatsApp',        value: stats.whatsappNotes ?? stats.whatsappMessages ?? 0 },
           ].map((card, i) => (
             <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
               className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
@@ -273,23 +247,11 @@ export default function Reports() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={getMainChartData()}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                  <XAxis dataKey="date" stroke="#6b7280" fontSize={9} fontWeight={900} tickLine={false} axisLine={false} />
+                  <XAxis dataKey={getXAxisKey()} stroke="#6b7280" fontSize={9} fontWeight={900} tickLine={false} axisLine={false} />
                   <YAxis stroke="#6b7280" fontSize={9} fontWeight={900} tickLine={false} axisLine={false} />
                   <Tooltip cursor={{ fill: 'rgba(239,68,68,0.08)' }} contentStyle={tooltipStyle} />
                   <Legend iconType="circle" wrapperStyle={{ color: '#9ca3af', fontSize: '9px', fontWeight: 900 }} />
-                  {reportType === 'whatsapp' ? (
-                    <>
-                      <Bar dataKey="inbound" name="Received" fill="#EF4444" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="outbound" name="Sent" fill="#7F1D1D" radius={[4, 4, 0, 0]} />
-                    </>
-                  ) : reportType === 'leads' ? (
-                    <Bar dataKey="value" name="Leads" fill="#EF4444" radius={[4, 4, 0, 0]} />
-                  ) : (
-                    <>
-                      <Bar dataKey="connected" name="Connected" fill="#EF4444" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="failed" name="Failed" fill="#7F1D1D" radius={[4, 4, 0, 0]} />
-                    </>
-                  )}
+                  {renderBars()}
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -308,7 +270,10 @@ export default function Reports() {
           className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-sm font-black text-gray-900 uppercase tracking-tighter">
-              {reportType === 'projects' ? 'Project Distribution' : reportType === 'leads' ? 'Lead Pipeline' : 'Conversion Pipeline'}
+              {reportType === 'projects' ? 'Project Distribution'
+               : reportType === 'leads' ? 'Lead Pipeline'
+               : reportType === 'team'  ? 'Team Calls'
+               : 'Conversion Pipeline'}
             </h3>
             <Dna className="text-aura-red" size={18} />
           </div>
@@ -316,26 +281,14 @@ export default function Reports() {
             {getPieChartData().length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie
-                    data={getPieChartData()}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
+                  <Pie data={getPieChartData()} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={5} dataKey="value">
                     {getPieChartData().map((_: any, index: number) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip contentStyle={tooltipStyle} />
-                  <Legend
-                    verticalAlign="bottom"
-                    align="center"
-                    iconType="circle"
-                    wrapperStyle={{ color: '#9ca3af', fontSize: '9px', fontWeight: 900 }}
-                  />
+                  <Legend verticalAlign="bottom" align="center" iconType="circle"
+                    wrapperStyle={{ color: '#9ca3af', fontSize: '9px', fontWeight: 900 }} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -349,7 +302,7 @@ export default function Reports() {
           </div>
         </motion.div>
 
-        {/* Team Table */}
+        {/* Team Table — always visible, highlighted when on Team tab */}
         {user?.role !== 'EMPLOYEE' && (
           <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className={`bg-white p-6 rounded-2xl border lg:col-span-2 shadow-sm transition-all ${
@@ -365,6 +318,7 @@ export default function Reports() {
                   <thead>
                     <tr className="text-[9px] font-black text-gray-500 uppercase tracking-widest border-b border-gray-200">
                       <th className="pb-4 px-3">Agent</th>
+                      <th className="pb-4 px-3 text-center">Total Leads</th>
                       <th className="pb-4 px-3 text-center">Total Calls</th>
                       <th className="pb-4 px-3 text-center">Connected</th>
                       <th className="pb-4 px-3 text-right">Duration (Mins)</th>
@@ -374,6 +328,7 @@ export default function Reports() {
                     {teamData.map((agent: any, idx: number) => (
                       <tr key={idx} className="text-xs hover:bg-gray-50 transition-colors">
                         <td className="py-4 px-3 font-black text-gray-900 uppercase">{agent.name}</td>
+                        <td className="py-4 px-3 text-center font-bold text-gray-600">{agent.total_leads}</td>
                         <td className="py-4 px-3 text-center font-bold text-gray-600">{agent.total_calls}</td>
                         <td className="py-4 px-3 text-center">
                           <span className="bg-aura-red/20 text-aura-red px-2 py-0.5 rounded-full font-black text-[9px]">{agent.connected_calls}</span>
