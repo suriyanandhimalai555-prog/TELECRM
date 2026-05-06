@@ -69,6 +69,8 @@ async function fetchMediaInfo(
 
 // ─── Media proxy endpoint ─────────────────────────────────────────────────────
 // GET /api/whatsapp/media/:mediaId  (PUBLIC — no auth required)
+// On Vercel: redirect to Meta's signed URL (avoids 4.5MB response size limit)
+// On Railway: stream buffer directly
 export const proxyMedia = async (req: Request, res: Response) => {
   const { mediaId } = req.params;
 
@@ -91,8 +93,8 @@ export const proxyMedia = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'WhatsApp token missing. Please set it in Settings.' });
     }
 
-    // Step 1: Get media metadata from Meta
-    const metaRes  = await fetch(`https://graph.facebook.com/v25.0/${mediaId}`, {
+    // Step 1: Get media metadata (signed URL) from Meta
+    const metaRes = await fetch(`https://graph.facebook.com/v25.0/${mediaId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const metaData = await metaRes.json();
@@ -103,10 +105,21 @@ export const proxyMedia = async (req: Request, res: Response) => {
     }
 
     const mediaUrl: string = metaData.url;
+
+    // Step 2: On Vercel, redirect browser directly to Meta's signed URL.
+    // Meta signed URLs expire in ~5 min — fine for immediate viewing/download.
+    // Vercel serverless functions have a 4.5MB response size limit which
+    // causes crashes when proxying images/videos/documents.
+    const isVercel = process.env.VERCEL === '1';
+
+    if (isVercel) {
+      return res.redirect(302, mediaUrl);
+    }
+
+    // Non-Vercel (Railway): proxy the file as a buffer
     const mimeType: string = metaData.mime_type || 'application/octet-stream';
     const filename: string = metaData.filename  || `file_${mediaId}`;
 
-    // Step 2: Download file into buffer
     const fileRes = await fetch(mediaUrl, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -119,7 +132,6 @@ export const proxyMedia = async (req: Request, res: Response) => {
     const arrayBuffer = await fileRes.arrayBuffer();
     const buffer      = Buffer.from(arrayBuffer);
 
-    // Step 3: Send to browser
     res.setHeader('Content-Type', mimeType);
     res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     res.setHeader('Content-Length', buffer.length);
@@ -486,7 +498,6 @@ export const handleWebhook = async (req: Request, res: Response) => {
           const msgId   = msg.id as string;
           const ts      = new Date(parseInt(msg.timestamp) * 1000);
           const contact = val.contacts?.find((c: any) => c.wa_id === from);
-          // Use WhatsApp profile name, fall back to phone number — never empty
           const name    = contact?.profile?.name || from;
 
           let text      = '';
@@ -525,7 +536,6 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
           console.log(`[WA] 📩 INBOUND from ${from} (${name}): type=${msg.type}`);
 
-          // ✅ Find existing lead or auto-create with real admin owner_id
           let lead = await findLeadByPhone(from);
           if (!lead) {
             const adminId = await getAdminUserId();
@@ -540,7 +550,6 @@ export const handleWebhook = async (req: Request, res: Response) => {
             console.log(`[WA] ✅ Auto-created lead #${lead?.id} for ${from} (owner: ${adminId})`);
           }
 
-          // Save the message
           const { rows: savedRows } = await db.query(
             `INSERT INTO whatsapp_messages
                (message_id, from_number, to_number, message_text, direction, status, contact_name, timestamp, is_read)
@@ -550,7 +559,6 @@ export const handleWebhook = async (req: Request, res: Response) => {
             [msgId, from, PHONE_NUMBER_ID, text, name, ts]
           );
 
-          // Auto-reply for hi / hello
           if (msg.type === 'text') {
             const lower = text.toLowerCase().trim();
             if (lower === 'hi' || lower === 'hello') {
@@ -585,7 +593,6 @@ export const handleWebhook = async (req: Request, res: Response) => {
           }
         }
 
-        // ── Status updates ────────────────────────────────────────────────
         for (const s of val?.statuses || []) {
           await db.query(
             `UPDATE whatsapp_messages SET status = $1 WHERE message_id = $2`,
