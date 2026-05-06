@@ -9,7 +9,8 @@ import {
   getTemplates,
   syncTemplates,
   sendTemplate,
-  bulkSendMessage
+  bulkSendMessage,
+  proxyMedia
 } from '../controllers/whatsappController';
 import { authenticateToken } from '../middleware/auth';
 
@@ -28,5 +29,8 @@ router.get('/templates', authenticateToken, getTemplates);
 router.post('/templates/sync', authenticateToken, syncTemplates);
 router.post('/templates/send', authenticateToken, sendTemplate);
 router.post('/bulk-send', authenticateToken, bulkSendMessage);
+
+// ✅ Media proxy — streams documents/images/audio/video from Meta
+router.get('/media/:mediaId', authenticateToken, proxyMedia);
 
 export default router;

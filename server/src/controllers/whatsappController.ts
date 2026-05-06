@@ -11,7 +11,7 @@ function normalizePhone(phone: string): string {
   return phone.replace(/[^0-9]/g, '').slice(-10);
 }
 
-// ─── Helper: find a lead by phone number (matches mobile OR whatsapp field) ──
+// ─── Helper: find a lead by phone number ────────────────────────────────────
 async function findLeadByPhone(phone: string): Promise<any | null> {
   const normalized = normalizePhone(phone);
   const { rows } = await db.query(
@@ -37,6 +37,75 @@ async function getUserWACredentials(userId: number) {
     wabaId:  u?.whatsapp_waba_id  || WABA_ID,
   };
 }
+
+// ─── Helper: fetch media URL + mime_type from Meta ───────────────────────────
+async function fetchMediaInfo(mediaId: string, token: string): Promise<{ url: string; mime_type: string; filename?: string } | null> {
+  try {
+    const res = await fetch(`https://graph.facebook.com/v25.0/${mediaId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (data.error) {
+      console.error('[WA] fetchMediaInfo error:', data.error);
+      return null;
+    }
+    return { url: data.url, mime_type: data.mime_type, filename: data.filename };
+  } catch (err) {
+    console.error('[WA] fetchMediaInfo exception:', err);
+    return null;
+  }
+}
+
+// ─── Media proxy endpoint ─────────────────────────────────────────────────────
+// GET /api/whatsapp/media/:mediaId
+export const proxyMedia = async (req: Request, res: Response) => {
+  const { mediaId } = req.params;
+  const userId = (req as any).user?.id;
+
+  try {
+    const { token } = await getUserWACredentials(userId);
+    if (!token) return res.status(400).json({ error: 'WhatsApp token missing' });
+
+    // Step 1: get the media URL from Meta
+    const metaRes = await fetch(`https://graph.facebook.com/v25.0/${mediaId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const metaData = await metaRes.json();
+    if (metaData.error) return res.status(400).json({ error: metaData.error.message });
+
+    const mediaUrl: string = metaData.url;
+    const mimeType: string = metaData.mime_type || 'application/octet-stream';
+    const filename: string = metaData.filename || `file_${mediaId}`;
+
+    // Step 2: stream the actual media bytes back
+    const fileRes = await fetch(mediaUrl, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!fileRes.ok) return res.status(502).json({ error: 'Failed to fetch media from Meta' });
+
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    res.setHeader('Cache-Control', 'private, max-age=3600');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+
+    // Stream the response
+    const reader = fileRes.body?.getReader();
+    if (!reader) return res.status(502).json({ error: 'No body' });
+
+    const pump = async () => {
+      const { done, value } = await reader.read();
+      if (done) { res.end(); return; }
+      res.write(Buffer.from(value));
+      await pump();
+    };
+    await pump();
+
+  } catch (err) {
+    console.error('[WA] proxyMedia error:', err);
+    res.status(500).json({ error: 'Media proxy failed' });
+  }
+};
 
 // ─── Templates ───────────────────────────────────────────────────────────────
 
@@ -271,7 +340,7 @@ export const getHistory = async (req: Request, res: Response) => {
   }
 };
 
-// ─── Get all conversations (latest message per contact) ───────────────────────
+// ─── Get all conversations ────────────────────────────────────────────────────
 
 export const getConversations = async (req: Request, res: Response) => {
   const { search } = req.query;
@@ -396,23 +465,64 @@ export const handleWebhook = async (req: Request, res: Response) => {
           const contact = val.contacts?.find((c: any) => c.wa_id === from);
           const name    = contact?.profile?.name || '';
 
-          let text = '';
+          let text      = '';
+          let mediaId   = '';
+          let mediaType = '';
+          let fileName  = '';
+          let mimeType  = '';
+
           switch (msg.type) {
-            case 'text':     text = msg.text?.body || ''; break;
-            case 'image':    text = '[Image]';             break;
-            case 'audio':    text = '[Audio]';             break;
-            case 'video':    text = '[Video]';             break;
-            case 'document': text = '[Document]';          break;
-            case 'location': text = '[Location]';          break;
-            default:         text = `[${msg.type}]`;
+            case 'text':
+              text = msg.text?.body || '';
+              break;
+
+            case 'image':
+              mediaId   = msg.image?.id || '';
+              mimeType  = msg.image?.mime_type || 'image/jpeg';
+              text      = `[image:${mediaId}]`;
+              mediaType = 'image';
+              break;
+
+            case 'document':
+              mediaId   = msg.document?.id || '';
+              fileName  = msg.document?.filename || 'document';
+              mimeType  = msg.document?.mime_type || 'application/octet-stream';
+              text      = `[document:${mediaId}:${fileName}:${mimeType}]`;
+              mediaType = 'document';
+              break;
+
+            case 'audio':
+              mediaId   = msg.audio?.id || '';
+              mimeType  = msg.audio?.mime_type || 'audio/ogg';
+              text      = `[audio:${mediaId}]`;
+              mediaType = 'audio';
+              break;
+
+            case 'video':
+              mediaId   = msg.video?.id || '';
+              mimeType  = msg.video?.mime_type || 'video/mp4';
+              text      = `[video:${mediaId}]`;
+              mediaType = 'video';
+              break;
+
+            case 'sticker':
+              mediaId   = msg.sticker?.id || '';
+              text      = `[sticker:${mediaId}]`;
+              mediaType = 'sticker';
+              break;
+
+            case 'location':
+              text = `[location:${msg.location?.latitude},${msg.location?.longitude}:${msg.location?.name || ''}]`;
+              break;
+
+            default:
+              text = `[${msg.type}]`;
           }
 
-          console.log(`[WA] 📩 INBOUND from ${from} (${name}): ${text}`);
+          console.log(`[WA] 📩 INBOUND from ${from} (${name}): type=${msg.type}`);
 
-          // ✅ Find existing lead by phone number
+          // Find or auto-create lead
           let lead = await findLeadByPhone(from);
-
-          // ✅ Auto-create lead if not found so message links to Leads page
           if (!lead) {
             const { rows: newLeadRows } = await db.query(
               `INSERT INTO leads
@@ -425,7 +535,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
             console.log(`[WA] Auto-created lead #${lead?.id} for ${from}`);
           }
 
-          // Save the incoming message, linked to the lead
+          // Save the message
           const { rows: savedRows } = await db.query(
             `INSERT INTO whatsapp_messages
                (message_id, from_number, to_number, message_text, direction, status, contact_name, timestamp, is_read)
@@ -435,31 +545,33 @@ export const handleWebhook = async (req: Request, res: Response) => {
             [msgId, from, PHONE_NUMBER_ID, text, name, ts]
           );
 
-          // Auto-reply for hi / hello
-          const lower = text.toLowerCase().trim();
-          if (lower === 'hi' || lower === 'hello') {
-            const reply = 'Hello from AVG CRM! 🤖 How can we assist you today?';
+          // Auto-reply for hi / hello (text only)
+          if (msg.type === 'text') {
+            const lower = text.toLowerCase().trim();
+            if (lower === 'hi' || lower === 'hello') {
+              const reply = 'Hello from AVG CRM! 🤖 How can we assist you today?';
 
-            await fetch(`https://graph.facebook.com/v25.0/${PHONE_NUMBER_ID}/messages`, {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${WHATSAPP_TOKEN}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                messaging_product: 'whatsapp',
-                to: from,
-                type: 'text',
-                text: { body: reply },
-              }),
-            });
+              await fetch(`https://graph.facebook.com/v25.0/${PHONE_NUMBER_ID}/messages`, {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${WHATSAPP_TOKEN}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  messaging_product: 'whatsapp',
+                  to: from,
+                  type: 'text',
+                  text: { body: reply },
+                }),
+              });
 
-            await db.query(
-              `INSERT INTO whatsapp_messages
-                 (message_id, from_number, to_number, message_text, direction, status, contact_name, is_read)
-               VALUES ($1, $2, $3, $4, 'outbound', 'sent', $5, true)`,
-              [`auto_${msgId}`, PHONE_NUMBER_ID, from, reply, 'Auto Bot']
-            );
+              await db.query(
+                `INSERT INTO whatsapp_messages
+                   (message_id, from_number, to_number, message_text, direction, status, contact_name, is_read)
+                 VALUES ($1, $2, $3, $4, 'outbound', 'sent', $5, true)`,
+                [`auto_${msgId}`, PHONE_NUMBER_ID, from, reply, 'Auto Bot']
+              );
+            }
           }
 
           const reqWithIo = req as any;

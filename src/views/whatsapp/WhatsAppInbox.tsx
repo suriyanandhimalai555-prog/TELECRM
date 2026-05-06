@@ -22,7 +22,15 @@ import {
   Layout,
   RefreshCw,
   X,
-  Eye
+  Eye,
+  FileText,
+  Download,
+  Image as ImageIcon,
+  Film,
+  Music,
+  MapPin,
+  ExternalLink,
+  Play
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import api from '../../services/api';
@@ -49,6 +57,248 @@ interface WhatsAppTemplate {
   language: string;
   components: any;
   status: string;
+}
+
+// ─── Parse special message formats ───────────────────────────────────────────
+// Format stored in DB:
+//   [image:MEDIA_ID]
+//   [document:MEDIA_ID:FILENAME:MIME_TYPE]
+//   [audio:MEDIA_ID]
+//   [video:MEDIA_ID]
+//   [sticker:MEDIA_ID]
+//   [location:LAT,LNG:NAME]
+//   plain text (may contain URLs)
+
+type ParsedMessage =
+  | { type: 'text';     text: string }
+  | { type: 'image';    mediaId: string }
+  | { type: 'document'; mediaId: string; filename: string; mimeType: string }
+  | { type: 'audio';    mediaId: string }
+  | { type: 'video';    mediaId: string }
+  | { type: 'sticker';  mediaId: string }
+  | { type: 'location'; lat: string; lng: string; name: string };
+
+function parseMessage(text: string): ParsedMessage {
+  if (text.startsWith('[image:')) {
+    const mediaId = text.slice(7, -1);
+    return { type: 'image', mediaId };
+  }
+  if (text.startsWith('[document:')) {
+    const inner = text.slice(10, -1);
+    const parts = inner.split(':');
+    return { type: 'document', mediaId: parts[0], filename: parts[1] || 'document', mimeType: parts[2] || 'application/octet-stream' };
+  }
+  if (text.startsWith('[audio:')) {
+    const mediaId = text.slice(7, -1);
+    return { type: 'audio', mediaId };
+  }
+  if (text.startsWith('[video:')) {
+    const mediaId = text.slice(7, -1);
+    return { type: 'video', mediaId };
+  }
+  if (text.startsWith('[sticker:')) {
+    const mediaId = text.slice(9, -1);
+    return { type: 'sticker', mediaId };
+  }
+  if (text.startsWith('[location:')) {
+    const inner = text.slice(10, -1);
+    const colonIdx = inner.indexOf(':');
+    const coords = colonIdx > -1 ? inner.slice(0, colonIdx) : inner;
+    const locName = colonIdx > -1 ? inner.slice(colonIdx + 1) : '';
+    const [lat, lng] = coords.split(',');
+    return { type: 'location', lat, lng, name: locName };
+  }
+  return { type: 'text', text };
+}
+
+// ─── Linkify plain text ───────────────────────────────────────────────────────
+function linkifyText(text: string) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  return parts.map((part, i) => {
+    if (urlRegex.test(part)) {
+      urlRegex.lastIndex = 0;
+      return (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2 opacity-90 hover:opacity-100 break-all flex items-center gap-1"
+        >
+          {part}
+          <ExternalLink size={10} className="inline shrink-0" />
+        </a>
+      );
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
+
+// ─── Media URL helper ─────────────────────────────────────────────────────────
+function mediaUrl(mediaId: string) {
+  return `/api/whatsapp/media/${mediaId}`;
+}
+
+// ─── Message bubble content renderer ─────────────────────────────────────────
+function MessageContent({ parsed, isOut }: { parsed: ParsedMessage; isOut: boolean }) {
+  const [imgError, setImgError] = useState(false);
+  const textColor = isOut ? 'text-white' : 'text-gray-800';
+
+  switch (parsed.type) {
+    case 'image':
+      return imgError ? (
+        <div className={cn("flex items-center gap-2 text-xs font-bold", textColor)}>
+          <ImageIcon size={16} /> Image unavailable
+        </div>
+      ) : (
+        <div className="relative group/img">
+          <img
+            src={mediaUrl(parsed.mediaId)}
+            alt="Received image"
+            className="max-w-[240px] max-h-[240px] rounded-lg object-cover cursor-pointer"
+            onError={() => setImgError(true)}
+            onClick={() => window.open(mediaUrl(parsed.mediaId), '_blank')}
+          />
+          <a
+            href={mediaUrl(parsed.mediaId)}
+            download
+            className="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded-lg opacity-0 group-hover/img:opacity-100 transition-opacity"
+            title="Download"
+          >
+            <Download size={14} />
+          </a>
+        </div>
+      );
+
+    case 'document':
+      return (
+        <a
+          href={mediaUrl(parsed.mediaId)}
+          download={parsed.filename}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            "flex items-center gap-3 p-3 rounded-xl border transition-all",
+            isOut
+              ? "bg-white/10 border-white/20 hover:bg-white/20 text-white"
+              : "bg-gray-50 border-gray-200 hover:bg-gray-100 text-gray-800"
+          )}
+        >
+          <div className={cn(
+            "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
+            isOut ? "bg-white/20" : "bg-aura-red/10"
+          )}>
+            <FileText size={20} className={isOut ? "text-white" : "text-aura-red"} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className={cn("text-xs font-bold truncate", textColor)}>{parsed.filename}</div>
+            <div className={cn("text-[10px] mt-0.5", isOut ? "text-white/60" : "text-gray-400")}>
+              {parsed.mimeType.split('/')[1]?.toUpperCase() || 'FILE'} · Tap to download
+            </div>
+          </div>
+          <Download size={16} className={isOut ? "text-white/70" : "text-gray-400"} />
+        </a>
+      );
+
+    case 'audio':
+      return (
+        <div className={cn("flex flex-col gap-2 min-w-[200px]")}>
+          <div className={cn("flex items-center gap-2 text-xs font-bold mb-1", textColor)}>
+            <Music size={14} /> Voice message
+          </div>
+          <audio
+            controls
+            src={mediaUrl(parsed.mediaId)}
+            className="w-full h-8 accent-aura-red"
+            style={{ minWidth: 200 }}
+          >
+            Your browser does not support audio.
+          </audio>
+        </div>
+      );
+
+    case 'video':
+      return (
+        <div className="relative group/vid">
+          <video
+            controls
+            src={mediaUrl(parsed.mediaId)}
+            className="max-w-[240px] max-h-[200px] rounded-lg"
+          >
+            Your browser does not support video.
+          </video>
+          <a
+            href={mediaUrl(parsed.mediaId)}
+            download
+            className="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded-lg opacity-0 group-hover/vid:opacity-100 transition-opacity"
+            title="Download"
+          >
+            <Download size={14} />
+          </a>
+        </div>
+      );
+
+    case 'sticker':
+      return (
+        <img
+          src={mediaUrl(parsed.mediaId)}
+          alt="Sticker"
+          className="w-24 h-24 object-contain"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+        />
+      );
+
+    case 'location': {
+      const mapsUrl = `https://maps.google.com/?q=${parsed.lat},${parsed.lng}`;
+      return (
+        <a
+          href={mapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            "flex items-center gap-3 p-3 rounded-xl border transition-all",
+            isOut
+              ? "bg-white/10 border-white/20 hover:bg-white/20 text-white"
+              : "bg-gray-50 border-gray-200 hover:bg-gray-100 text-gray-800"
+          )}
+        >
+          <div className={cn(
+            "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
+            isOut ? "bg-white/20" : "bg-aura-red/10"
+          )}>
+            <MapPin size={20} className={isOut ? "text-white" : "text-aura-red"} />
+          </div>
+          <div className="min-w-0">
+            <div className={cn("text-xs font-bold", textColor)}>{parsed.name || 'Shared Location'}</div>
+            <div className={cn("text-[10px] mt-0.5", isOut ? "text-white/60" : "text-gray-400")}>
+              {parsed.lat}, {parsed.lng} · Open in Maps
+            </div>
+          </div>
+          <ExternalLink size={14} className={isOut ? "text-white/70" : "text-gray-400"} />
+        </a>
+      );
+    }
+
+    case 'text':
+    default:
+      return (
+        <div className={cn("text-[14px] leading-relaxed whitespace-pre-wrap break-words", textColor)}>
+          {linkifyText(parsed.text)}
+        </div>
+      );
+  }
+}
+
+// ─── Conversation last message preview ───────────────────────────────────────
+function previewMessage(text: string): string {
+  if (text.startsWith('[image:'))    return '📷 Image';
+  if (text.startsWith('[document:')) return '📄 Document';
+  if (text.startsWith('[audio:'))    return '🎵 Voice message';
+  if (text.startsWith('[video:'))    return '🎥 Video';
+  if (text.startsWith('[sticker:'))  return '😊 Sticker';
+  if (text.startsWith('[location:')) return '📍 Location';
+  return text;
 }
 
 export default function WhatsAppInbox() {
@@ -79,7 +329,7 @@ export default function WhatsAppInbox() {
   const fetchTemplates = useCallback(async () => {
     try {
       const res = await api.get('/whatsapp/templates');
-      setTemplates(res.data);
+      setTemplates(res.data.templates || res.data || []);
     } catch (err) {
       console.error('Failed to fetch templates');
     }
@@ -125,7 +375,7 @@ export default function WhatsAppInbox() {
         to: selectedContact.contact_number,
         templateName: selectedTemplate.name,
         languageCode: selectedTemplate.language,
-        components: [] // Basic template for now
+        components: []
       });
       setShowTemplateModal(false);
       setSelectedTemplate(null);
@@ -184,17 +434,6 @@ export default function WhatsAppInbox() {
     setMessages(prev => prev.map(m => m.message_id === message_id ? { ...m, status } : m));
   }, []);
 
-  // ✅ Auto-refresh polling
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchConversations();
-      if (selectedContact) {
-        fetchMessages(selectedContact.contact_number);
-      }
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [fetchConversations, fetchMessages, selectedContact]);
-
   useEffect(() => {
     fetchConversations();
     fetchTemplates();
@@ -210,7 +449,7 @@ export default function WhatsAppInbox() {
     };
   }, [fetchConversations, fetchTemplates, handleMessage, handleRead, handleStatus]);
 
-  // ✅ Auto-refresh polling
+  // Auto-refresh polling (deduplicated to one interval)
   useEffect(() => {
     const interval = setInterval(() => {
       fetchConversations();
@@ -226,17 +465,6 @@ export default function WhatsAppInbox() {
       fetchMessages(selectedContact.contact_number);
     }
   }, [selectedContact, fetchMessages]);
-
-  // ✅ Auto-refresh polling
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchConversations();
-      if (selectedContact) {
-        fetchMessages(selectedContact.contact_number);
-      }
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [fetchConversations, fetchMessages, selectedContact]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -270,9 +498,8 @@ export default function WhatsAppInbox() {
         message: text,
         contactName: selectedContact.contact_name
       });
-      // socket listener will handle the UI update instantly
     } catch (err) {
-      console.error('Failed to send pulse');
+      console.error('Failed to send message');
     } finally {
       setSending(false);
     }
@@ -302,13 +529,10 @@ export default function WhatsAppInbox() {
     }
   };
 
-  const hasKeys = user?.whatsapp_token && user?.whatsapp_phone_id;
-
   return (
     <div className="flex h-[calc(100vh-140px)] bg-white rounded-[2rem] shadow-2xl border border-gray-100 overflow-hidden ui-aura-glow">
-      {/* Sidebar - Contacts List */}
+      {/* Sidebar */}
       <div className="w-full md:w-80 lg:w-96 border-r border-gray-100 flex flex-col bg-gray-50/30">
-        {/* Sidebar Header */}
         <div className="p-6 border-b border-gray-100 bg-white">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Whats <span className="text-aura-red">App</span></h2>
@@ -333,7 +557,6 @@ export default function WhatsAppInbox() {
           </div>
         </div>
 
-        {/* Contacts Scroll Area */}
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           {loading ? (
             <div className="p-10 text-center space-y-4">
@@ -371,7 +594,7 @@ export default function WhatsAppInbox() {
                   <div className="flex items-center justify-between">
                     <p className="text-[11px] font-medium text-gray-500 truncate leading-none flex items-center max-w-[80%]">
                       {conv.last_direction === 'outbound' && <span className="mr-1"><StatusIcon status={conv.last_status} direction={conv.last_direction} /></span>}
-                      {conv.last_message}
+                      {previewMessage(conv.last_message)}
                     </p>
                     {conv.unread_count > 0 && (
                       <span className="w-5 h-5 bg-aura-red text-white text-[9px] font-black flex items-center justify-center rounded-full shadow-sm">
@@ -407,7 +630,7 @@ export default function WhatsAppInbox() {
                 <div className="bg-gray-100 text-gray-500 px-3 py-1.5 rounded-full text-[12px] font-bold border border-gray-200">
                   23h
                 </div>
-                <motion.button whileHover={{ scale: 1.05 }} className="bg-aura-red text-white px-5 py-2 rounded-lg text-[12px] font-bold flex items-center shadow-sm">
+                <motion.button whileHover={{ scale: 1.05 }} onClick={handleResolve} className="bg-aura-red text-white px-5 py-2 rounded-lg text-[12px] font-bold flex items-center shadow-sm">
                   <Check size={16} className="mr-2" /> Resolve
                 </motion.button>
                 <motion.button whileHover={{ scale: 1.05 }} className="bg-aura-red text-white px-5 py-2 rounded-lg text-[12px] font-bold flex items-center shadow-sm">
@@ -422,11 +645,12 @@ export default function WhatsAppInbox() {
               </div>
             </div>
 
-            {/* Messages Display Area */}
+            {/* Messages */}
             <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar bg-red-50/20">
                <AnimatePresence initial={false}>
-                  {messages.map((m, i) => {
+                  {messages.map((m) => {
                     const isOut = m.direction === 'outbound';
+                    const parsed = parseMessage(m.message_text);
                     
                     return (
                       <div key={m.id} className={cn("flex", isOut ? "justify-end" : "justify-start")}>
@@ -440,16 +664,18 @@ export default function WhatsAppInbox() {
                               : "bg-white text-gray-800 rounded-tl-none border border-gray-100"
                           )}
                         >
-                             <div className="text-[14px] leading-relaxed whitespace-pre-wrap">{m.message_text}</div>
-                             <div className="flex items-center justify-end mt-1 space-x-1">
-                                <span className={cn("text-[10px]", isOut ? "text-red-100" : "text-gray-500")}>{new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase()}</span>
-                                {isOut && <StatusIcon status={m.status} direction={m.direction} />}
-                             </div>
-                             {/* Triangle arrow for bubbles */}
-                             <div className={cn(
-                               "absolute top-0 w-3 h-3",
-                               isOut ? "-right-2 bg-aura-red [clip-path:polygon(0_0,0_100%,100%_0)]" : "-left-2 bg-white [clip-path:polygon(100%_0,100%_100%,0_0)]"
-                             )} />
+                          <MessageContent parsed={parsed} isOut={isOut} />
+                          <div className="flex items-center justify-end mt-1.5 space-x-1">
+                            <span className={cn("text-[10px]", isOut ? "text-red-100" : "text-gray-500")}>
+                              {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase()}
+                            </span>
+                            {isOut && <StatusIcon status={m.status} direction={m.direction} />}
+                          </div>
+                          {/* Triangle arrow */}
+                          <div className={cn(
+                            "absolute top-0 w-3 h-3",
+                            isOut ? "-right-2 bg-aura-red [clip-path:polygon(0_0,0_100%,100%_0)]" : "-left-2 bg-white [clip-path:polygon(100%_0,100%_100%,0_0)]"
+                          )} />
                         </motion.div>
                       </div>
                     );
@@ -458,7 +684,7 @@ export default function WhatsAppInbox() {
                <div ref={chatEndRef} />
             </div>
 
-            {/* Message Input Container */}
+            {/* Input */}
             <div className="p-4 bg-[#f0f2f5] border-t border-gray-200 relative">
               <form onSubmit={handleSendMessage} className="flex items-center space-x-4">
                  <div className="flex items-center space-x-3 text-gray-500 px-2">
@@ -494,9 +720,13 @@ export default function WhatsAppInbox() {
                    type="submit"
                    whileTap={{ scale: 0.95 }}
                    disabled={!input.trim() || sending}
-                   className="text-gray-500 hover:text-aura-red transition-colors px-2"
+                   className="text-gray-500 hover:text-aura-red transition-colors px-2 disabled:opacity-40"
                  >
-                   <ChevronDown size={32} />
+                   {sending ? (
+                     <div className="w-6 h-6 border-2 border-aura-red/30 border-t-aura-red rounded-full animate-spin" />
+                   ) : (
+                     <ChevronDown size={32} />
+                   )}
                  </motion.button>
               </form>
             </div>
@@ -554,7 +784,6 @@ export default function WhatsAppInbox() {
               </div>
               
               <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
-                 {/* Template List */}
                  <div className="w-full md:w-1/2 border-r border-gray-100 overflow-y-auto p-6 space-y-3 custom-scrollbar">
                     {templates.length === 0 ? (
                       <div className="text-center py-12">
@@ -591,7 +820,6 @@ export default function WhatsAppInbox() {
                     )}
                  </div>
 
-                 {/* Preview Area */}
                  <div className="flex-1 bg-gray-50/50 p-8 flex flex-col">
                     <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center">
                        <Eye size={14} className="mr-2" /> Message Preview
@@ -599,7 +827,7 @@ export default function WhatsAppInbox() {
                     
                     <div className="flex-1 flex items-center justify-center">
                        {selectedTemplate ? (
-                         <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden ui-aura-glow p-6">
+                         <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden p-6">
                             {selectedTemplate.components?.map((comp: any, idx: number) => (
                               <div key={idx} className="mb-4 last:mb-0">
                                  {comp.type === 'HEADER' && comp.format === 'TEXT' && (
@@ -626,7 +854,7 @@ export default function WhatsAppInbox() {
                        ) : (
                          <div className="text-center">
                             <ShieldAlert size={48} className="mx-auto text-gray-200 mb-4" />
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Select a frequency profile</p>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Select a template to preview</p>
                          </div>
                        )}
                     </div>
