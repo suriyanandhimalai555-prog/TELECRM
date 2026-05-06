@@ -59,16 +59,6 @@ interface WhatsAppTemplate {
   status: string;
 }
 
-// ─── Parse special message formats ───────────────────────────────────────────
-// Format stored in DB:
-//   [image:MEDIA_ID]
-//   [document:MEDIA_ID:FILENAME:MIME_TYPE]
-//   [audio:MEDIA_ID]
-//   [video:MEDIA_ID]
-//   [sticker:MEDIA_ID]
-//   [location:LAT,LNG:NAME]
-//   plain text (may contain URLs)
-
 type ParsedMessage =
   | { type: 'text';     text: string }
   | { type: 'image';    mediaId: string }
@@ -111,7 +101,6 @@ function parseMessage(text: string): ParsedMessage {
   return { type: 'text', text };
 }
 
-// ─── Linkify plain text ───────────────────────────────────────────────────────
 function linkifyText(text: string) {
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   const parts = text.split(urlRegex);
@@ -119,7 +108,7 @@ function linkifyText(text: string) {
     if (urlRegex.test(part)) {
       urlRegex.lastIndex = 0;
       return (
-        <a
+        
           key={i}
           href={part}
           target="_blank"
@@ -135,12 +124,14 @@ function linkifyText(text: string) {
   });
 }
 
-// ─── Media URL helper ─────────────────────────────────────────────────────────
-function mediaUrl(mediaId: string) {
-  return `/api/whatsapp/media/${mediaId}`;
+// ✅ FIX: Use absolute URL with window.location.origin so browser
+// makes a plain GET with NO auth headers — bypasses axios interceptors
+function mediaUrl(mediaId: string): string {
+  const base = window.location.origin;
+  // Support both /api prefix and direct backend port
+  return `${base}/api/whatsapp/media/${mediaId}`;
 }
 
-// ─── Message bubble content renderer ─────────────────────────────────────────
 function MessageContent({ parsed, isOut }: { parsed: ParsedMessage; isOut: boolean }) {
   const [imgError, setImgError] = useState(false);
   const textColor = isOut ? 'text-white' : 'text-gray-800';
@@ -160,7 +151,7 @@ function MessageContent({ parsed, isOut }: { parsed: ParsedMessage; isOut: boole
             onError={() => setImgError(true)}
             onClick={() => window.open(mediaUrl(parsed.mediaId), '_blank')}
           />
-          <a
+          
             href={mediaUrl(parsed.mediaId)}
             download
             className="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded-lg opacity-0 group-hover/img:opacity-100 transition-opacity"
@@ -173,13 +164,12 @@ function MessageContent({ parsed, isOut }: { parsed: ParsedMessage; isOut: boole
 
     case 'document':
       return (
-        <a
-          href={mediaUrl(parsed.mediaId)}
-          download={parsed.filename}
-          target="_blank"
-          rel="noopener noreferrer"
+        // ✅ FIX: Use window.open instead of <a download> so browser
+        // makes a fresh GET request without axios auth headers
+        <div
+          onClick={() => window.open(mediaUrl(parsed.mediaId), '_blank')}
           className={cn(
-            "flex items-center gap-3 p-3 rounded-xl border transition-all",
+            "flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer",
             isOut
               ? "bg-white/10 border-white/20 hover:bg-white/20 text-white"
               : "bg-gray-50 border-gray-200 hover:bg-gray-100 text-gray-800"
@@ -198,7 +188,7 @@ function MessageContent({ parsed, isOut }: { parsed: ParsedMessage; isOut: boole
             </div>
           </div>
           <Download size={16} className={isOut ? "text-white/70" : "text-gray-400"} />
-        </a>
+        </div>
       );
 
     case 'audio':
@@ -228,7 +218,7 @@ function MessageContent({ parsed, isOut }: { parsed: ParsedMessage; isOut: boole
           >
             Your browser does not support video.
           </video>
-          <a
+          
             href={mediaUrl(parsed.mediaId)}
             download
             className="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded-lg opacity-0 group-hover/vid:opacity-100 transition-opacity"
@@ -252,7 +242,7 @@ function MessageContent({ parsed, isOut }: { parsed: ParsedMessage; isOut: boole
     case 'location': {
       const mapsUrl = `https://maps.google.com/?q=${parsed.lat},${parsed.lng}`;
       return (
-        <a
+        
           href={mapsUrl}
           target="_blank"
           rel="noopener noreferrer"
@@ -290,7 +280,6 @@ function MessageContent({ parsed, isOut }: { parsed: ParsedMessage; isOut: boole
   }
 }
 
-// ─── Conversation last message preview ───────────────────────────────────────
 function previewMessage(text: string): string {
   if (text.startsWith('[image:'))    return '📷 Image';
   if (text.startsWith('[document:')) return '📄 Document';
@@ -449,7 +438,6 @@ export default function WhatsAppInbox() {
     };
   }, [fetchConversations, fetchTemplates, handleMessage, handleRead, handleStatus]);
 
-  // Auto-refresh polling (deduplicated to one interval)
   useEffect(() => {
     const interval = setInterval(() => {
       fetchConversations();
@@ -671,7 +659,6 @@ export default function WhatsAppInbox() {
                             </span>
                             {isOut && <StatusIcon status={m.status} direction={m.direction} />}
                           </div>
-                          {/* Triangle arrow */}
                           <div className={cn(
                             "absolute top-0 w-3 h-3",
                             isOut ? "-right-2 bg-aura-red [clip-path:polygon(0_0,0_100%,100%_0)]" : "-left-2 bg-white [clip-path:polygon(100%_0,100%_100%,0_0)]"

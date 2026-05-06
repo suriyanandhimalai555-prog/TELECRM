@@ -20,6 +20,9 @@ const router = Router();
 router.get('/webhook', verifyWebhook);
 router.post('/webhook', handleWebhook);
 
+// ✅ FIX: Media proxy is PUBLIC — browser GETs have no auth header
+router.get('/media/:mediaId', proxyMedia);
+
 // Protected API routes
 router.post('/send', authenticateToken, sendMessage);
 router.get('/history/:phone', authenticateToken, getHistory);
@@ -29,8 +32,5 @@ router.get('/templates', authenticateToken, getTemplates);
 router.post('/templates/sync', authenticateToken, syncTemplates);
 router.post('/templates/send', authenticateToken, sendTemplate);
 router.post('/bulk-send', authenticateToken, bulkSendMessage);
-
-// ✅ Media proxy — streams documents/images/audio/video from Meta
-router.get('/media/:mediaId', authenticateToken, proxyMedia);
 
 export default router;
