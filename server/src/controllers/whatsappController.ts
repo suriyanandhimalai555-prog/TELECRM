@@ -103,10 +103,29 @@ export const proxyMedia = async (req: Request, res: Response) => {
       return res.status(400).json({ error: metaData.error.message });
     }
 
-    // Redirect browser directly to Meta's signed URL.
-    // The browser fetches the file directly from Meta — no server buffering,
-    // no Vercel 4.5MB response size limit issue.
-    return res.redirect(302, metaData.url);
+    // Stream the file through our server (Meta CDN requires Authorization header)
+    const mediaUrl: string = metaData.url;
+    const mimeType: string = metaData.mime_type || 'application/octet-stream';
+    const filename: string = metaData.filename || `file_${mediaId}`;
+
+    const fileRes = await fetch(mediaUrl, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!fileRes.ok) {
+      console.error('[WA] proxyMedia file fetch failed:', fileRes.status);
+      return res.status(502).json({ error: 'Failed to fetch media from Meta' });
+    }
+
+    const arrayBuffer = await fileRes.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    res.setHeader('Content-Length', buffer.length);
+    res.setHeader('Cache-Control', 'private, max-age=3600');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    return res.send(buffer);
 
   } catch (err) {
     console.error('[WA] proxyMedia error:', err);
