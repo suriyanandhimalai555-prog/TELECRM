@@ -71,14 +71,20 @@ async function fetchMediaInfo(
 // GET /api/whatsapp/media/:mediaId  (PUBLIC — no auth required)
 export const proxyMedia = async (req: Request, res: Response) => {
   const { mediaId } = req.params;
-  const userId = (req as any).user?.id;
 
   try {
-    // Always use env token as fallback — browser downloads don't carry auth headers
+    // 1. Try env token first
     let token = WHATSAPP_TOKEN;
-    if (userId) {
-      const creds = await getUserWACredentials(userId);
-      if (creds.token) token = creds.token;
+
+    // 2. If env token is missing, fall back to admin user's DB token
+    if (!token) {
+      try {
+        const adminId = await getAdminUserId();
+        const creds = await getUserWACredentials(adminId);
+        if (creds.token) token = creds.token;
+      } catch (dbErr) {
+        console.error('[WA] proxyMedia: failed to get admin token from DB:', dbErr);
+      }
     }
 
     if (!token) {
