@@ -24,6 +24,14 @@ async function findLeadByPhone(phone: string): Promise<any | null> {
   return rows[0] ?? null;
 }
 
+// ─── Helper: get admin user id ───────────────────────────────────────────────
+async function getAdminUserId(): Promise<number> {
+  const { rows } = await db.query(
+    `SELECT id FROM users WHERE role = 'ADMIN' ORDER BY id ASC LIMIT 1`
+  );
+  return rows[0]?.id ?? 1;
+}
+
 // ─── Helper: get user's WhatsApp credentials ─────────────────────────────────
 async function getUserWACredentials(userId: number) {
   const { rows } = await db.query(
@@ -60,14 +68,13 @@ async function fetchMediaInfo(
 }
 
 // ─── Media proxy endpoint ─────────────────────────────────────────────────────
-// GET /api/whatsapp/media/:mediaId
-// ✅ FIX: No longer requires userId — falls back to env token so browser can download directly
+// GET /api/whatsapp/media/:mediaId  (PUBLIC — no auth required)
 export const proxyMedia = async (req: Request, res: Response) => {
   const { mediaId } = req.params;
   const userId = (req as any).user?.id;
 
   try {
-    // ✅ FIX: Always use env token as fallback — browser downloads don't carry auth headers
+    // Always use env token as fallback — browser downloads don't carry auth headers
     let token = WHATSAPP_TOKEN;
     if (userId) {
       const creds = await getUserWACredentials(userId);
@@ -78,8 +85,8 @@ export const proxyMedia = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'WhatsApp token missing. Please set it in Settings.' });
     }
 
-    // Step 1: Get the media metadata (URL + mime_type) from Meta
-    const metaRes = await fetch(`https://graph.facebook.com/v25.0/${mediaId}`, {
+    // Step 1: Get media metadata from Meta
+    const metaRes  = await fetch(`https://graph.facebook.com/v25.0/${mediaId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const metaData = await metaRes.json();
@@ -91,9 +98,9 @@ export const proxyMedia = async (req: Request, res: Response) => {
 
     const mediaUrl: string = metaData.url;
     const mimeType: string = metaData.mime_type || 'application/octet-stream';
-    const filename: string = metaData.filename || `file_${mediaId}`;
+    const filename: string = metaData.filename  || `file_${mediaId}`;
 
-    // Step 2: Download the file into a buffer
+    // Step 2: Download file into buffer
     const fileRes = await fetch(mediaUrl, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -104,9 +111,9 @@ export const proxyMedia = async (req: Request, res: Response) => {
     }
 
     const arrayBuffer = await fileRes.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const buffer      = Buffer.from(arrayBuffer);
 
-    // Step 3: Send back to browser
+    // Step 3: Send to browser
     res.setHeader('Content-Type', mimeType);
     res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     res.setHeader('Content-Length', buffer.length);
@@ -254,14 +261,12 @@ export const bulkSendMessage = async (req: Request, res: Response) => {
 
         if (!data.error) {
           const msgId = data.messages?.[0]?.id;
-
           await db.query(
             `INSERT INTO whatsapp_messages
                (message_id, from_number, to_number, message_text, direction, status, contact_name, is_read)
              VALUES ($1, $2, $3, $4, 'outbound', 'sent', $5, true)`,
             [msgId, phoneId, phone, message, name]
           );
-
           results.push({ phone: rawPhone, success: true });
         } else {
           results.push({ phone: rawPhone, success: false, error: data.error.message });
@@ -359,7 +364,6 @@ export const getHistory = async (req: Request, res: Response) => {
 export const getConversations = async (req: Request, res: Response) => {
   const { search } = req.query;
   try {
-    // ✅ FIX: Coalesce lead_name > contact_name > contact_number so name always shows
     let query = `
       SELECT
         contact_number,
@@ -404,7 +408,6 @@ export const getConversations = async (req: Request, res: Response) => {
 
     const params: any[] = [];
     if (search) {
-      // ✅ FIX: Search also checks lead_name
       query += ` AND (lead_name ILIKE $1 OR contact_name ILIKE $1 OR contact_number ILIKE $1 OR message_text ILIKE $1)`;
       params.push(`%${search}%`);
     }
@@ -477,89 +480,71 @@ export const handleWebhook = async (req: Request, res: Response) => {
           const msgId   = msg.id as string;
           const ts      = new Date(parseInt(msg.timestamp) * 1000);
           const contact = val.contacts?.find((c: any) => c.wa_id === from);
-          // ✅ FIX: Better fallback — use phone number if name is missing
+          // Use WhatsApp profile name, fall back to phone number — never empty
           const name    = contact?.profile?.name || from;
 
           let text      = '';
-          let mediaId   = '';
           let mediaType = '';
-          let fileName  = '';
-          let mimeType  = '';
 
           switch (msg.type) {
             case 'text':
               text = msg.text?.body || '';
               break;
-
             case 'image':
-              mediaId   = msg.image?.id || '';
-              mimeType  = msg.image?.mime_type || 'image/jpeg';
-              text      = `[image:${mediaId}]`;
+              text      = `[image:${msg.image?.id || ''}]`;
               mediaType = 'image';
               break;
-
             case 'document':
-              mediaId   = msg.document?.id || '';
-              fileName  = msg.document?.filename || 'document';
-              mimeType  = msg.document?.mime_type || 'application/octet-stream';
-              text      = `[document:${mediaId}:${fileName}:${mimeType}]`;
+              text      = `[document:${msg.document?.id || ''}:${msg.document?.filename || 'document'}:${msg.document?.mime_type || 'application/octet-stream'}]`;
               mediaType = 'document';
               break;
-
             case 'audio':
-              mediaId   = msg.audio?.id || '';
-              mimeType  = msg.audio?.mime_type || 'audio/ogg';
-              text      = `[audio:${mediaId}]`;
+              text      = `[audio:${msg.audio?.id || ''}]`;
               mediaType = 'audio';
               break;
-
             case 'video':
-              mediaId   = msg.video?.id || '';
-              mimeType  = msg.video?.mime_type || 'video/mp4';
-              text      = `[video:${mediaId}]`;
+              text      = `[video:${msg.video?.id || ''}]`;
               mediaType = 'video';
               break;
-
             case 'sticker':
-              mediaId   = msg.sticker?.id || '';
-              text      = `[sticker:${mediaId}]`;
+              text      = `[sticker:${msg.sticker?.id || ''}]`;
               mediaType = 'sticker';
               break;
-
             case 'location':
               text = `[location:${msg.location?.latitude},${msg.location?.longitude}:${msg.location?.name || ''}]`;
               break;
-
             default:
               text = `[${msg.type}]`;
           }
 
           console.log(`[WA] 📩 INBOUND from ${from} (${name}): type=${msg.type}`);
 
+          // ✅ Find existing lead or auto-create with real admin owner_id
           let lead = await findLeadByPhone(from);
           if (!lead) {
+            const adminId = await getAdminUserId();
             const { rows: newLeadRows } = await db.query(
               `INSERT INTO leads
                  (contact_name, mobile, whatsapp, source, stage, owner_id, revenue, created_at, updated_at)
-               VALUES ($1, $2, $3, 'WHATSAPP', 'NEW', 1, 0, NOW(), NOW())
+               VALUES ($1, $2, $3, 'WHATSAPP', 'NEW', $4, 0, NOW(), NOW())
                RETURNING *`,
-              // ✅ FIX: Use name (which now falls back to phone) not empty string
-              [name, from, from]
+              [name, from, from, adminId]
             );
             lead = newLeadRows[0];
-            console.log(`[WA] Auto-created lead #${lead?.id} for ${from}`);
+            console.log(`[WA] ✅ Auto-created lead #${lead?.id} for ${from} (owner: ${adminId})`);
           }
 
+          // Save the message
           const { rows: savedRows } = await db.query(
             `INSERT INTO whatsapp_messages
                (message_id, from_number, to_number, message_text, direction, status, contact_name, timestamp, is_read)
              VALUES ($1, $2, $3, $4, 'inbound', 'received', $5, $6, false)
              ON CONFLICT (message_id) DO NOTHING
              RETURNING *`,
-            // ✅ FIX: Save name (with phone fallback) not empty string
             [msgId, from, PHONE_NUMBER_ID, text, name, ts]
           );
 
+          // Auto-reply for hi / hello
           if (msg.type === 'text') {
             const lower = text.toLowerCase().trim();
             if (lower === 'hi' || lower === 'hello') {
@@ -594,6 +579,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
           }
         }
 
+        // ── Status updates ────────────────────────────────────────────────
         for (const s of val?.statuses || []) {
           await db.query(
             `UPDATE whatsapp_messages SET status = $1 WHERE message_id = $2`,
