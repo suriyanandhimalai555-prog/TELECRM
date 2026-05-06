@@ -153,24 +153,82 @@ export default function Leads() {
     }
   };
 
+  // ✅ FIXED: Mass Edit now uses Promise.allSettled so one failure doesn't block others
   const handleMassEdit = async () => {
     if (selectedLeadIds.length === 0 || savingMassEdit) return;
+
+    // Build payload — only include fields that were actually changed
     const payload: Record<string, any> = {};
     if (massEditData.stage) payload.stage = massEditData.stage;
     if (massEditData.owner_id) payload.owner_id = Number(massEditData.owner_id);
-    if (massEditData.project_id !== undefined) payload.project_id = massEditData.project_id ? Number(massEditData.project_id) : null;
+    if (massEditData.project_id !== undefined) {
+      payload.project_id = massEditData.project_id
+        ? Number(massEditData.project_id)
+        : null;
+    }
+
     if (Object.keys(payload).length === 0) return;
+
     setSavingMassEdit(true);
     try {
-      await Promise.all(selectedLeadIds.map(id => api.put(`/leads/${id}`, payload)));
+      // ✅ allSettled: does NOT throw even if some individual updates fail
+      const results = await Promise.allSettled(
+        selectedLeadIds.map(id => api.put(`/leads/${id}`, payload))
+      );
+
+      const succeeded = results.filter(r => r.status === 'fulfilled');
+      const failed = results.filter(r => r.status === 'rejected');
+
+      // ✅ Immediately update local state for successfully updated leads
+      // so UI changes are visible instantly without waiting for re-fetch
+      if (succeeded.length > 0) {
+        const successfulIds = selectedLeadIds.filter(
+          (_, i) => results[i].status === 'fulfilled'
+        );
+
+        setLeads(prev =>
+          prev.map(lead => {
+            if (!successfulIds.includes(lead.id)) return lead;
+
+            // Resolve owner name for display
+            const ownerName = payload.owner_id
+              ? users.find(u => u.id === payload.owner_id)?.name
+              : lead.owner_name;
+
+            // Resolve project name for display
+            const projectName =
+              payload.project_id === null
+                ? undefined
+                : payload.project_id
+                ? projects.find(p => p.id === payload.project_id)?.name
+                : lead.project_name;
+
+            return {
+              ...lead,
+              ...payload,
+              owner_name: ownerName ?? lead.owner_name,
+              project_name: projectName ?? lead.project_name,
+            };
+          })
+        );
+      }
+
       triggerFlash('white');
       setShowMassEditModal(false);
       setMassEditData({});
       setSelectedLeadIds([]);
-      fetchLeads();
+
+      // Re-fetch to fully sync with server
+      await fetchLeads(searchTerm);
+
+      if (failed.length > 0) {
+        alert(
+          `Updated ${succeeded.length} lead${succeeded.length !== 1 ? 's' : ''}. ${failed.length} could not be updated.`
+        );
+      }
     } catch (error) {
-      console.error('Mass edit failed');
-      alert('Failed to update some leads');
+      console.error('Mass edit failed', error);
+      alert('An unexpected error occurred. Please try again.');
     } finally {
       setSavingMassEdit(false);
     }
