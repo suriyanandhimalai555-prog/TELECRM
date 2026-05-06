@@ -15,18 +15,18 @@
       "use": "@vercel/node"
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/whatsapp/media/([^/]+)",
-      "dest": "/api/whatsapp-media?mediaId=$1"
+      "source": "/api/whatsapp/media/:mediaId",
+      "destination": "/api/whatsapp-media?mediaId=:mediaId"
     },
     {
-      "src": "/api/(.*)",
-      "dest": "/api/index.ts"
+      "source": "/api/(.*)",
+      "destination": "/api/index.ts"
     },
     {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
