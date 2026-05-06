@@ -4,11 +4,9 @@
     {
       "src": "package.json",
       "use": "@vercel/static-build",
-      "config": { "distDir": "dist" }
-    },
-    {
-      "src": "api/whatsapp-media.ts",
-      "use": "@vercel/node"
+      "config": {
+        "distDir": "dist"
+      }
     },
     {
       "src": "api/index.ts",
@@ -16,10 +14,6 @@
     }
   ],
   "rewrites": [
-    {
-      "source": "/api/whatsapp/media/:mediaId",
-      "destination": "/api/whatsapp-media?mediaId=:mediaId"
-    },
     {
       "source": "/api/(.*)",
       "destination": "/api/index.ts"
