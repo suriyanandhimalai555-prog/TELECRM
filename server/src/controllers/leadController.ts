@@ -18,7 +18,6 @@ export const getLeads = async (req: AuthRequest, res: Response) => {
     let whereClauses = [];
     let queryParams: any[] = [];
 
-    // Role-based filtering
     if (req.user.role === 'MANAGER') {
       whereClauses.push(`(l.owner_id = $1 OR u.reporting_to = $2)`);
       queryParams.push(req.user.id, req.user.id);
@@ -27,7 +26,6 @@ export const getLeads = async (req: AuthRequest, res: Response) => {
       queryParams.push(req.user.id, req.user.id);
     }
 
-    // Search filtering
     if (search) {
       const paramIndex = queryParams.length + 1;
       const searchPattern = `%${search}%`;
@@ -73,7 +71,6 @@ export const createLead = async (req: AuthRequest, res: Response) => {
 
     const leadId = result.rows[0].id;
 
-    // Auto-create 24-hour follow-up task
     const dueDate = new Date();
     dueDate.setHours(dueDate.getHours() + 24);
     
@@ -90,20 +87,44 @@ export const createLead = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// ✅ FIXED: Dynamic update — only updates fields that are actually sent in the request.
+// Previously it overwrote ALL fields, so mass edit (which only sends stage/owner_id)
+// was wiping contact_name, mobile, email etc. to undefined/null.
 export const updateLead = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
-  const { contact_name, mobile, whatsapp, email, source, stage, revenue, next_followup, owner_id, project_id, company, tags } = req.body;
+  const body = req.body;
 
   try {
-    const finalRevenue = Number(revenue) || 0;
-    const finalNextFollowup = next_followup ? next_followup : null;
-    const finalProjectId = project_id || null;
+    // Build a map of only the fields that were actually included in the request
+    const fieldMap: Record<string, any> = {};
 
-    await db.query(`
-      UPDATE leads 
-      SET contact_name = $1, mobile = $2, whatsapp = $3, email = $4, source = $5, stage = $6, revenue = $7, next_followup = $8, owner_id = $9, project_id = $10, company = $11, tags = $12, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $13
-    `, [contact_name, mobile, whatsapp, email, source, stage, finalRevenue, finalNextFollowup, owner_id, finalProjectId, company, tags, id]);
+    if (body.contact_name  !== undefined) fieldMap.contact_name  = body.contact_name;
+    if (body.mobile        !== undefined) fieldMap.mobile        = body.mobile;
+    if (body.whatsapp      !== undefined) fieldMap.whatsapp      = body.whatsapp;
+    if (body.email         !== undefined) fieldMap.email         = body.email;
+    if (body.source        !== undefined) fieldMap.source        = body.source;
+    if (body.stage         !== undefined) fieldMap.stage         = body.stage;
+    if (body.revenue       !== undefined) fieldMap.revenue       = Number(body.revenue) || 0;
+    if (body.next_followup !== undefined) fieldMap.next_followup = body.next_followup || null;
+    if (body.owner_id      !== undefined) fieldMap.owner_id      = body.owner_id;
+    if (body.project_id    !== undefined) fieldMap.project_id    = body.project_id || null;
+    if (body.company       !== undefined) fieldMap.company       = body.company;
+    if (body.tags          !== undefined) fieldMap.tags          = body.tags;
+
+    if (Object.keys(fieldMap).length === 0) {
+      return res.status(400).json({ message: 'No fields to update' });
+    }
+
+    // Dynamically build: SET col1 = $1, col2 = $2, ...
+    const keys      = Object.keys(fieldMap);
+    const values    = Object.values(fieldMap);
+    const setClauses = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
+    const idParam   = `$${keys.length + 1}`;
+
+    await db.query(
+      `UPDATE leads SET ${setClauses}, updated_at = CURRENT_TIMESTAMP WHERE id = ${idParam}`,
+      [...values, id]
+    );
 
     const updatedLeadResult = await db.query('SELECT * FROM leads WHERE id = $1', [id]);
     res.json(updatedLeadResult.rows[0]);
@@ -141,17 +162,14 @@ export const importLeads = async (req: AuthRequest, res: Response) => {
 
   const client = await db.connect();
   try {
-    // Fetch all users and projects for mapping
     const usersRes = await client.query('SELECT id, name FROM users');
     const projectsRes = await client.query('SELECT id, name FROM projects');
     
-    // Trim and lowercase for robust matching
     const userMap = new Map(usersRes.rows.map((u: any) => [u.name.toLowerCase().trim(), u.id]));
     const projectMap = new Map(projectsRes.rows.map((p: any) => [p.name.toLowerCase().trim(), p.id]));
 
     await client.query('BEGIN');
     for (const lead of leads as any[]) {
-      // Helper to find value by multiple possible keys (case-insensitive and trimmed)
       const findVal = (possibleKeys: string[]) => {
         const entry = Object.entries(lead).find(([k]) => {
           const trimmedKey = k.trim().toLowerCase();
@@ -162,7 +180,7 @@ export const importLeads = async (req: AuthRequest, res: Response) => {
 
       const name = (findVal(['CONTACT', 'Name', 'Contact Name', 'contact_name']) || 'Unknown').toString();
       const mobileRaw = (findVal(['MOBILE', 'Phone', 'Mobile Number', 'Phone Number', 'mobile']) || '').toString();
-      const mobile = mobileRaw.replace(/\s+/g, ''); // Remove all spaces
+      const mobile = mobileRaw.replace(/\s+/g, '');
       const whatsapp = (findVal(['WhatsApp', 'WhatsApp Number', 'whatsapp']) || mobile).toString().replace(/\s+/g, '');
       const email = (findVal(['Email', 'Email Address', 'email']) || '').toString();
       const source = (findVal(['Source', 'Lead Source', 'source']) || 'BULK_IMPORT').toString();
@@ -173,7 +191,6 @@ export const importLeads = async (req: AuthRequest, res: Response) => {
       let nextFollowup = null;
       if (nextFollowupRaw) {
         const dateStr = nextFollowupRaw.toString().trim();
-        // Handle DD-MM-YYYY format
         if (dateStr.match(/^\d{2}-\d{2}-\d{4}$/)) {
           const [d, m, y] = dateStr.split('-');
           nextFollowup = `${y}-${m}-${d}`;
@@ -182,11 +199,9 @@ export const importLeads = async (req: AuthRequest, res: Response) => {
         }
       }
       
-      // Map Employee/Owner Name
       const employeeName = (findVal(['Employee Name', 'Owner', 'Assigned To', 'OWNER']) || '').toString().toLowerCase().trim();
       const ownerId = userMap.get(employeeName) || req.user.id;
 
-      // Map Project Name
       const projectName = (findVal(['Project Name', 'Project', 'PROJECT']) || '').toString().toLowerCase().trim();
       const projectId = projectMap.get(projectName) || null;
 
