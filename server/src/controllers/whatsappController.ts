@@ -59,14 +59,21 @@ async function fetchMediaInfo(
   }
 }
 
-// ─── Media proxy endpoint (Vercel-compatible — buffer, NOT stream) ────────────
+// ─── Media proxy endpoint ─────────────────────────────────────────────────────
 // GET /api/whatsapp/media/:mediaId
+// ✅ FIX: No longer requires userId — falls back to env token so browser can download directly
 export const proxyMedia = async (req: Request, res: Response) => {
   const { mediaId } = req.params;
   const userId = (req as any).user?.id;
 
   try {
-    const { token } = await getUserWACredentials(userId);
+    // ✅ FIX: Always use env token as fallback — browser downloads don't carry auth headers
+    let token = WHATSAPP_TOKEN;
+    if (userId) {
+      const creds = await getUserWACredentials(userId);
+      if (creds.token) token = creds.token;
+    }
+
     if (!token) {
       return res.status(400).json({ error: 'WhatsApp token missing. Please set it in Settings.' });
     }
@@ -86,7 +93,7 @@ export const proxyMedia = async (req: Request, res: Response) => {
     const mimeType: string = metaData.mime_type || 'application/octet-stream';
     const filename: string = metaData.filename || `file_${mediaId}`;
 
-    // Step 2: Download the file into a buffer (Vercel requires this — no streaming)
+    // Step 2: Download the file into a buffer
     const fileRes = await fetch(mediaUrl, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -96,7 +103,6 @@ export const proxyMedia = async (req: Request, res: Response) => {
       return res.status(502).json({ error: 'Failed to fetch media from Meta' });
     }
 
-    // Load entire file into memory as Buffer
     const arrayBuffer = await fileRes.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
@@ -353,10 +359,11 @@ export const getHistory = async (req: Request, res: Response) => {
 export const getConversations = async (req: Request, res: Response) => {
   const { search } = req.query;
   try {
+    // ✅ FIX: Coalesce lead_name > contact_name > contact_number so name always shows
     let query = `
       SELECT
         contact_number,
-        contact_name,
+        COALESCE(NULLIF(lead_name, ''), NULLIF(contact_name, ''), contact_number) AS contact_name,
         message_text   AS last_message,
         timestamp      AS last_timestamp,
         direction      AS last_direction,
@@ -397,7 +404,8 @@ export const getConversations = async (req: Request, res: Response) => {
 
     const params: any[] = [];
     if (search) {
-      query += ` AND (contact_name ILIKE $1 OR contact_number ILIKE $1 OR message_text ILIKE $1)`;
+      // ✅ FIX: Search also checks lead_name
+      query += ` AND (lead_name ILIKE $1 OR contact_name ILIKE $1 OR contact_number ILIKE $1 OR message_text ILIKE $1)`;
       params.push(`%${search}%`);
     }
 
@@ -454,7 +462,6 @@ export const verifyWebhook = (req: Request, res: Response) => {
 // ─── Incoming webhook (POST) ──────────────────────────────────────────────────
 
 export const handleWebhook = async (req: Request, res: Response) => {
-  // Always ack immediately so Meta does not retry
   res.sendStatus(200);
 
   const body = req.body;
@@ -465,13 +472,13 @@ export const handleWebhook = async (req: Request, res: Response) => {
       for (const change of entry.changes || []) {
         const val = change.value;
 
-        // ── Incoming messages ─────────────────────────────────────────────
         for (const msg of val?.messages || []) {
           const from    = msg.from as string;
           const msgId   = msg.id as string;
           const ts      = new Date(parseInt(msg.timestamp) * 1000);
           const contact = val.contacts?.find((c: any) => c.wa_id === from);
-          const name    = contact?.profile?.name || '';
+          // ✅ FIX: Better fallback — use phone number if name is missing
+          const name    = contact?.profile?.name || from;
 
           let text      = '';
           let mediaId   = '';
@@ -529,7 +536,6 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
           console.log(`[WA] 📩 INBOUND from ${from} (${name}): type=${msg.type}`);
 
-          // Find or auto-create lead
           let lead = await findLeadByPhone(from);
           if (!lead) {
             const { rows: newLeadRows } = await db.query(
@@ -537,23 +543,23 @@ export const handleWebhook = async (req: Request, res: Response) => {
                  (contact_name, mobile, whatsapp, source, stage, owner_id, revenue, created_at, updated_at)
                VALUES ($1, $2, $3, 'WHATSAPP', 'NEW', 1, 0, NOW(), NOW())
                RETURNING *`,
-              [name || from, from, from]
+              // ✅ FIX: Use name (which now falls back to phone) not empty string
+              [name, from, from]
             );
             lead = newLeadRows[0];
             console.log(`[WA] Auto-created lead #${lead?.id} for ${from}`);
           }
 
-          // Save the message
           const { rows: savedRows } = await db.query(
             `INSERT INTO whatsapp_messages
                (message_id, from_number, to_number, message_text, direction, status, contact_name, timestamp, is_read)
              VALUES ($1, $2, $3, $4, 'inbound', 'received', $5, $6, false)
              ON CONFLICT (message_id) DO NOTHING
              RETURNING *`,
+            // ✅ FIX: Save name (with phone fallback) not empty string
             [msgId, from, PHONE_NUMBER_ID, text, name, ts]
           );
 
-          // Auto-reply for hi / hello (text only)
           if (msg.type === 'text') {
             const lower = text.toLowerCase().trim();
             if (lower === 'hi' || lower === 'hello') {
@@ -588,7 +594,6 @@ export const handleWebhook = async (req: Request, res: Response) => {
           }
         }
 
-        // ── Status updates ────────────────────────────────────────────────
         for (const s of val?.statuses || []) {
           await db.query(
             `UPDATE whatsapp_messages SET status = $1 WHERE message_id = $2`,
