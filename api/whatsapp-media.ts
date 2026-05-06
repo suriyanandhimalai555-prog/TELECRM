@@ -5,7 +5,7 @@ const { Pool } = pkg;
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const mediaId = req.url?.split('/').pop()?.split('?')[0];
+  const mediaId = req.query.mediaId as string;
   if (!mediaId) return res.status(400).json({ error: 'Missing mediaId' });
 
   try {

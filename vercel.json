@@ -18,7 +18,7 @@
   "rewrites": [
     {
       "source": "/api/whatsapp/media/:mediaId",
-      "destination": "/api/whatsapp-media"
+      "destination": "/api/whatsapp-media?mediaId=:mediaId"
     },
     {
       "source": "/api/(.*)",
