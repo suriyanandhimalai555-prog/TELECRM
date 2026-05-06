@@ -39,7 +39,10 @@ async function getUserWACredentials(userId: number) {
 }
 
 // ─── Helper: fetch media URL + mime_type from Meta ───────────────────────────
-async function fetchMediaInfo(mediaId: string, token: string): Promise<{ url: string; mime_type: string; filename?: string } | null> {
+async function fetchMediaInfo(
+  mediaId: string,
+  token: string
+): Promise<{ url: string; mime_type: string; filename?: string } | null> {
   try {
     const res = await fetch(`https://graph.facebook.com/v25.0/${mediaId}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -56,7 +59,7 @@ async function fetchMediaInfo(mediaId: string, token: string): Promise<{ url: st
   }
 }
 
-// ─── Media proxy endpoint ─────────────────────────────────────────────────────
+// ─── Media proxy endpoint (Vercel-compatible — buffer, NOT stream) ────────────
 // GET /api/whatsapp/media/:mediaId
 export const proxyMedia = async (req: Request, res: Response) => {
   const { mediaId } = req.params;
@@ -64,46 +67,51 @@ export const proxyMedia = async (req: Request, res: Response) => {
 
   try {
     const { token } = await getUserWACredentials(userId);
-    if (!token) return res.status(400).json({ error: 'WhatsApp token missing' });
+    if (!token) {
+      return res.status(400).json({ error: 'WhatsApp token missing. Please set it in Settings.' });
+    }
 
-    // Step 1: get the media URL from Meta
+    // Step 1: Get the media metadata (URL + mime_type) from Meta
     const metaRes = await fetch(`https://graph.facebook.com/v25.0/${mediaId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const metaData = await metaRes.json();
-    if (metaData.error) return res.status(400).json({ error: metaData.error.message });
+
+    if (metaData.error) {
+      console.error('[WA] proxyMedia meta error:', metaData.error);
+      return res.status(400).json({ error: metaData.error.message });
+    }
 
     const mediaUrl: string = metaData.url;
     const mimeType: string = metaData.mime_type || 'application/octet-stream';
     const filename: string = metaData.filename || `file_${mediaId}`;
 
-    // Step 2: stream the actual media bytes back
+    // Step 2: Download the file into a buffer (Vercel requires this — no streaming)
     const fileRes = await fetch(mediaUrl, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (!fileRes.ok) return res.status(502).json({ error: 'Failed to fetch media from Meta' });
+    if (!fileRes.ok) {
+      console.error('[WA] proxyMedia file fetch failed:', fileRes.status, fileRes.statusText);
+      return res.status(502).json({ error: 'Failed to fetch media from Meta' });
+    }
 
+    // Load entire file into memory as Buffer
+    const arrayBuffer = await fileRes.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // Step 3: Send back to browser
     res.setHeader('Content-Type', mimeType);
     res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    res.setHeader('Content-Length', buffer.length);
     res.setHeader('Cache-Control', 'private, max-age=3600');
     res.setHeader('Access-Control-Allow-Origin', '*');
 
-    // Stream the response
-    const reader = fileRes.body?.getReader();
-    if (!reader) return res.status(502).json({ error: 'No body' });
-
-    const pump = async () => {
-      const { done, value } = await reader.read();
-      if (done) { res.end(); return; }
-      res.write(Buffer.from(value));
-      await pump();
-    };
-    await pump();
+    return res.send(buffer);
 
   } catch (err) {
     console.error('[WA] proxyMedia error:', err);
-    res.status(500).json({ error: 'Media proxy failed' });
+    return res.status(500).json({ error: 'Media proxy failed' });
   }
 };
 
