@@ -108,7 +108,7 @@ function linkifyText(text: string) {
     if (urlRegex.test(part)) {
       urlRegex.lastIndex = 0;
       return (
-        
+        <a
           key={i}
           href={part}
           target="_blank"
@@ -151,7 +151,7 @@ function MessageContent({ parsed, isOut }: { parsed: ParsedMessage; isOut: boole
             onError={() => setImgError(true)}
             onClick={() => window.open(mediaUrl(parsed.mediaId), '_blank')}
           />
-          
+          <a
             href={mediaUrl(parsed.mediaId)}
             download
             className="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded-lg opacity-0 group-hover/img:opacity-100 transition-opacity"
@@ -218,7 +218,7 @@ function MessageContent({ parsed, isOut }: { parsed: ParsedMessage; isOut: boole
           >
             Your browser does not support video.
           </video>
-          
+          <a
             href={mediaUrl(parsed.mediaId)}
             download
             className="absolute top-2 right-2 bg-black/50 text-white p-1.5 rounded-lg opacity-0 group-hover/vid:opacity-100 transition-opacity"
@@ -242,7 +242,7 @@ function MessageContent({ parsed, isOut }: { parsed: ParsedMessage; isOut: boole
     case 'location': {
       const mapsUrl = `https://maps.google.com/?q=${parsed.lat},${parsed.lng}`;
       return (
-        
+        <a
           href={mapsUrl}
           target="_blank"
           rel="noopener noreferrer"
