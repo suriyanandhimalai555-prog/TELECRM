@@ -69,8 +69,7 @@ async function fetchMediaInfo(
 
 // ─── Media proxy endpoint ─────────────────────────────────────────────────────
 // GET /api/whatsapp/media/:mediaId  (PUBLIC — no auth required)
-// On Vercel: redirect to Meta's signed URL (avoids 4.5MB response size limit)
-// On Railway: stream buffer directly
+// Always redirects to Meta's signed URL — avoids Vercel 4.5MB response limit.
 export const proxyMedia = async (req: Request, res: Response) => {
   const { mediaId } = req.params;
 
@@ -93,7 +92,7 @@ export const proxyMedia = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'WhatsApp token missing. Please set it in Settings.' });
     }
 
-    // Step 1: Get media metadata (signed URL) from Meta
+    // Get media metadata (signed URL) from Meta
     const metaRes = await fetch(`https://graph.facebook.com/v25.0/${mediaId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -104,41 +103,10 @@ export const proxyMedia = async (req: Request, res: Response) => {
       return res.status(400).json({ error: metaData.error.message });
     }
 
-    const mediaUrl: string = metaData.url;
-
-    // Step 2: On Vercel, redirect browser directly to Meta's signed URL.
-    // Meta signed URLs expire in ~5 min — fine for immediate viewing/download.
-    // Vercel serverless functions have a 4.5MB response size limit which
-    // causes crashes when proxying images/videos/documents.
-    const isVercel = process.env.VERCEL === '1';
-
-    if (isVercel) {
-      return res.redirect(302, mediaUrl);
-    }
-
-    // Non-Vercel (Railway): proxy the file as a buffer
-    const mimeType: string = metaData.mime_type || 'application/octet-stream';
-    const filename: string = metaData.filename  || `file_${mediaId}`;
-
-    const fileRes = await fetch(mediaUrl, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!fileRes.ok) {
-      console.error('[WA] proxyMedia file fetch failed:', fileRes.status, fileRes.statusText);
-      return res.status(502).json({ error: 'Failed to fetch media from Meta' });
-    }
-
-    const arrayBuffer = await fileRes.arrayBuffer();
-    const buffer      = Buffer.from(arrayBuffer);
-
-    res.setHeader('Content-Type', mimeType);
-    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
-    res.setHeader('Content-Length', buffer.length);
-    res.setHeader('Cache-Control', 'private, max-age=3600');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-
-    return res.send(buffer);
+    // Redirect browser directly to Meta's signed URL.
+    // The browser fetches the file directly from Meta — no server buffering,
+    // no Vercel 4.5MB response size limit issue.
+    return res.redirect(302, metaData.url);
 
   } catch (err) {
     console.error('[WA] proxyMedia error:', err);
