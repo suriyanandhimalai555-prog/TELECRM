@@ -11,7 +11,7 @@ export const getLeads = async (req: AuthRequest, res: Response) => {
     let baseQuery = `
       SELECT l.*, u.name as owner_name, p.name as project_name
       FROM leads l 
-      JOIN users u ON l.owner_id = u.id
+      LEFT JOIN users u ON l.owner_id = u.id
       LEFT JOIN projects p ON l.project_id = p.id
     `;
     
@@ -19,12 +19,13 @@ export const getLeads = async (req: AuthRequest, res: Response) => {
     let queryParams: any[] = [];
 
     if (req.user.role === 'MANAGER') {
-      whereClauses.push(`(l.owner_id = $1 OR u.reporting_to = $2)`);
+      whereClauses.push(`(l.owner_id = $1 OR (u.reporting_to = $2))`);
       queryParams.push(req.user.id, req.user.id);
     } else if (req.user.role === 'EMPLOYEE') {
       whereClauses.push(`(l.owner_id = $1 OR l.project_id IN (SELECT project_id FROM user_projects WHERE user_id = $2))`);
       queryParams.push(req.user.id, req.user.id);
     }
+    // ADMIN sees all leads — no WHERE clause added
 
     if (search) {
       const paramIndex = queryParams.length + 1;
@@ -87,15 +88,11 @@ export const createLead = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// ✅ FIXED: Dynamic update — only updates fields that are actually sent in the request.
-// Previously it overwrote ALL fields, so mass edit (which only sends stage/owner_id)
-// was wiping contact_name, mobile, email etc. to undefined/null.
 export const updateLead = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const body = req.body;
 
   try {
-    // Build a map of only the fields that were actually included in the request
     const fieldMap: Record<string, any> = {};
 
     if (body.contact_name  !== undefined) fieldMap.contact_name  = body.contact_name;
@@ -115,11 +112,10 @@ export const updateLead = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: 'No fields to update' });
     }
 
-    // Dynamically build: SET col1 = $1, col2 = $2, ...
-    const keys      = Object.keys(fieldMap);
-    const values    = Object.values(fieldMap);
+    const keys       = Object.keys(fieldMap);
+    const values     = Object.values(fieldMap);
     const setClauses = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
-    const idParam   = `$${keys.length + 1}`;
+    const idParam    = `$${keys.length + 1}`;
 
     await db.query(
       `UPDATE leads SET ${setClauses}, updated_at = CURRENT_TIMESTAMP WHERE id = ${idParam}`,
@@ -162,10 +158,10 @@ export const importLeads = async (req: AuthRequest, res: Response) => {
 
   const client = await db.connect();
   try {
-    const usersRes = await client.query('SELECT id, name FROM users');
+    const usersRes    = await client.query('SELECT id, name FROM users');
     const projectsRes = await client.query('SELECT id, name FROM projects');
     
-    const userMap = new Map(usersRes.rows.map((u: any) => [u.name.toLowerCase().trim(), u.id]));
+    const userMap    = new Map(usersRes.rows.map((u: any) => [u.name.toLowerCase().trim(), u.id]));
     const projectMap = new Map(projectsRes.rows.map((p: any) => [p.name.toLowerCase().trim(), p.id]));
 
     await client.query('BEGIN');
@@ -178,14 +174,14 @@ export const importLeads = async (req: AuthRequest, res: Response) => {
         return entry ? entry[1] : null;
       };
 
-      const name = (findVal(['CONTACT', 'Name', 'Contact Name', 'contact_name']) || 'Unknown').toString();
-      const mobileRaw = (findVal(['MOBILE', 'Phone', 'Mobile Number', 'Phone Number', 'mobile']) || '').toString();
-      const mobile = mobileRaw.replace(/\s+/g, '');
-      const whatsapp = (findVal(['WhatsApp', 'WhatsApp Number', 'whatsapp']) || mobile).toString().replace(/\s+/g, '');
-      const email = (findVal(['Email', 'Email Address', 'email']) || '').toString();
-      const source = (findVal(['Source', 'Lead Source', 'source']) || 'BULK_IMPORT').toString();
-      const stage = (findVal(['Stage', 'Lead Stage', 'stage']) || 'NEW').toString();
-      const revenue = Number(findVal(['Revenue', 'Expected Revenue', 'revenue']) || 0);
+      const name        = (findVal(['CONTACT', 'Name', 'Contact Name', 'contact_name']) || 'Unknown').toString();
+      const mobileRaw   = (findVal(['MOBILE', 'Phone', 'Mobile Number', 'Phone Number', 'mobile']) || '').toString();
+      const mobile      = mobileRaw.replace(/\s+/g, '');
+      const whatsapp    = (findVal(['WhatsApp', 'WhatsApp Number', 'whatsapp']) || mobile).toString().replace(/\s+/g, '');
+      const email       = (findVal(['Email', 'Email Address', 'email']) || '').toString();
+      const source      = (findVal(['Source', 'Lead Source', 'source']) || 'BULK_IMPORT').toString();
+      const stage       = (findVal(['Stage', 'Lead Stage', 'stage']) || 'NEW').toString();
+      const revenue     = Number(findVal(['Revenue', 'Expected Revenue', 'revenue']) || 0);
       const nextFollowupRaw = findVal(['Next Follow-up', 'Next Followup', 'Follow-up Date', 'next_followup', 'NEXT FOLLOW-UP']);
       
       let nextFollowup = null;
@@ -200,13 +196,13 @@ export const importLeads = async (req: AuthRequest, res: Response) => {
       }
       
       const employeeName = (findVal(['Employee Name', 'Owner', 'Assigned To', 'OWNER']) || '').toString().toLowerCase().trim();
-      const ownerId = userMap.get(employeeName) || req.user.id;
+      const ownerId      = userMap.get(employeeName) || req.user.id;
 
       const projectName = (findVal(['Project Name', 'Project', 'PROJECT']) || '').toString().toLowerCase().trim();
-      const projectId = projectMap.get(projectName) || null;
+      const projectId   = projectMap.get(projectName) || null;
 
       const company = (findVal(['Company', 'Organization', 'Company Name', 'company']) || '').toString();
-      const tags = (findVal(['Tags', 'Labels', 'tags']) || '').toString();
+      const tags    = (findVal(['Tags', 'Labels', 'tags']) || '').toString();
 
       await client.query(`
         INSERT INTO leads (owner_id, contact_name, mobile, whatsapp, email, source, stage, revenue, next_followup, project_id, company, tags)
@@ -229,10 +225,11 @@ export const exportLeads = async (req: AuthRequest, res: Response) => {
 
   try {
     let leadsResult;
+    // ✅ FIX: LEFT JOIN so WhatsApp auto-created leads always appear
     const query = `
       SELECT l.*, u.name as owner_name, p.name as project_name
       FROM leads l 
-      JOIN users u ON l.owner_id = u.id
+      LEFT JOIN users u ON l.owner_id = u.id
       LEFT JOIN projects p ON l.project_id = p.id
     `;
     
@@ -241,7 +238,7 @@ export const exportLeads = async (req: AuthRequest, res: Response) => {
     } else if (req.user.role === 'MANAGER') {
       leadsResult = await db.query(`
         ${query}
-        WHERE l.owner_id = $1 OR u.reporting_to = $2
+        WHERE l.owner_id = $1 OR (u.reporting_to = $2)
         ORDER BY l.created_at DESC
       `, [req.user.id, req.user.id]);
     } else {
