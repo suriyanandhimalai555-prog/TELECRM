@@ -129,7 +129,7 @@ function linkifyText(text: string) {
 function mediaUrl(mediaId: string): string {
   const base = window.location.origin;
   // Support both /api prefix and direct backend port
-  return `${base}/api/whatsapp/media/${mediaId}`;
+  return `https://telecrm-production.up.railway.app/api/whatsapp/media/${mediaId}`;
 }
 
 function MessageContent({ parsed, isOut }: { parsed: ParsedMessage; isOut: boolean }) {
