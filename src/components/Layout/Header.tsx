@@ -18,7 +18,7 @@ export default function Header({ }: HeaderProps) {
 
   return (
     <header className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-8 shrink-0 z-30 relative overflow-visible">
-      <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-aura-red to-red-600 shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
+      <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-green-500 to-green-700 shadow-[0_0_10px_rgba(22,163,74,0.5)]" />
       
       <div className="flex items-center flex-1">
         <div className="relative w-72 max-w-lg group">

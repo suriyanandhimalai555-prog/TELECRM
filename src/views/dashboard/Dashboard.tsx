@@ -39,7 +39,7 @@ import {
   Cell
 } from 'recharts';
 
-const COLORS = ['#ef4444', '#22c55e', '#fbbf24', '#8b5cf6'];
+const COLORS = ['#16a34a', '#22c55e', '#fbbf24', '#8b5cf6'];
 
 const PowerCounter = ({ value }: { value: number }) => {
   const count = useMotionValue(0);
@@ -237,7 +237,7 @@ export default function Dashboard() {
                   />
                   <Bar 
                     dataKey="count" 
-                    fill="#ef4444" 
+                    fill="#16a34a" 
                     radius={[4, 4, 0, 0]}
                     animationDuration={1500}
                   />
