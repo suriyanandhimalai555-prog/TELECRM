@@ -13,6 +13,7 @@ import {
   proxyMedia
 } from '../controllers/whatsappController';
 import { authenticateToken } from '../middleware/auth';
+import multer from 'multer';
 
 const router = Router();
 
@@ -33,4 +34,6 @@ router.post('/templates/sync', authenticateToken, syncTemplates);
 router.post('/templates/send', authenticateToken, sendTemplate);
 router.post('/bulk-send', authenticateToken, bulkSendMessage);
 
-export default router;
+export default router;import { sendMedia } from '../controllers/whatsappController';
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 16 * 1024 * 1024 } });
+router.post('/send-media', authenticateToken, upload.single('file'), sendMedia);

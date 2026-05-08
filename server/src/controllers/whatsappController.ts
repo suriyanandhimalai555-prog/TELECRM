@@ -597,3 +597,80 @@ export const handleWebhook = async (req: Request, res: Response) => {
     console.error('[WA] Webhook processing error:', err);
   }
 };
+// ─── Send Media (file upload) ─────────────────────────────────────────────────
+export const sendMedia = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    const { token, phoneId } = await getUserWACredentials(userId);
+    const to: string = req.body.to;
+    const contactName: string = req.body.contactName || '';
+
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+    const file = req.file;
+    const mime = file.mimetype;
+
+    // Determine WhatsApp media type
+    let waType = 'document';
+    if (mime.startsWith('image/')) waType = 'image';
+    else if (mime.startsWith('video/')) waType = 'video';
+    else if (mime.startsWith('audio/')) waType = 'audio';
+
+    // Step 1: Upload file to Meta
+    const FormDataNode = (await import('form-data')).default;
+    const fetchFn = (await import('node-fetch')).default;
+
+    const uploadForm = new FormDataNode();
+    uploadForm.append('file', file.buffer, { filename: file.originalname, contentType: mime });
+    uploadForm.append('messaging_product', 'whatsapp');
+
+    const uploadRes = await fetchFn(
+      `https://graph.facebook.com/v18.0/${phoneId}/media`,
+      { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: uploadForm }
+    );
+    const uploadData: any = await uploadRes.json();
+    if (!uploadData.id) return res.status(500).json({ error: 'Media upload failed', detail: uploadData });
+
+    const mediaId = uploadData.id;
+
+    // Step 2: Send media message
+    const body: any = {
+      messaging_product: 'whatsapp',
+      to,
+      type: waType,
+      [waType]: waType === 'document'
+        ? { id: mediaId, filename: file.originalname }
+        : { id: mediaId },
+    };
+
+    const sendRes = await fetchFn(
+      `https://graph.facebook.com/v18.0/${phoneId}/messages`,
+      { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+    );
+    const sendData: any = await sendRes.json();
+    if (!sendData.messages?.[0]?.id) return res.status(500).json({ error: 'Send failed', detail: sendData });
+
+    const messageId = sendData.messages[0].id;
+    const lead = await findLeadByPhone(to);
+    const adminId = await getAdminUserId();
+
+    // Store in DB with [document:mediaId:filename:mime] format
+    const msgText = waType === 'document'
+      ? `[document:${mediaId}:${file.originalname}:${mime}]`
+      : waType === 'image' ? `[image:${mediaId}]`
+      : waType === 'video' ? `[video:${mediaId}]`
+      : `[audio:${mediaId}]`;
+
+    await db.query(
+      `INSERT INTO whatsapp_messages (message_id, from_number, to_number, message_text, direction, status, contact_name, timestamp)
+       VALUES ($1, $2, $3, $4, 'outbound', 'sent', $5, NOW())
+       ON CONFLICT (message_id) DO NOTHING`,
+      [messageId, phoneId, to, msgText, contactName || lead?.contact_name || to]
+    );
+
+    res.json({ success: true, messageId, mediaId });
+  } catch (err: any) {
+    console.error('sendMedia error:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
