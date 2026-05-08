@@ -383,6 +383,7 @@ export default function WhatsAppInbox() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; msgId: number | string } | null>(null);
 
   // UI toggles
   const [showTemplateModal, setShowTemplateModal] = useState(false);
@@ -585,6 +586,11 @@ export default function WhatsAppInbox() {
       setSelectedContact(null);
     }
     setDeleteModal(null);
+  };
+
+  const handleDeleteMessage = (msgId: number | string) => {
+    setMessages(prev => prev.filter(m => m.id !== msgId));
+    setCtxMenu(null);
   };
 
   const togglePin = (phone: string) => {
@@ -840,10 +846,11 @@ export default function WhatsAppInbox() {
                   const isOut = m.direction === 'outbound';
                   const parsed = parseMessage(m.message_text);
                   return (
-                    <div key={m.id} className={cn("flex", isOut ? "justify-end" : "justify-start")}>
+                    <div key={m.id} className={cn("flex", isOut ? "justify-end" : "justify-start")}
+                      onContextMenu={e => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, msgId: m.id }); }}>
                       <motion.div initial={{ opacity: 0, y: 6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
                         className={cn(
-                          "max-w-[68%] p-3 px-3.5 rounded-2xl shadow-sm relative",
+                          "max-w-[68%] p-3 px-3.5 rounded-2xl shadow-sm relative cursor-pointer",
                           isOut ? "bg-green-600 text-white rounded-tr-sm" : "bg-white text-gray-800 rounded-tl-sm border border-gray-100"
                         )}>
                         <MessageContent parsed={parsed} isOut={isOut}
@@ -945,6 +952,18 @@ export default function WhatsAppInbox() {
           </div>
         )}
 
+        {/* Message Context Menu */}
+        {ctxMenu && (
+          <div className="fixed inset-0 z-50" onClick={() => setCtxMenu(null)}>
+            <div className="absolute bg-white border border-gray-100 rounded-xl shadow-xl py-1 w-40"
+              style={{ left: ctxMenu.x, top: ctxMenu.y }}>
+              <button onClick={() => handleDeleteMessage(ctxMenu.msgId)}
+                className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50">
+                <Trash2 size={13} />Delete Message
+              </button>
+            </div>
+          </div>
+        )}
         {/* Contact Info Drawer */}
         <AnimatePresence>
           {showContactInfo && selectedContact && (
