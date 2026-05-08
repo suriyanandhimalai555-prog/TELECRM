@@ -629,7 +629,7 @@ export const sendMedia = async (req: Request, res: Response) => {
 
     const uploadRes = await nodeFetch(
       `https://graph.facebook.com/v18.0/${phoneId}/media`,
-      { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: uploadForm }
+      { method: 'POST', headers: { Authorization: `Bearer ${token}`, ...uploadForm.getHeaders() }, body: uploadForm }
     );
     const uploadData: any = await uploadRes.json();
     if (!uploadData.id) return res.status(500).json({ error: 'Media upload failed', detail: uploadData });
