@@ -893,7 +893,21 @@ export default function WhatsAppInbox() {
                         fd.append('file', file);
                         fd.append('to', selectedContact.contact_number);
                         fd.append('contactName', selectedContact.contact_name || selectedContact.contact_number);
-                        await api.post('/whatsapp/send-media', fd);
+                        const res = await api.post('/whatsapp/send-media', fd);
+                        // Immediately show in chat
+                        const mediaId = res.data.mediaId;
+                        const mime = file.type;
+                        let msgText = mime.startsWith('image/') ? `[image:${mediaId}]`
+                          : mime.startsWith('video/') ? `[video:${mediaId}]`
+                          : mime.startsWith('audio/') ? `[audio:${mediaId}]`
+                          : `[document:${mediaId}:${file.name}:${mime}]`;
+                        setMessages(prev => [...prev, {
+                          id: Date.now(), message_id: res.data.messageId,
+                          from_number: 'me', to_number: selectedContact.contact_number,
+                          message_text: msgText, direction: 'outbound',
+                          status: 'sent', timestamp: new Date().toISOString(),
+                          contact_name: selectedContact.contact_name
+                        } as any]);
                         fetchMessages(selectedContact.contact_number);
                       } catch(err) { console.error('Upload failed', err); }
                       finally { setUploadingFile(false); }
