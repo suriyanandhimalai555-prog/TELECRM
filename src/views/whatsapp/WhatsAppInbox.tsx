@@ -13,9 +13,8 @@ import { cn } from '../../lib/utils';
 import { Message } from '../../types';
 import { socket } from '../../services/socket';
 import { useAuth } from '../../hooks/useAuth';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { useSearch } from '../../context/SearchContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Conversation {
@@ -373,7 +372,6 @@ function DeleteModal({ type, onConfirm, onCancel }: {
 export default function WhatsAppInbox() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedContact, setSelectedContact] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
