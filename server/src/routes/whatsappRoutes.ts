@@ -37,3 +37,7 @@ router.post('/bulk-send', authenticateToken, bulkSendMessage);
 export default router;import { sendMedia } from '../controllers/whatsappController';
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 16 * 1024 * 1024 } });
 router.post('/send-media', authenticateToken, upload.single('file'), sendMedia);
+import { sendMedia } from '../controllers/whatsappController';
+import multer from 'multer';
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 16 * 1024 * 1024 } });
+router.post('/send-media', authenticateToken, upload.single('file'), sendMedia);

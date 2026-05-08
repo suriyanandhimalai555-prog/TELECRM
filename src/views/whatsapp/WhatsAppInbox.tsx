@@ -14,7 +14,7 @@ import { Message } from '../../types';
 import { socket } from '../../services/socket';
 import { useAuth } from '../../hooks/useAuth';
 import { useSearch } from '../../context/SearchContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Conversation {
@@ -372,6 +372,7 @@ function DeleteModal({ type, onConfirm, onCancel }: {
 export default function WhatsAppInbox() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedContact, setSelectedContact] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -380,6 +381,8 @@ export default function WhatsAppInbox() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
 
   // UI toggles
   const [showTemplateModal, setShowTemplateModal] = useState(false);
@@ -414,6 +417,25 @@ export default function WhatsAppInbox() {
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const phone = params.get('phone');
+    if (!phone || loading) return;
+    const found = conversations.find(c =>
+      c.contact_number === phone ||
+      c.contact_number.replace(/\D/g, '') === phone
+    );
+    if (found) { selectContact(found); navigate('/whatsapp', { replace: true }); return; }
+    const placeholder: Conversation = {
+      contact_number: phone, contact_name: phone, last_message: '',
+      last_timestamp: new Date().toISOString(), last_direction: 'outbound',
+      last_status: '', unread_count: 0,
+    };
+    setSelectedContact(placeholder);
+    fetchMessages(phone);
+    navigate('/whatsapp', { replace: true });
+  }, [location.search, loading, conversations]);
 
   const fetchTemplates = useCallback(async () => {
     try {
@@ -859,8 +881,27 @@ export default function WhatsAppInbox() {
                     className="p-2 text-gray-400 hover:text-red-500 rounded-lg transition-colors">
                     <Layout size={19} />
                   </button>
-                  <button className="p-2 text-gray-400 hover:text-red-500 rounded-lg transition-colors">
+                  <input ref={fileInputRef} type="file" className="hidden"
+                    accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.txt"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file || !selectedContact) return;
+                      e.target.value = '';
+                      setUploadingFile(true);
+                      try {
+                        const fd = new FormData();
+                        fd.append('file', file);
+                        fd.append('to', selectedContact.contact_number);
+                        fd.append('contactName', selectedContact.contact_name || selectedContact.contact_number);
+                        await api.post('/whatsapp/send-media', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+                        fetchMessages(selectedContact.contact_number);
+                      } catch(err) { console.error('Upload failed', err); }
+                      finally { setUploadingFile(false); }
+                    }} />
+                  <button onClick={() => fileInputRef.current?.click()} disabled={uploadingFile}
+                    className={cn("p-2 rounded-lg transition-colors relative", uploadingFile ? "text-red-400 animate-pulse" : "text-gray-400 hover:text-red-500")}>
                     <Paperclip size={19} />
+                    {uploadingFile && <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-ping" />}
                   </button>
                 </div>
                 <div className="flex-1 bg-gray-100 rounded-2xl overflow-hidden">
