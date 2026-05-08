@@ -101,6 +101,7 @@ export const proxyMedia = async (req: Request, res: Response) => {
     const metaData = await metaRes.json();
 
     if (metaData.error) {
+      
       console.error('[WA] proxyMedia meta error:', metaData.error);
       return res.status(400).json({ error: metaData.error.message });
     }

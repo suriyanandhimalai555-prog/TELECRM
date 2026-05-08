@@ -145,6 +145,20 @@ export const initDb = async () => {
     )
   `);
 
+
+  // Add missing columns
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_projects INTEGER[] DEFAULT '{}'`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reporting_to INTEGER`);
+  await pool.query(`ALTER TABLE leads ADD COLUMN IF NOT EXISTS contact_name VARCHAR(255)`);
+  await pool.query(`ALTER TABLE leads ADD COLUMN IF NOT EXISTS mobile VARCHAR(50)`);
+  await pool.query(`ALTER TABLE leads ADD COLUMN IF NOT EXISTS whatsapp VARCHAR(50)`);
+  await pool.query(`ALTER TABLE leads ADD COLUMN IF NOT EXISTS stage VARCHAR(50) DEFAULT 'NEW'`);
+  await pool.query(`ALTER TABLE leads ADD COLUMN IF NOT EXISTS source VARCHAR(50)`);
+  await pool.query(`ALTER TABLE leads ADD COLUMN IF NOT EXISTS owner_id INTEGER`);
+  await pool.query(`ALTER TABLE leads ADD COLUMN IF NOT EXISTS revenue NUMERIC DEFAULT 0`);
+  await pool.query(`ALTER TABLE leads ADD COLUMN IF NOT EXISTS tags TEXT[]`);
+  await pool.query(`ALTER TABLE leads ADD COLUMN IF NOT EXISTS reporting_to INTEGER`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_projects INTEGER[] DEFAULT '{}'`);
   console.log('✅ DB initialized successfully');
 };
 
