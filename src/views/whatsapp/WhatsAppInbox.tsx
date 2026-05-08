@@ -893,7 +893,7 @@ export default function WhatsAppInbox() {
                         fd.append('file', file);
                         fd.append('to', selectedContact.contact_number);
                         fd.append('contactName', selectedContact.contact_name || selectedContact.contact_number);
-                        await api.post('/whatsapp/send-media', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+                        await api.post('/whatsapp/send-media', fd);
                         fetchMessages(selectedContact.contact_number);
                       } catch(err) { console.error('Upload failed', err); }
                       finally { setUploadingFile(false); }
