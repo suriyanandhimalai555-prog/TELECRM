@@ -13,8 +13,9 @@ import { cn } from '../../lib/utils';
 import { Message } from '../../types';
 import { socket } from '../../services/socket';
 import { useAuth } from '../../hooks/useAuth';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSearch } from '../../context/SearchContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Conversation {
