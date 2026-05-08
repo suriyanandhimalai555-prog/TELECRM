@@ -621,13 +621,13 @@ export const sendMedia = async (req: Request, res: Response) => {
 
     // Step 1: Upload file to Meta
     
-    const fetchFn = (await import('node-fetch')).default;
+    
 
     const uploadForm = new FormDataNode();
     uploadForm.append('file', file.buffer, { filename: file.originalname, contentType: mime });
     uploadForm.append('messaging_product', 'whatsapp');
 
-    const uploadRes = await fetchFn(
+    const uploadRes = await fetch(
       `https://graph.facebook.com/v18.0/${phoneId}/media`,
       { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: uploadForm }
     );
@@ -646,7 +646,7 @@ export const sendMedia = async (req: Request, res: Response) => {
         : { id: mediaId },
     };
 
-    const sendRes = await fetchFn(
+    const sendRes = await fetch(
       `https://graph.facebook.com/v18.0/${phoneId}/messages`,
       { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
     );

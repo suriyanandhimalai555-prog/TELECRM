@@ -447,7 +447,7 @@ export default function WhatsAppInbox() {
   const fetchConversations = useCallback(async () => {
     try {
       const res = await api.get(`/whatsapp/conversations${searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : ''}`);
-      setConversations(res.data.conversations || []);
+      setConversations((res.data.conversations || []).map((c: any) => ({ ...c, unread_count: Number(c.unread_count) || 0 })));
     } catch { } finally {
       setLoading(false);
     }
@@ -603,7 +603,7 @@ export default function WhatsAppInbox() {
       return ap === bp ? 0 : ap ? -1 : 1;
     });
 
-  const totalUnread = conversations.reduce((s, c) => s + (c.unread_count || 0), 0);
+  const totalUnread = conversations.reduce((s, c) => s + (Number(c.unread_count) || 0), 0);
 
   const formatTime = (ts: string) => {
     const d = new Date(ts);
