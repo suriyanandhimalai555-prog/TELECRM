@@ -372,6 +372,8 @@ function DeleteModal({ type, onConfirm, onCancel }: {
 export default function WhatsAppInbox() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedContact, setSelectedContact] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
