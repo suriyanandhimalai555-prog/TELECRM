@@ -10,18 +10,18 @@ import {
   syncTemplates,
   sendTemplate,
   bulkSendMessage,
-  proxyMedia
+  proxyMedia,
+  sendMedia
 } from '../controllers/whatsappController';
 import { authenticateToken } from '../middleware/auth';
 import multer from 'multer';
 
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 16 * 1024 * 1024 } });
 
-// Public webhook routes (Meta needs these accessible)
+// Public webhook routes
 router.get('/webhook', verifyWebhook);
 router.post('/webhook', handleWebhook);
-
-// ✅ FIX: Media proxy is PUBLIC — browser GETs have no auth header
 router.get('/media/:mediaId', proxyMedia);
 
 // Protected API routes
@@ -33,11 +33,6 @@ router.get('/templates', authenticateToken, getTemplates);
 router.post('/templates/sync', authenticateToken, syncTemplates);
 router.post('/templates/send', authenticateToken, sendTemplate);
 router.post('/bulk-send', authenticateToken, bulkSendMessage);
+router.post('/send-media', authenticateToken, upload.single('file'), sendMedia);
 
-export default router;import { sendMedia } from '../controllers/whatsappController';
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 16 * 1024 * 1024 } });
-router.post('/send-media', authenticateToken, upload.single('file'), sendMedia);
-import { sendMedia } from '../controllers/whatsappController';
-import multer from 'multer';
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 16 * 1024 * 1024 } });
-router.post('/send-media', authenticateToken, upload.single('file'), sendMedia);
+export default router;
