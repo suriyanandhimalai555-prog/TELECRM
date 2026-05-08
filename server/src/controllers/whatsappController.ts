@@ -1,4 +1,4 @@
-import fetch from 'node-fetch';
+import nodeFetch from 'node-fetch';
 import FormDataNode from 'form-data';
 import { Request, Response } from 'express';
 import db from '../config/database';
@@ -627,7 +627,7 @@ export const sendMedia = async (req: Request, res: Response) => {
     uploadForm.append('file', file.buffer, { filename: file.originalname, contentType: mime });
     uploadForm.append('messaging_product', 'whatsapp');
 
-    const uploadRes = await fetch(
+    const uploadRes = await nodeFetch(
       `https://graph.facebook.com/v18.0/${phoneId}/media`,
       { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: uploadForm }
     );
