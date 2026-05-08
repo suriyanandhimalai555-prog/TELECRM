@@ -1,3 +1,5 @@
+import fetch from 'node-fetch';
+import FormDataNode from 'form-data';
 import { Request, Response } from 'express';
 import db from '../config/database';
 
@@ -617,7 +619,7 @@ export const sendMedia = async (req: Request, res: Response) => {
     else if (mime.startsWith('audio/')) waType = 'audio';
 
     // Step 1: Upload file to Meta
-    const FormDataNode = (await import('form-data')).default;
+    
     const fetchFn = (await import('node-fetch')).default;
 
     const uploadForm = new FormDataNode();
@@ -690,8 +692,8 @@ export const sendMedia = async (req: Request, res: Response) => {
     else if (mime.startsWith('video/')) waType = 'video';
     else if (mime.startsWith('audio/')) waType = 'audio';
     // Upload to Meta
-    const fetch = (await import('node-fetch')).default;
-    const FormDataNode = (await import('form-data')).default;
+    
+    
     const uploadForm = new FormDataNode();
     uploadForm.append('file', file.buffer, { filename: file.originalname, contentType: mime });
     uploadForm.append('messaging_product', 'whatsapp');
