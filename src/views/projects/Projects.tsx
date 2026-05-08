@@ -207,7 +207,7 @@ export default function Projects() {
                           setProjectToDelete(project.id);
                           setShowDeleteConfirm(true);
                         }}
-                        className="p-1.5 text-red-200 hover:text-aura-red hover:bg-aura-red/5 rounded-lg"
+                        className="p-1.5 text-green-200 hover:text-aura-red hover:bg-aura-red/5 rounded-lg"
                       >
                         <Trash2 size={14} />
                       </motion.button>

@@ -193,8 +193,8 @@ function MessageContent({ parsed, isOut, onMediaClick }: {
           className={cn("flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all",
             isOut ? "bg-white/10 border-white/20 hover:bg-white/20" : "bg-gray-50 border-gray-200 hover:bg-gray-100")}>
           <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
-            isOut ? "bg-white/20" : "bg-red-50")}>
-            <FileText size={18} className={isOut ? "text-white" : "text-red-500"} />
+            isOut ? "bg-white/20" : "bg-green-50")}>
+            <FileText size={18} className={isOut ? "text-white" : "text-green-600"} />
           </div>
           <div className="min-w-0 flex-1">
             <div className={cn("text-xs font-bold truncate", tc)}>{parsed.filename}</div>
@@ -238,8 +238,8 @@ function MessageContent({ parsed, isOut, onMediaClick }: {
           className={cn("flex items-center gap-3 p-3 rounded-xl border transition-all",
             isOut ? "bg-white/10 border-white/20 hover:bg-white/20" : "bg-gray-50 border-gray-200 hover:bg-gray-100")}>
           <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
-            isOut ? "bg-white/20" : "bg-red-50")}>
-            <MapPin size={18} className={isOut ? "text-white" : "text-red-500"} />
+            isOut ? "bg-white/20" : "bg-green-50")}>
+            <MapPin size={18} className={isOut ? "text-white" : "text-green-600"} />
           </div>
           <div className="min-w-0">
             <div className={cn("text-xs font-bold", tc)}>{parsed.name || 'Location'}</div>
@@ -322,8 +322,8 @@ function ContactInfoDrawer({ contact, messages, onClose }: {
                   </div>
                 );
                 if (p.type === 'document') return (
-                  <div key={i} className="aspect-square bg-red-50 rounded-lg flex flex-col items-center justify-center gap-1 p-1">
-                    <FileText size={14} className="text-red-500" />
+                  <div key={i} className="aspect-square bg-green-50 rounded-lg flex flex-col items-center justify-center gap-1 p-1">
+                    <FileText size={14} className="text-green-600" />
                     <span className="text-[7px] text-gray-500 truncate w-full text-center">{p.filename}</span>
                   </div>
                 );
@@ -342,7 +342,7 @@ function DeleteModal({ type, onConfirm, onCancel }: {
   type: 'delete' | 'archive' | 'clear'; onConfirm: () => void; onCancel: () => void;
 }) {
   const cfg = {
-    delete: { title: 'Delete Conversation', desc: 'Permanently delete this conversation. Cannot be undone.', btn: 'Delete', cls: 'bg-red-500 hover:bg-red-600' },
+    delete: { title: 'Delete Conversation', desc: 'Permanently delete this conversation. Cannot be undone.', btn: 'Delete', cls: 'bg-green-600 hover:bg-green-700' },
     archive: { title: 'Archive Conversation', desc: 'Move this conversation to archive.', btn: 'Archive', cls: 'bg-gray-500 hover:bg-gray-600' },
     clear: { title: 'Clear Chat', desc: 'All messages will be cleared from view.', btn: 'Clear', cls: 'bg-orange-500 hover:bg-orange-600' },
   }[type];
@@ -353,8 +353,8 @@ function DeleteModal({ type, onConfirm, onCancel }: {
       <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
         className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative z-10">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-9 h-9 rounded-full bg-red-50 flex items-center justify-center">
-            <AlertCircle size={18} className="text-red-500" />
+          <div className="w-9 h-9 rounded-full bg-green-50 flex items-center justify-center">
+            <AlertCircle size={18} className="text-green-600" />
           </div>
           <h3 className="font-black text-gray-900 text-sm">{cfg.title}</h3>
         </div>
@@ -644,7 +644,7 @@ export default function WhatsAppInbox() {
               <div className="relative" ref={filterRef}>
                 <button onClick={() => setShowFilterMenu(v => !v)}
                   className={cn("p-2 rounded-lg transition-colors text-sm",
-                    showFilterMenu ? "bg-red-50 text-aura-red" : "text-gray-400 hover:text-aura-red hover:bg-red-50")}>
+                    showFilterMenu ? "bg-green-50 text-aura-red" : "text-gray-400 hover:text-aura-red hover:bg-green-50")}>
                   <Filter size={15} />
                 </button>
                 <AnimatePresence>
@@ -657,7 +657,7 @@ export default function WhatsAppInbox() {
                       ].map(({ label, val, icon: Icon }) => (
                         <button key={val} onClick={() => { setActiveFilter(val); setShowFilterMenu(false); }}
                           className={cn("w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold transition-colors",
-                            activeFilter === val ? "bg-red-50 text-aura-red" : "text-gray-700 hover:bg-gray-50")}>
+                            activeFilter === val ? "bg-green-50 text-aura-red" : "text-gray-700 hover:bg-gray-50")}>
                           <Icon size={13} />{label}
                         </button>
                       ))}
@@ -675,7 +675,7 @@ export default function WhatsAppInbox() {
               <div className="relative" ref={dotsRef}>
                 <button onClick={() => setShowDotsMenu(v => !v)}
                   className={cn("p-2 rounded-lg transition-colors",
-                    showDotsMenu ? "bg-red-50 text-aura-red" : "text-gray-400 hover:text-aura-red hover:bg-red-50")}>
+                    showDotsMenu ? "bg-green-50 text-aura-red" : "text-gray-400 hover:text-aura-red hover:bg-green-50")}>
                   <MoreVertical size={15} />
                 </button>
                 <AnimatePresence>
@@ -702,7 +702,7 @@ export default function WhatsAppInbox() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
             <input type="text" placeholder="Search conversations..." value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-200 text-xs font-bold text-gray-900 transition-all" />
+              className="w-full pl-9 pr-4 py-2 bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-200 text-xs font-bold text-gray-900 transition-all" />
           </div>
 
           <div className="flex gap-2 mt-2.5">
@@ -720,7 +720,7 @@ export default function WhatsAppInbox() {
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           {loading ? (
             <div className="flex flex-col items-center justify-center p-10 gap-3">
-              <div className="w-7 h-7 border-2 border-red-200 border-t-aura-red rounded-full animate-spin" />
+              <div className="w-7 h-7 border-2 border-green-200 border-t-aura-red rounded-full animate-spin" />
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Loading...</p>
             </div>
           ) : filteredConversations.length === 0 ? (
@@ -737,7 +737,7 @@ export default function WhatsAppInbox() {
                 className={cn(
                   "px-4 py-3 flex items-center gap-3 cursor-pointer transition-all border-b border-gray-50",
                   selectedContact?.contact_number === conv.contact_number
-                    ? "bg-red-50 border-l-[3px] border-l-aura-red"
+                    ? "bg-green-50 border-l-[3px] border-l-aura-red"
                     : "hover:bg-gray-50/80"
                 )}>
                 <div className={cn(
@@ -795,13 +795,13 @@ export default function WhatsAppInbox() {
                   <Check size={12} /> Resolve
                 </button>
                 <button onClick={() => setShowContactInfo(v => !v)}
-                  className={cn("p-2 rounded-lg transition-colors", showContactInfo ? "bg-red-50 text-aura-red" : "text-gray-400 hover:bg-gray-100")}>
+                  className={cn("p-2 rounded-lg transition-colors", showContactInfo ? "bg-green-50 text-aura-red" : "text-gray-400 hover:bg-gray-100")}>
                   <Info size={17} />
                 </button>
                 {/* Chat menu */}
                 <div className="relative" ref={chatMenuRef}>
                   <button onClick={() => setShowChatMenu(v => !v)}
-                    className={cn("p-2 rounded-lg transition-colors", showChatMenu ? "bg-red-50 text-aura-red" : "text-gray-400 hover:bg-gray-100")}>
+                    className={cn("p-2 rounded-lg transition-colors", showChatMenu ? "bg-green-50 text-aura-red" : "text-gray-400 hover:bg-gray-100")}>
                     <MoreVertical size={17} />
                   </button>
                   <AnimatePresence>
@@ -822,7 +822,7 @@ export default function WhatsAppInbox() {
                           <Archive size={13} />Archive
                         </button>
                         <button onClick={() => { setDeleteModal('delete'); setShowChatMenu(false); }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50">
+                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-green-600 hover:bg-green-50">
                           <Trash2 size={13} />Delete Chat
                         </button>
                       </motion.div>
@@ -848,7 +848,7 @@ export default function WhatsAppInbox() {
                         <MessageContent parsed={parsed} isOut={isOut}
                           onMediaClick={(url, type, filename) => setMediaPreview({ url, type, filename })} />
                         <div className="flex items-center justify-end mt-1 gap-1">
-                          <span className={cn("text-[10px]", isOut ? "text-red-200" : "text-gray-400")}>
+                          <span className={cn("text-[10px]", isOut ? "text-green-200" : "text-gray-400")}>
                             {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase()}
                           </span>
                           {isOut && <StatusIcon status={m.status} direction="outbound" />}
@@ -893,7 +893,7 @@ export default function WhatsAppInbox() {
                 </div>
                 <motion.button whileTap={{ scale: 0.9 }} onClick={handleSendMessage}
                   disabled={!input.trim() || sending}
-                  className="shrink-0 w-10 h-10 bg-aura-red text-white rounded-full flex items-center justify-center disabled:opacity-40 shadow-md hover:bg-red-600 transition-colors">
+                  className="shrink-0 w-10 h-10 bg-aura-red text-white rounded-full flex items-center justify-center disabled:opacity-40 shadow-md hover:bg-green-700 transition-colors">
                   {sending
                     ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                     : <Send size={16} />}
@@ -936,7 +936,7 @@ export default function WhatsAppInbox() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={handleSyncTemplates} disabled={syncingTemplates}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-red-200 rounded-lg text-[10px] font-black text-aura-red hover:bg-red-50 disabled:opacity-50 transition-colors">
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-green-200 rounded-lg text-[10px] font-black text-aura-red hover:bg-green-50 disabled:opacity-50 transition-colors">
                     <RefreshCw size={11} className={cn(syncingTemplates && "animate-spin")} />
                     {syncingTemplates ? 'Syncing...' : 'Sync Meta'}
                   </button>
@@ -956,10 +956,10 @@ export default function WhatsAppInbox() {
                     <div key={tpl.id} onClick={() => setSelectedTemplate(tpl)}
                       className={cn("p-3 rounded-xl border cursor-pointer transition-all",
                         selectedTemplate?.id === tpl.id
-                          ? "bg-red-50 border-red-300 shadow-sm"
-                          : "bg-white border-gray-100 hover:border-red-200")}>
+                          ? "bg-green-50 border-green-300 shadow-sm"
+                          : "bg-white border-gray-100 hover:border-green-200")}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[8px] font-black text-aura-red uppercase bg-red-50 px-1.5 py-0.5 rounded">{tpl.category}</span>
+                        <span className="text-[8px] font-black text-aura-red uppercase bg-green-50 px-1.5 py-0.5 rounded">{tpl.category}</span>
                         <span className="text-[8px] text-gray-400">{tpl.language}</span>
                       </div>
                       <h4 className="text-xs font-black text-gray-900">{tpl.name}</h4>
@@ -991,7 +991,7 @@ export default function WhatsAppInbox() {
                             {comp.type === 'BUTTONS' && (
                               <div className="mt-2 space-y-1">
                                 {comp.buttons?.map((btn: any, bi: number) => (
-                                  <div key={bi} className="text-center text-[10px] font-bold text-aura-red py-1 bg-red-50 rounded-lg">{btn.text}</div>
+                                  <div key={bi} className="text-center text-[10px] font-bold text-aura-red py-1 bg-green-50 rounded-lg">{btn.text}</div>
                                 ))}
                               </div>
                             )}
@@ -1008,7 +1008,7 @@ export default function WhatsAppInbox() {
                   <div className="pt-4 border-t border-gray-200 flex justify-end">
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                       disabled={!selectedTemplate || sending} onClick={handleSendTemplate}
-                      className="flex items-center gap-2 px-5 py-2 bg-aura-red text-white rounded-xl text-xs font-black shadow-lg disabled:opacity-50 hover:bg-red-600 transition-colors">
+                      className="flex items-center gap-2 px-5 py-2 bg-aura-red text-white rounded-xl text-xs font-black shadow-lg disabled:opacity-50 hover:bg-green-700 transition-colors">
                       <Send size={13} />{sending ? 'Sending...' : 'Send Message'}
                     </motion.button>
                   </div>

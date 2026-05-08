@@ -54,8 +54,8 @@ export default function Login() {
         <div className="bg-white py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-gray-100">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-4">
-                <p className="text-xs font-bold text-red-600 uppercase tracking-wider">{error}</p>
+              <div className="bg-green-50 border-l-4 border-green-500 p-4">
+                <p className="text-xs font-bold text-green-700 uppercase tracking-wider">{error}</p>
               </div>
             )}
             
@@ -99,7 +99,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-xs font-black text-white bg-aura-red hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-aura-red disabled:opacity-50 uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-xs font-black text-white bg-aura-red hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-aura-red disabled:opacity-50 uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
                 {loading ? 'Validating Access...' : 'Initialize Session'}
               </button>

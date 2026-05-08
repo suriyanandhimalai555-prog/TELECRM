@@ -107,7 +107,7 @@ export default function Dashboard() {
       </div>
       <button 
         onClick={() => fetchStats()}
-        className="px-6 py-2 bg-aura-red text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg hover:bg-red-600 transition-all"
+        className="px-6 py-2 bg-aura-red text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg hover:bg-green-700 transition-all"
       >
         Retry Connection
       </button>
@@ -169,7 +169,7 @@ export default function Dashboard() {
             className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 transition-all cursor-pointer group"
           >
             <div className="flex items-center justify-between mb-6">
-              <div className={cn(card.color, "p-4 rounded-xl text-white shadow-lg shadow-red-500/20 transform group-hover:scale-110 transition-transform")}>
+              <div className={cn(card.color, "p-4 rounded-xl text-white shadow-lg shadow-green-500/20 transform group-hover:scale-110 transition-transform")}>
                 <card.icon size={24} />
               </div>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{card.name}</p>

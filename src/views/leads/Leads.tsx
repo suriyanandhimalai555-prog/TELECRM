@@ -298,7 +298,7 @@ export default function Leads() {
       case 'FOLLOW_UP': return 'bg-yellow-100/50 text-yellow-700 border border-yellow-200';
       case 'HOT': return 'bg-orange-100/50 text-orange-700 border border-orange-200';
       case 'RECENTLY_WON': return 'bg-green-100/50 text-green-700 border border-green-200';
-      case 'LOST': return 'bg-red-100/50 text-red-700 border border-red-200';
+      case 'LOST': return 'bg-red-100/50 text-red-700 border border-green-200';
       default: return 'bg-gray-100 text-gray-700';
     }
   };
@@ -522,7 +522,7 @@ export default function Leads() {
                             <motion.button 
                               whileHover={{ scale: 1.1, color: 'var(--color-aura-red)' }}
                               onClick={() => { setLeadToDelete(lead.id); setShowDeleteConfirm(true); }}
-                              className="p-1.5 text-red-200 hover:text-aura-red hover:bg-aura-red/5 rounded-lg"
+                              className="p-1.5 text-green-200 hover:text-aura-red hover:bg-aura-red/5 rounded-lg"
                             >
                               <Trash2 size={14} />
                             </motion.button>

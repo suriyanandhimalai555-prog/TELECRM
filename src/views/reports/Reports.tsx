@@ -157,7 +157,7 @@ export default function Reports() {
   if (loading) return <div className="h-full flex items-center justify-center"><div className="ui-standard-spinner" /></div>;
   if (error)   return (
     <div className="h-full flex items-center justify-center flex-col gap-4">
-      <p className="text-red-500 font-bold">{error}</p>
+      <p className="text-green-600 font-bold">{error}</p>
       <button onClick={fetchData} className="px-4 py-2 bg-aura-red text-white rounded-xl text-xs font-black uppercase">Retry</button>
     </div>
   );
