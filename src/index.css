@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap");
 @import "tailwindcss";
 
 @theme {
@@ -12,54 +12,33 @@
   --color-dark-bg: #f9fafb;
   --color-dark-card: #ffffff;
   --color-dark-border: #e5e7eb;
-  --font-family-sans: 'Inter', sans-serif;
+  --font-family-sans: 'DM Sans', sans-serif;
 }
 
 @layer base {
   body {
     @apply bg-gray-50 text-gray-900;
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'DM Sans', sans-serif !important;
   }
   * {
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'DM Sans', sans-serif !important;
   }
 }
 
 @layer components {
-  .ui-aura-glow {
-    @apply transition-all duration-300;
-  }
-  .ui-aura-glow:hover {
-    box-shadow: 0 0 15px #16a34a;
-    transform: translateY(-2px);
-  }
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-aura-red/20 rounded-full hover:bg-aura-red/40 transition-colors;
-  }
-  .ui-standard-spinner {
-    @apply animate-spin w-10 h-10 border-4 border-aura-red border-t-transparent rounded-full;
-  }
-  .pattern-grid {
-    background-image: radial-gradient(circle, #e5e7eb 1px, transparent 1px);
-    background-size: 20px 20px;
-  }
+  .ui-aura-glow { @apply transition-all duration-300; }
+  .ui-aura-glow:hover { box-shadow: 0 0 15px #16a34a; transform: translateY(-2px); }
+  .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { @apply bg-aura-red/20 rounded-full hover:bg-aura-red/40 transition-colors; }
+  .ui-standard-spinner { @apply animate-spin w-10 h-10 border-4 border-aura-red border-t-transparent rounded-full; }
+  .pattern-grid { background-image: radial-gradient(circle, #e5e7eb 1px, transparent 1px); background-size: 20px 20px; }
 }
 
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { @apply bg-transparent; }
 ::-webkit-scrollbar-thumb { @apply bg-aura-red/30 rounded-full hover:bg-aura-red/50; }
 
-@keyframes flash {
-  0% { background-color: white; opacity: 0.8; }
-  100% { background-color: transparent; opacity: 0; }
-}
 @keyframes flash-red {
   0% { background-color: #16a34a; opacity: 0.5; }
   100% { background-color: transparent; opacity: 0; }
