@@ -98,13 +98,3 @@ export const deleteCall = async (req: any, res: any) => {
     res.status(500).json({ error: err.message });
   }
 };
-
-export const deleteCall = async (req: any, res: any) => {
-  const { id } = req.params;
-  try {
-    await db.query('DELETE FROM calls WHERE id = $1', [id]);
-    res.json({ success: true });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-};
