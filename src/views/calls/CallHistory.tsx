@@ -316,12 +316,14 @@ export default function CallHistory() {
                           title="Edit">
                           <Pencil size={14} />
                         </motion.button>
-                        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                          onClick={() => { if(confirm('Delete this call record?')) api.delete(`/calls/${call.id}`).then(() => setCalls(prev => prev.filter(c => c.id !== call.id))); }}
-                          className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete">
-                          <Trash2 size={14} />
-                        </motion.button>
+                        {user?.role === 'ADMIN' && (
+                          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                            onClick={() => { if(confirm('Delete this call record?')) api.delete(`/calls/${call.id}`).then(() => setCalls(prev => prev.filter(c => c.id !== call.id))); }}
+                            className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete">
+                            <Trash2 size={14} />
+                          </motion.button>
+                        )}
                       </div>
                     </td>
                   </motion.tr>
