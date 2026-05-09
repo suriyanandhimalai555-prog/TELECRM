@@ -432,7 +432,7 @@ export default function Leads() {
                     checked={selectedLeadIds.length === filteredLeads.length && filteredLeads.length > 0}
                     onChange={toggleAllSelection} className="accent-aura-red" />
                 </th>
-                {['Contact', 'Project', 'Mobile', 'Stage', 'Employee', 'Revenue', 'Next Followup', 'Actions'].map((h) => (
+                {['Contact', 'Project', 'Mobile', 'Stage', 'Owner', 'Revenue', 'Next Followup', 'Actions'].map((h) => (
                   <th key={h} className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">{h}</th>
                 ))}
               </tr>
@@ -590,7 +590,7 @@ export default function Leads() {
                   </div>
                   {(user?.role === 'ADMIN' || user?.role === 'MANAGER') && users.length > 0 && (
                     <div>
-                      <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Employee (Assigned To)</label>
+                      <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Owner (Assigned To)</label>
                       <select value={formData.owner_id} onChange={(e) => setFormData({...formData, owner_id: Number(e.target.value)})}
                         className="w-full px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-xs font-bold appearance-none">
                         {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
@@ -653,7 +653,7 @@ export default function Leads() {
                 </div>
                 {(user?.role === 'ADMIN' || user?.role === 'MANAGER') && users.length > 0 && (
                   <div>
-                    <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Assign Employee</label>
+                    <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Assign Owner</label>
                     <select value={massEditData.owner_id || ''} onChange={(e) => setMassEditData({ ...massEditData, owner_id: e.target.value || undefined })}
                       className="w-full px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-xs font-bold appearance-none">
                       <option value="">— No Change —</option>

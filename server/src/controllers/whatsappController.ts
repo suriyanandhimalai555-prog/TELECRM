@@ -677,3 +677,24 @@ export const sendMedia = async (req: Request, res: Response) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// ─── Delete Message ───────────────────────────────────────────────────────────
+export const deleteMessage = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    await db.query('DELETE FROM whatsapp_messages WHERE id = $1', [id]);
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const deleteMessage = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    await db.query('DELETE FROM whatsapp_messages WHERE id = $1', [id]);
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};

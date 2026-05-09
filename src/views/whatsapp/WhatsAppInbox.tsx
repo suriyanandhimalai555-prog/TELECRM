@@ -65,6 +65,11 @@ function parseMessage(text: string): ParsedMessage {
     const [lat, lng] = coords.split(',');
     return { type: 'location', lat: lat || '', lng: lng || '', name: locName };
   }
+  if (text.startsWith('[reaction:')) {
+    const emoji = text.slice(10, -1);
+    return { type: 'text', text: emoji };
+  }
+  if (text === '[reaction]') return { type: 'text', text: '👍' };
   return { type: 'text', text };
 }
 
@@ -588,9 +593,10 @@ export default function WhatsAppInbox() {
     setDeleteModal(null);
   };
 
-  const handleDeleteMessage = (msgId: number | string) => {
+  const handleDeleteMessage = async (msgId: number | string) => {
     setMessages(prev => prev.filter(m => m.id !== msgId));
     setCtxMenu(null);
+    try { await api.delete(`/whatsapp/message/${msgId}`); } catch {}
   };
 
   const togglePin = (phone: string) => {
