@@ -34,6 +34,7 @@ export default function Leads() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedLeadIds, setSelectedLeadIds] = useState<number[]>([]);
   const [activeCall, setActiveCall] = useState<{ lead: Lead; seconds: number; interval: any; type: 'phone' | 'whatsapp' } | null>(null);
+  const [callPopup, setCallPopup] = useState<Lead | null>(null);
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [bulkMessage, setBulkMessage] = useState('');
   const [sendingBulk, setSendingBulk] = useState(false);
@@ -338,6 +339,29 @@ export default function Leads() {
 
   return (
     <div className="space-y-6 relative">
+      {callPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={() => setCallPopup(null)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-72 z-10" onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-black text-gray-900 mb-1">{callPopup.contact_name}</h3>
+            <p className="text-xs text-gray-400 font-mono mb-5">{callPopup.mobile || callPopup.whatsapp}</p>
+            <div className="flex flex-col gap-3">
+              <button onClick={() => { setCallPopup(null); startCall(callPopup, 'phone'); }}
+                className="flex items-center gap-3 px-4 py-3 bg-green-50 hover:bg-green-100 text-green-700 rounded-xl font-bold text-sm transition-colors">
+                <Phone size={18} /> Call via Phone
+              </button>
+              <button onClick={() => { setCallPopup(null); startCall(callPopup, 'whatsapp'); }}
+                className="flex items-center gap-3 px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold text-sm transition-colors">
+                <MessageSquare size={18} /> Call via WhatsApp
+              </button>
+            </div>
+            <button onClick={() => setCallPopup(null)}
+              className="mt-4 w-full text-xs text-gray-400 hover:text-gray-600 font-bold">
+              CANCEL
+            </button>
+          </div>
+        </div>
+      )}
       {activeCall && (
         <div className="fixed bottom-4 right-4 z-50 bg-green-600 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-4">
           <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
@@ -541,16 +565,10 @@ export default function Leads() {
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-1">
                         <motion.button whileHover={{ scale: 1.2 }}
-                          onClick={() => startCall(lead, 'phone')}
-                          title="Phone Call"
-                          className={cn("p-1.5 rounded-lg transition-colors", activeCall?.lead.id === lead.id && activeCall?.type === 'phone' ? "text-red-500 bg-red-50 animate-pulse" : "text-green-600 hover:bg-green-50")}>
+                          onClick={() => setCallPopup(lead)}
+                          title="Call"
+                          className={cn("p-1.5 rounded-lg transition-colors", activeCall?.lead.id === lead.id ? "text-red-500 bg-red-50 animate-pulse" : "text-green-600 hover:bg-green-50")}>
                           <Phone size={14} />
-                        </motion.button>
-                        <motion.button whileHover={{ scale: 1.2 }}
-                          onClick={() => startCall(lead, 'whatsapp')}
-                          title="WhatsApp Call"
-                          className={cn("p-1.5 rounded-lg transition-colors", activeCall?.lead.id === lead.id && activeCall?.type === 'whatsapp' ? "text-red-500 bg-red-50 animate-pulse" : "text-green-500 hover:bg-green-50")}>
-                          <MessageSquare size={14} />
                         </motion.button>
                         {(user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
                           <>
