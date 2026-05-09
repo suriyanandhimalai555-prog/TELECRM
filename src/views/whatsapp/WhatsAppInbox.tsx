@@ -223,12 +223,15 @@ function MessageContent({ parsed, isOut, onMediaClick }: {
 
     case 'video':
       return (
-        <div className="relative cursor-pointer"
-          onClick={() => onMediaClick(mediaUrl(parsed.mediaId), 'video')}>
-          <video src={mediaUrl(parsed.mediaId)} className="max-w-[220px] max-h-[180px] rounded-lg" />
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg">
-            <Play size={28} className="text-white" fill="white" />
-          </div>
+        <div className="relative rounded-lg overflow-hidden max-w-[280px]">
+          <video 
+            src={mediaUrl(parsed.mediaId)} 
+            controls
+            preload="metadata"
+            controlsList="nodownload"
+            className="w-full max-h-[220px] rounded-lg bg-black"
+            onClick={e => e.stopPropagation()}
+          />
         </div>
       );
 
