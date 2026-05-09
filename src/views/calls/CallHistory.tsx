@@ -14,7 +14,10 @@ import {
   Table as TableIcon,
   Plus,
   X,
-  MessageCircle
+  MessageCircle,
+  Phone,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import WhatsAppChat from '../../components/WhatsApp/WhatsAppChat';
 import Papa from 'papaparse';
@@ -46,6 +49,7 @@ export default function CallHistory() {
   });
 
   const [showLogModal, setShowLogModal] = useState(false);
+  const [editingCallId, setEditingCallId] = useState<number | null>(null);
   const [activeWhatsApp, setActiveWhatsApp] = useState<{ phone: string; name: string } | null>(null);
   const [logFormData, setLogFormData] = useState({
     lead_id: '',
@@ -293,15 +297,32 @@ export default function CallHistory() {
                       {new Date(call.start_time).toLocaleString()}
                     </td>
                     <td className="px-6 py-4">
-                      <motion.button 
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => setActiveWhatsApp({ phone: call.caller, name: call.lead_name || 'Customer' })}
-                        className="p-2 text-aura-red hover:bg-aura-red/5 rounded-lg transition-colors"
-                        title="Open WhatsApp Chat"
-                      >
-                        <MessageCircle size={14} />
-                      </motion.button>
+                      <div className="flex items-center gap-1">
+                        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                          onClick={() => { const phone = (call.lead_phone || call.caller || '').replace(/\D/g,''); if(phone) window.open(`tel:${phone}`,'_self'); }}
+                          className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          title="Phone Call">
+                          <Phone size={14} />
+                        </motion.button>
+                        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                          onClick={() => setActiveWhatsApp({ phone: call.lead_phone || call.caller, name: call.lead_name || 'Customer' })}
+                          className="p-1.5 text-green-500 hover:bg-green-50 rounded-lg transition-colors"
+                          title="WhatsApp Chat">
+                          <MessageCircle size={14} />
+                        </motion.button>
+                        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                          onClick={() => { setLogFormData({ lead_id: call.lead_id?.toString() || '', caller: call.agent_name || '', type: call.type || 'OUTGOING', status: call.status || 'CONNECTED', duration_seconds: call.duration_seconds || 0, outcome: call.outcome || '', notes: call.notes || '', campaign_id: call.campaign_id?.toString() || '' }); setEditingCallId(call.id); setShowLogModal(true); }}
+                          className="p-1.5 text-gray-400 hover:bg-gray-50 rounded-lg transition-colors"
+                          title="Edit">
+                          <Pencil size={14} />
+                        </motion.button>
+                        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                          onClick={() => { if(confirm('Delete this call record?')) api.delete(`/calls/${call.id}`).then(() => setCalls(prev => prev.filter(c => c.id !== call.id))); }}
+                          className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete">
+                          <Trash2 size={14} />
+                        </motion.button>
+                      </div>
                     </td>
                   </motion.tr>
                 ))}
