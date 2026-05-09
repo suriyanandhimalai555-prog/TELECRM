@@ -123,11 +123,23 @@ export const proxyMedia = async (req: Request, res: Response) => {
     const arrayBuffer = await fileRes.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    const total = buffer.length;
     res.setHeader('Content-Type', mimeType);
     res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
-    res.setHeader('Content-Length', buffer.length);
     res.setHeader('Cache-Control', 'private, max-age=3600');
     res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Accept-Ranges', 'bytes');
+    const rangeHeader = req.headers['range'];
+    if (rangeHeader) {
+      const [startStr, endStr] = rangeHeader.replace('bytes=', '').split('-');
+      const start = parseInt(startStr, 10);
+      const end = endStr ? parseInt(endStr, 10) : total - 1;
+      res.setHeader('Content-Range', `bytes ${start}-${end}/${total}`);
+      res.setHeader('Content-Length', end - start + 1);
+      res.status(206);
+      return res.send(buffer.slice(start, end + 1));
+    }
+    res.setHeader('Content-Length', total);
     return res.send(buffer);
 
   } catch (err) {
