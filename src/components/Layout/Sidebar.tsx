@@ -89,8 +89,8 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
             className={({ isActive }) => cn(
               "flex items-center px-4 py-2.5 rounded-xl transition-all group relative overflow-hidden",
               isActive 
-                ? "bg-aura-red/5 text-aura-red shadow-sm" 
-                : "text-gray-400 hover:bg-gray-50 hover:text-gray-600"
+                ? "bg-green-50 text-green-600 shadow-sm font-bold" 
+                : "text-gray-500 hover:bg-green-50 hover:text-green-600"
             )}
           >
             <div className={cn("min-w-[20px] transition-transform group-hover:scale-110", isOpen ? "mr-3" : "mx-auto")}>
@@ -102,7 +102,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
               </span>
             )}
             {location.pathname === item.path && (
-               <motion.div layoutId="sidebar-active" className="absolute right-0 top-1/4 bottom-1/4 w-0.5 bg-aura-red rounded-full shadow-sm" />
+               <motion.div layoutId="sidebar-active" className="absolute right-0 top-1/4 bottom-1/4 w-1 bg-green-500 rounded-full shadow-sm" />
             )}
           </NavLink>
         ))}
