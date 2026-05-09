@@ -299,13 +299,13 @@ export default function CallHistory() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1">
                         <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                          onClick={() => { const phone = (call.lead_phone || call.caller || '').replace(/\D/g,''); if(phone) window.open(`tel:${phone}`,'_self'); }}
+                          onClick={() => { const phone = (call.lead_mobile || call.lead_whatsapp || '').replace(/[^0-9]/g, ''); if(phone) window.open(`tel:${phone}`,'_self'); }}
                           className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                           title="Phone Call">
                           <Phone size={14} />
                         </motion.button>
                         <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                          onClick={() => setActiveWhatsApp({ phone: call.lead_phone || call.caller, name: call.lead_name || 'Customer' })}
+                          onClick={() => { const ph = (call.lead_whatsapp || call.lead_mobile || '').replace(/[^0-9]/g, ''); setActiveWhatsApp({ phone: ph, name: call.lead_name || 'Customer' }); }}
                           className="p-1.5 text-green-500 hover:bg-green-50 rounded-lg transition-colors"
                           title="WhatsApp Chat">
                           <MessageCircle size={14} />

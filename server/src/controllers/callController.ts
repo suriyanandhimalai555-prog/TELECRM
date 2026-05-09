@@ -9,7 +9,7 @@ export const getCalls = async (req: AuthRequest, res: Response) => {
 
   try {
     let query = `
-      SELECT c.*, u.name as agent_name, l.contact_name as lead_name, cp.name as campaign_name
+      SELECT c.*, u.name as agent_name, l.contact_name as lead_name, l.mobile as lead_mobile, l.whatsapp as lead_whatsapp, cp.name as campaign_name
       FROM calls c
       JOIN users u ON c.agent_id = u.id
       LEFT JOIN leads l ON c.lead_id = l.id
