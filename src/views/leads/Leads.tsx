@@ -303,8 +303,8 @@ export default function Leads() {
       setActiveCall(prev => prev ? { ...prev, seconds: prev.seconds + 1 } : null);
     }, 1000);
     setActiveCall({ lead, seconds: 0, interval });
-    const phone = lead.whatsapp || lead.mobile;
-    if (phone) window.open(`tel:${phone}`, '_self');
+    const phone = (lead.whatsapp || lead.mobile || '').replace(/\D/g, '');
+    if (phone) window.open(`https://wa.me/${phone}`, '_blank');
   };
 
   const formatCallTime = (s: number) => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
