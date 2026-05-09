@@ -60,8 +60,8 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
             animate={{ opacity: 1 }}
             className="flex items-center"
           >
-            <div className="w-8 h-8 bg-aura-red rounded-lg flex items-center justify-center mr-3 shadow-lg shadow-aura-red/20">
-               <Zap size={18} className="text-white" fill="currentColor" />
+            <div className="flex items-center mr-2">
+               <img src="/logo.png" alt="AVG CRM" className="w-10 h-10 object-contain" />
             </div>
             <span className="text-lg font-black text-gray-900 tracking-tighter uppercase">
               AVG<span className="text-aura-red">CRM</span>
