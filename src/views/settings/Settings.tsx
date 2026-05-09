@@ -46,6 +46,7 @@ export default function Settings() {
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
     email: user?.email || '',
+    phone: (user as any)?.phone || '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
@@ -106,6 +107,14 @@ export default function Settings() {
     }
 
     try {
+      await api.put(`/settings/users/${user?.id}`, {
+        name: profileData.name,
+        email: user?.email,
+        phone: profileData.phone,
+        role: user?.role,
+        reporting_to: (user as any)?.reporting_to || null,
+        assigned_projects: (user as any)?.assigned_projects || [],
+      });
       if (profileData.newPassword) {
         await api.post('/auth/change-password', {
           currentPassword: profileData.currentPassword,
@@ -226,6 +235,16 @@ export default function Settings() {
                         type="text" 
                         value={profileData.name}
                         onChange={(e) => setProfileData({...profileData, name: e.target.value})}
+                        className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-lg focus:outline-aura-red font-bold text-xs"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-[9px] font-black text-gray-400 uppercase mb-2">Phone Number</label>
+                      <input
+                        type="tel"
+                        value={profileData.phone}
+                        onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
+                        placeholder="e.g. 919876543210"
                         className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-lg focus:outline-aura-red font-bold text-xs"
                       />
                     </div>

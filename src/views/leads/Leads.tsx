@@ -87,13 +87,18 @@ export default function Leads() {
   const fetchLeads = useCallback(async (search?: string) => {
     try {
       const res = await api.get('/leads', { params: { search } });
-      setLeads(res.data);
+      let allLeads = res.data;
+      // Manager sees only leads assigned to them
+      if (user?.role === 'MANAGER') {
+        allLeads = allLeads.filter((l: any) => l.owner_id === user.id);
+      }
+      setLeads(allLeads);
     } catch (error) {
       console.error('Failed to fetch leads');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   const fetchUsers = useCallback(async () => {
     if (user?.role === 'ADMIN' || user?.role === 'MANAGER') {
