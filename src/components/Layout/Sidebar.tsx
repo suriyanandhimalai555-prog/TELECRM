@@ -61,7 +61,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
             className="flex items-center"
           >
             <div className="flex items-center mr-2">
-               <img src="/logo.png" alt="AVG CRM" className="w-10 h-10 object-contain" />
+               <img src="/logo.png" alt="AVG CRM" className="w-14 h-14 object-contain" />
             </div>
             <span className="text-lg font-black text-gray-900 tracking-tighter uppercase">
               AVG<span className="text-aura-red">CRM</span>
