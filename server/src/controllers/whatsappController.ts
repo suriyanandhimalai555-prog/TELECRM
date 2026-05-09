@@ -560,30 +560,6 @@ export const handleWebhook = async (req: Request, res: Response) => {
              RETURNING *`,
             [msgId, from, PHONE_NUMBER_ID, text, name, ts]
           );
-
-          if (msg.type === 'text') {
-            const lower = text.toLowerCase().trim();
-            if (lower === 'hi' || lower === 'hello') {
-              const reply = 'Hello from AVG CRM! 🤖 How can we assist you today?';
-
-              await fetch(`https://graph.facebook.com/v25.0/${PHONE_NUMBER_ID}/messages`, {
-                method: 'POST',
-                headers: {
-                  Authorization: `Bearer ${WHATSAPP_TOKEN}`,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  messaging_product: 'whatsapp',
-                  to: from,
-                  type: 'text',
-                  text: { body: reply },
-                }),
-              });
-
-              await db.query(
-                `INSERT INTO whatsapp_messages
-                   (message_id, from_number, to_number, message_text, direction, status, contact_name, is_read)
-                 VALUES ($1, $2, $3, $4, 'outbound', 'sent', $5, true)`,
                 [`auto_${msgId}`, PHONE_NUMBER_ID, from, reply, 'Auto Bot']
               );
             }
