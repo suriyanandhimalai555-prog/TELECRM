@@ -332,9 +332,9 @@ export default function Leads() {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="space-y-6 relative">
       {activeCall && (
-        <div className="bg-green-600 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-4">
+        <div className="fixed bottom-4 right-4 z-50 bg-green-600 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-4">
           <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
           <div>
             <p className="text-xs font-bold">{activeCall.lead.contact_name}</p>
@@ -346,8 +346,6 @@ export default function Leads() {
           </button>
         </div>
       )}
-    </div>
-    <div className="space-y-6 relative">
       {flash === 'white' && <div className="ui-screen-flash" />}
       {flash === 'red' && <div className="ui-screen-flash bg-aura-red/30" />}
 
