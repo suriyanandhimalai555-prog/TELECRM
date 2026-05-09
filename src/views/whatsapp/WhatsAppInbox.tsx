@@ -756,14 +756,26 @@ export default function WhatsAppInbox() {
             </div>
           ) : (
             filteredConversations.map(conv => (
-              <motion.div key={conv.contact_number} whileHover={{ x: 2 }}
+              <motion.div key={conv.contact_number}
+                whileHover={{ x: 3, backgroundColor: '#f0fdf4' }}
+                whileTap={{ scale: 0.98 }}
+                animate={selectedContact?.contact_number === conv.contact_number ? { x: 4 } : { x: 0 }}
                 onClick={() => selectContact(conv)}
                 className={cn(
-                  "px-4 py-3 flex items-center gap-3 cursor-pointer transition-all border-b border-gray-50",
+                  "px-4 py-3 flex items-center gap-3 cursor-pointer transition-all border-b border-gray-50 relative",
                   selectedContact?.contact_number === conv.contact_number
-                    ? "bg-green-50 border-l-[3px] border-l-green-500"
+                    ? "bg-gradient-to-r from-green-50 to-white border-l-[4px] border-l-green-500 shadow-sm"
                     : "hover:bg-gray-50/80"
                 )}>
+                {selectedContact?.contact_number === conv.contact_number && (
+                  <motion.div
+                    layoutId="activeChat"
+                    className="absolute left-0 top-0 bottom-0 w-1 bg-green-500 rounded-r-full"
+                    initial={{ scaleY: 0 }}
+                    animate={{ scaleY: 1 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  />
+                )}
                 <div className={cn(
                   "w-10 h-10 rounded-full flex items-center justify-center text-white font-black text-sm shrink-0",
                   conv.last_direction === 'inbound' ? "bg-green-600" : "bg-gray-400"
