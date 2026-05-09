@@ -8,6 +8,5 @@ router.get('/', authenticateToken, callController.getCalls);
 router.post('/', authenticateToken, callController.createCall);
 router.put('/:id', authenticateToken, callController.updateCall);
 router.delete('/:id', authenticateToken, callController.deleteCall);
-router.delete('/:id', authenticateToken, callController.deleteCall);
 
 export default router;
