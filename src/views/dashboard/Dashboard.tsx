@@ -117,7 +117,7 @@ export default function Dashboard() {
   const statCards = [
     { name: 'Total Contacts', value: stats.totalContacts || 0, icon: Users, color: 'bg-aura-red', filter: 'all', path: '/leads' },
     { name: 'Sent Today', value: stats.messagesToday || 0, icon: PhoneOutgoing, color: 'bg-green-600', filter: 'all', path: '/whatsapp' },
-    { name: 'Unread WA', value: stats.unreadWhatsAppCount || 0, icon: MessageSquare, color: 'bg-fbbf24', filter: 'unread', path: '/whatsapp' },
+    { name: 'Unread WA', value: stats.unreadWhatsAppCount || 0, icon: MessageSquare, color: 'bg-green-500', filter: 'unread', path: '/whatsapp' },
     { name: 'Calls Made', value: stats.totalCalls || 0, icon: Phone, color: 'bg-aura-red', filter: 'all', path: '/calls' },
   ];
 
