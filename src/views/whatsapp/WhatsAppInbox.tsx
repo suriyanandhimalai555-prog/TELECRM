@@ -707,7 +707,9 @@ export default function WhatsAppInbox() {
                     <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
                       className="absolute right-0 top-full mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-50 w-48 py-1 overflow-hidden">
                       {[
-                        { label: 'Sort by Latest', icon: SortDesc, action: () => {} },
+                        { label: 'Sort by Latest', icon: SortDesc, action: () => {
+          setConversations(prev => [...prev].sort((a, b) => new Date(b.last_timestamp).getTime() - new Date(a.last_timestamp).getTime()));
+        } },
                         { label: 'Sync Templates', icon: RefreshCw, action: handleSyncTemplates },
                       ].map(({ label, icon: Icon, action }) => (
                         <button key={label} onClick={() => { action(); setShowDotsMenu(false); }}
