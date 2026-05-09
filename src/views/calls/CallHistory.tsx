@@ -412,18 +412,21 @@ export default function CallHistory() {
       {/* Floating WhatsApp Chat */}
       <AnimatePresence>
         {activeWhatsApp && (
-          <motion.div 
-            initial={{ opacity: 0, y: 100, scale: 0.8 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 100, scale: 0.8 }}
-            className="fixed bottom-6 right-6 z-[60] shadow-2xl"
-          >
-            <WhatsAppChat 
-              phone={activeWhatsApp.phone} 
-              name={activeWhatsApp.name} 
-              onClose={() => setActiveWhatsApp(null)} 
-            />
-          </motion.div>
+          <div className="fixed inset-0 z-[60] flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setActiveWhatsApp(null)} />
+            <div className="relative z-10 shadow-2xl">
+              <button
+                onClick={() => setActiveWhatsApp(null)}
+                className="absolute -top-3 -right-3 z-20 bg-white rounded-full p-1.5 shadow-lg border border-gray-100 text-gray-500 hover:text-red-500 transition-colors">
+                <X size={16} />
+              </button>
+              <WhatsAppChat 
+                phone={activeWhatsApp.phone} 
+                name={activeWhatsApp.name} 
+                onClose={() => setActiveWhatsApp(null)} 
+              />
+            </div>
+          </div>
         )}
       </AnimatePresence>
     </div>
