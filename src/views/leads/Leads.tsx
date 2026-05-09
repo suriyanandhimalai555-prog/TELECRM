@@ -342,7 +342,11 @@ export default function Leads() {
           </div>
           <button onClick={() => startCall(activeCall.lead)}
             className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl text-sm font-bold">
-            End Call
+            End & Save
+          </button>
+          <button onClick={() => { clearInterval(activeCall.interval); setActiveCall(null); }}
+            className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl text-sm font-bold">
+            Cancel
           </button>
         </div>
       )}
