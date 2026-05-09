@@ -432,7 +432,7 @@ export default function Leads() {
                     checked={selectedLeadIds.length === filteredLeads.length && filteredLeads.length > 0}
                     onChange={toggleAllSelection} className="accent-aura-red" />
                 </th>
-                {['Contact', 'Project', 'Mobile', 'Stage', 'Owner', 'Revenue', 'Next Followup', 'Actions'].map((h) => (
+                {['Owner', 'Contact', 'Mobile', 'Project', 'Stage', 'Revenue', 'Next Followup', 'Actions'].map((h) => (
                   <th key={h} className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">{h}</th>
                 ))}
               </tr>
@@ -452,14 +452,14 @@ export default function Leads() {
                       <input type="checkbox" checked={selectedLeadIds.includes(lead.id)}
                         onChange={() => toggleLeadSelection(lead.id)} className="accent-aura-red" />
                     </td>
+                    <td className="px-6 py-4 text-[9px] font-black text-green-600 uppercase">
+                      {lead.owner_name || users.find(u => u.id === lead.owner_id)?.name || 'Admin'}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="text-xs font-black text-gray-900 lowercase tracking-tight"># {lead.contact_name}</span>
                         <span className="text-[9px] font-bold text-gray-400 truncate max-w-[150px]">{lead.email || 'No Email'}</span>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 text-[9px] font-black text-gray-500 uppercase">
-                      {lead.project_name || projects.find(p => p.id === lead.project_id)?.name || '-'}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-2">
@@ -476,13 +476,13 @@ export default function Leads() {
                         )}
                       </div>
                     </td>
+                    <td className="px-6 py-4 text-[9px] font-black text-gray-500 uppercase">
+                      {lead.project_name || projects.find(p => p.id === lead.project_id)?.name || '-'}
+                    </td>
                     <td className="px-6 py-4">
                       <span className={cn("px-2 py-0.5 rounded-full text-[9px] font-black uppercase", getStageColor(lead.stage))}>
                         {lead.stage}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 text-[9px] font-black text-aura-red uppercase">
-                      {lead.owner_name || users.find(u => u.id === lead.owner_id)?.name || 'Admin'}
                     </td>
                     <td className="px-6 py-4 text-xs font-black text-gray-900">${lead.revenue.toLocaleString()}</td>
                     <td className="px-6 py-4 text-[9px] font-bold text-gray-500 uppercase">
