@@ -15,14 +15,14 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
     let usersResult;
     if (req.user.role === 'ADMIN') {
       usersResult = await db.query(`
-        SELECT u.id, u.email, u.name, u.role, u.reporting_to, u.created_at,
+        SELECT u.id, u.email, u.name, u.role, u.reporting_to, u.phone, u.created_at,
         (SELECT ${jsonAggFunc} FROM user_projects WHERE user_id = u.id) as assigned_projects
         FROM users u
       `);
     } else {
       // Manager sees team
       usersResult = await db.query(`
-        SELECT u.id, u.email, u.name, u.role, u.reporting_to, u.created_at,
+        SELECT u.id, u.email, u.name, u.role, u.reporting_to, u.phone, u.created_at,
         (SELECT ${jsonAggFunc} FROM user_projects WHERE user_id = u.id) as assigned_projects
         FROM users u 
         WHERE u.reporting_to = $1 OR u.id = $2
@@ -49,7 +49,7 @@ export const createUser = async (req: AuthRequest, res: Response) => {
 
     const result = await db.query(
       'INSERT INTO users (email, password, name, role, reporting_to) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-      [email, hashedPassword, name, role, reporting_to || null]
+      [email, hashedPassword, name, role, reporting_to || null, req.body.phone || null]
     );
 
     const userId = result.rows[0].id;
@@ -61,7 +61,7 @@ export const createUser = async (req: AuthRequest, res: Response) => {
       }
     }
 
-    const newUserResult = await db.query('SELECT id, email, name, role, reporting_to FROM users WHERE id = $1', [userId]);
+    const newUserResult = await db.query('SELECT id, email, name, role, reporting_to, phone FROM users WHERE id = $1', [userId]);
     res.status(201).json(newUserResult.rows[0]);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -76,9 +76,9 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
     if (password) {
       const salt = bcrypt.genSaltSync(10);
       const hashedPassword = bcrypt.hashSync(password, salt);
-      await db.query('UPDATE users SET email = $1, name = $2, role = $3, reporting_to = $4, password = $5 WHERE id = $6', [email, name, role, reporting_to, hashedPassword, id]);
+      await db.query('UPDATE users SET email = $1, name = $2, role = $3, reporting_to = $4, password = $5, phone = $6 WHERE id = $7', [email, name, role, reporting_to, hashedPassword, req.body.phone || null, id]);
     } else {
-      await db.query('UPDATE users SET email = $1, name = $2, role = $3, reporting_to = $4 WHERE id = $5', [email, name, role, reporting_to, id]);
+      await db.query('UPDATE users SET email = $1, name = $2, role = $3, reporting_to = $4, phone = $5 WHERE id = $6', [email, name, role, reporting_to, req.body.phone || null, id]);
     }
 
     // Update project assignments
@@ -89,7 +89,7 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
       }
     }
 
-    const updatedUserResult = await db.query('SELECT id, email, name, role, reporting_to FROM users WHERE id = $1', [id]);
+    const updatedUserResult = await db.query('SELECT id, email, name, role, reporting_to, phone FROM users WHERE id = $1', [id]);
     res.json(updatedUserResult.rows[0]);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });

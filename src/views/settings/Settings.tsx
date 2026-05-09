@@ -55,6 +55,7 @@ export default function Settings() {
     name: string;
     email: string;
     password: string;
+    phone: string;
     role: 'ADMIN' | 'MANAGER' | 'EMPLOYEE';
     reporting_to: number | null;
     assigned_projects: number[];
@@ -62,6 +63,7 @@ export default function Settings() {
     name: '',
     email: '',
     password: '',
+    phone: '',
     role: 'EMPLOYEE',
     reporting_to: null,
     assigned_projects: [] as number[]
@@ -293,7 +295,7 @@ export default function Settings() {
                     whileTap={{ scale: 0.98 }}
                     onClick={() => {
                       setEditingUser(null);
-                      setUserData({ name: '', email: '', password: '', role: 'EMPLOYEE', reporting_to: null, assigned_projects: [] });
+                      setUserData({ name: '', email: '', password: '', phone: '', role: 'EMPLOYEE', reporting_to: null, assigned_projects: [] });
                       setShowUserModal(true);
                     }}
                     className="flex items-center px-4 py-2 bg-aura-red text-white rounded-lg text-[10px] font-black uppercase shadow-lg shadow-aura-red/20"
@@ -326,6 +328,7 @@ export default function Settings() {
                           <td className="py-4 px-2">
                             <div className="font-black text-gray-900 lowercase tracking-tight">{u.name}</div>
                             <div className="text-[9px] text-gray-400 font-mono tracking-wider">{u.email}</div>
+                            {u.phone && <div className="text-[9px] text-green-600 font-mono tracking-wider">📞 {u.phone}</div>}
                           </td>
                           <td className="py-4 px-2">
                             <span className={cn(
@@ -363,6 +366,7 @@ export default function Settings() {
                                   onClick={() => {
                                     setEditingUser(u);
                                     setUserData({
+                                      phone: u.phone || '',
                                       name: u.name,
                                       email: u.email,
                                       password: '',
@@ -426,6 +430,16 @@ export default function Settings() {
                       type="email" required
                       value={userData.email}
                       onChange={(e) => setUserData({...userData, email: e.target.value})}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-xs font-bold focus:outline-aura-red"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-black text-gray-400 uppercase mb-1">Phone Number</label>
+                    <input 
+                      type="tel"
+                      value={userData.phone}
+                      onChange={(e) => setUserData({...userData, phone: e.target.value})}
+                      placeholder="e.g. 919876543210"
                       className="w-full px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-xs font-bold focus:outline-aura-red"
                     />
                   </div>
