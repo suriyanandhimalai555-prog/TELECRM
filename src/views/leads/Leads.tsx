@@ -33,6 +33,7 @@ export default function Leads() {
   const navigate = useNavigate();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedLeadIds, setSelectedLeadIds] = useState<number[]>([]);
+  const [activeCall, setActiveCall] = useState<{ lead: Lead; seconds: number; interval: any } | null>(null);
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [bulkMessage, setBulkMessage] = useState('');
   const [sendingBulk, setSendingBulk] = useState(false);
@@ -281,6 +282,33 @@ export default function Leads() {
     navigate(`/whatsapp?phone=${phone.replace(/\D/g, '')}`);
   };
 
+  const startCall = (lead: Lead) => {
+    if (activeCall) {
+      clearInterval(activeCall.interval);
+      api.post('/calls', {
+        lead_id: activeCall.lead.id,
+        caller: user?.name || 'Agent',
+        type: 'OUTGOING',
+        status: 'CONNECTED',
+        duration_seconds: activeCall.seconds,
+        outcome: 'COMPLETED',
+        notes: `Call with ${activeCall.lead.contact_name}`,
+        start_time: new Date(Date.now() - activeCall.seconds * 1000).toISOString(),
+        end_time: new Date().toISOString(),
+      }).catch(() => {});
+      setActiveCall(null);
+      return;
+    }
+    const interval = setInterval(() => {
+      setActiveCall(prev => prev ? { ...prev, seconds: prev.seconds + 1 } : null);
+    }, 1000);
+    setActiveCall({ lead, seconds: 0, interval });
+    const phone = lead.whatsapp || lead.mobile;
+    if (phone) window.open(`tel:${phone}`, '_self');
+  };
+
+  const formatCallTime = (s: number) => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+
   const filteredLeads = Array.isArray(leads) ? leads.filter(lead => {
     const matchesProject = selectedProject === 'ALL' || lead.project_id?.toString() === selectedProject;
     const matchesStage = selectedStage === 'ALL' || lead.stage === selectedStage;
@@ -304,6 +332,21 @@ export default function Leads() {
   };
 
   return (
+    <div className="fixed bottom-4 right-4 z-50">
+      {activeCall && (
+        <div className="bg-green-600 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-4">
+          <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
+          <div>
+            <p className="text-xs font-bold">{activeCall.lead.contact_name}</p>
+            <p className="text-lg font-black">{formatCallTime(activeCall.seconds)}</p>
+          </div>
+          <button onClick={() => startCall(activeCall.lead)}
+            className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-xl text-sm font-bold">
+            End Call
+          </button>
+        </div>
+      )}
+    </div>
     <div className="space-y-6 relative">
       {flash === 'white' && <div className="ui-screen-flash" />}
       {flash === 'red' && <div className="ui-screen-flash bg-aura-red/30" />}
@@ -490,7 +533,9 @@ export default function Leads() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-1">
-                        <motion.button whileHover={{ scale: 1.2 }} className="p-1.5 text-aura-red hover:bg-aura-red/5 rounded-lg">
+                        <motion.button whileHover={{ scale: 1.2 }}
+                          onClick={() => startCall(lead)}
+                          className={cn("p-1.5 rounded-lg transition-colors", activeCall?.lead.id === lead.id ? "text-red-500 bg-red-50 animate-pulse" : "text-green-600 hover:bg-green-50")}>
                           <Phone size={14} />
                         </motion.button>
                         {(user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
