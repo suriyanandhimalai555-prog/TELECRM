@@ -144,6 +144,7 @@ function MediaPreviewModal({ url, type, filename, onClose }: {
         <div className="mt-12 w-full flex items-center justify-center">
           {type === 'image' && <img src={url} alt={filename} className="max-h-[75vh] max-w-full rounded-xl object-contain" />}
           {type === 'video' && <video src={url} controls autoPlay className="max-h-[75vh] max-w-full rounded-xl" />}
+          {type === 'video' && <video src={url} controls autoPlay className="max-h-[75vh] max-w-full rounded-xl" />}
           {type === 'audio' && (
             <div className="bg-white/10 rounded-xl p-8 flex flex-col items-center gap-4">
               <Music size={48} className="text-white" />
@@ -223,15 +224,18 @@ function MessageContent({ parsed, isOut, onMediaClick }: {
 
     case 'video':
       return (
-        <div className="relative rounded-lg overflow-hidden max-w-[280px]">
+        <div className="relative rounded-lg overflow-hidden max-w-[280px] cursor-pointer"
+          onClick={() => onMediaClick(mediaUrl(parsed.mediaId), 'video')}>
           <video 
             src={mediaUrl(parsed.mediaId)} 
-            controls
             preload="metadata"
-            controlsList="nodownload"
             className="w-full max-h-[220px] rounded-lg bg-black"
-            onClick={e => e.stopPropagation()}
           />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg">
+            <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
+              <Play size={20} className="text-gray-800 ml-1" fill="currentColor" />
+            </div>
+          </div>
         </div>
       );
 
