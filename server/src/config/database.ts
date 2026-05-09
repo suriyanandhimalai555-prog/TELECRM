@@ -159,6 +159,7 @@ export const initDb = async () => {
   await pool.query(`ALTER TABLE leads ADD COLUMN IF NOT EXISTS tags TEXT[]`);
   await pool.query(`ALTER TABLE leads ADD COLUMN IF NOT EXISTS reporting_to INTEGER`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_projects INTEGER[] DEFAULT '{}'`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50)`);
   console.log('✅ DB initialized successfully');
 };
 
