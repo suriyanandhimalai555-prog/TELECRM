@@ -143,8 +143,11 @@ function MediaPreviewModal({ url, type, filename, onClose }: {
         </div>
         <div className="mt-12 w-full flex items-center justify-center">
           {type === 'image' && <img src={url} alt={filename} className="max-h-[75vh] max-w-full rounded-xl object-contain" />}
-          {type === 'video' && <video src={url} controls autoPlay className="max-h-[75vh] max-w-full rounded-xl" />}
-          {type === 'video' && <video src={url} controls autoPlay className="max-h-[75vh] max-w-full rounded-xl" />}
+          {type === 'video' && (
+            <video src={url} controls autoPlay playsInline
+              className="max-h-[80vh] max-w-[90vw] rounded-xl outline-none"
+              style={{ minWidth: 320 }} />
+          )}
           {type === 'audio' && (
             <div className="bg-white/10 rounded-xl p-8 flex flex-col items-center gap-4">
               <Music size={48} className="text-white" />
