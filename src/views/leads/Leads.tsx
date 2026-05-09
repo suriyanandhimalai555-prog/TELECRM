@@ -33,7 +33,7 @@ export default function Leads() {
   const navigate = useNavigate();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedLeadIds, setSelectedLeadIds] = useState<number[]>([]);
-  const [activeCall, setActiveCall] = useState<{ lead: Lead; seconds: number; interval: any } | null>(null);
+  const [activeCall, setActiveCall] = useState<{ lead: Lead; seconds: number; interval: any; type: 'phone' | 'whatsapp' } | null>(null);
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [bulkMessage, setBulkMessage] = useState('');
   const [sendingBulk, setSendingBulk] = useState(false);
@@ -536,9 +536,16 @@ export default function Leads() {
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-1">
                         <motion.button whileHover={{ scale: 1.2 }}
-                          onClick={() => startCall(lead)}
-                          className={cn("p-1.5 rounded-lg transition-colors", activeCall?.lead.id === lead.id ? "text-red-500 bg-red-50 animate-pulse" : "text-green-600 hover:bg-green-50")}>
+                          onClick={() => startCall(lead, 'phone')}
+                          title="Phone Call"
+                          className={cn("p-1.5 rounded-lg transition-colors", activeCall?.lead.id === lead.id && activeCall?.type === 'phone' ? "text-red-500 bg-red-50 animate-pulse" : "text-green-600 hover:bg-green-50")}>
                           <Phone size={14} />
+                        </motion.button>
+                        <motion.button whileHover={{ scale: 1.2 }}
+                          onClick={() => startCall(lead, 'whatsapp')}
+                          title="WhatsApp Call"
+                          className={cn("p-1.5 rounded-lg transition-colors", activeCall?.lead.id === lead.id && activeCall?.type === 'whatsapp' ? "text-red-500 bg-red-50 animate-pulse" : "text-green-500 hover:bg-green-50")}>
+                          <MessageSquare size={14} />
                         </motion.button>
                         {(user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
                           <>
