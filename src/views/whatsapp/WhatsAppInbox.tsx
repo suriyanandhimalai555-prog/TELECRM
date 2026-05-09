@@ -547,7 +547,12 @@ export default function WhatsAppInbox() {
   }, [selectedContact, fetchMessages]);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = chatEndRef.current?.parentElement;
+    if (container) {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+      if (isNearBottom) chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages]);
 
   const selectContact = async (conv: Conversation) => {
@@ -622,6 +627,16 @@ export default function WhatsAppInbox() {
     const now = new Date();
     if (d.toDateString() === now.toDateString()) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  };
+
+  const formatDateSeparator = (ts: string) => {
+    const d = new Date(ts);
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (d.toDateString() === now.toDateString()) return 'Today';
+    if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return d.toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' });
   };
 
   const StatusIcon = ({ status, direction }: { status: string; direction: string }) => {
@@ -848,11 +863,20 @@ export default function WhatsAppInbox() {
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-5 space-y-3 custom-scrollbar bg-[#f0f2f5]">
               <AnimatePresence initial={false}>
-                {messages.map(m => {
+                {messages.map((m, idx) => {
                   const isOut = m.direction === 'outbound';
                   const parsed = parseMessage(m.message_text);
+                  const showDate = idx === 0 || new Date(m.timestamp).toDateString() !== new Date(messages[idx-1].timestamp).toDateString();
                   return (
-                    <div key={m.id} className={cn("flex", isOut ? "justify-end" : "justify-start")}
+                    <div key={m.id}>
+                    {showDate && (
+                      <div className="flex items-center justify-center my-3">
+                        <span className="px-3 py-1 bg-white text-gray-400 text-[10px] font-bold rounded-full shadow-sm border border-gray-100">
+                          {formatDateSeparator(m.timestamp)}
+                        </span>
+                      </div>
+                    )}
+                    <div className={cn("flex", isOut ? "justify-end" : "justify-start")}
                       onContextMenu={e => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, msgId: m.id }); }}>
                       <motion.div initial={{ opacity: 0, y: 6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
                         className={cn(
@@ -868,6 +892,7 @@ export default function WhatsAppInbox() {
                           {isOut && <StatusIcon status={m.status} direction="outbound" />}
                         </div>
                       </motion.div>
+                    </div>
                     </div>
                   );
                 })}
