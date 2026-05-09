@@ -712,7 +712,7 @@ export default function WhatsAppInbox() {
         } },
                         { label: 'Sync Templates', icon: RefreshCw, action: handleSyncTemplates },
                       ].map(({ label, icon: Icon, action }) => (
-                        <button key={label} onClick={() => { action(); setShowDotsMenu(false); }}
+                        <button key={label} onClick={() => { setShowDotsMenu(false); setTimeout(() => action(), 50); }}
                           className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50">
                           <Icon size={13} />{label}
                         </button>
