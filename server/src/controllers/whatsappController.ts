@@ -560,10 +560,6 @@ export const handleWebhook = async (req: Request, res: Response) => {
              RETURNING *`,
             [msgId, from, PHONE_NUMBER_ID, text, name, ts]
           );
-                [`auto_${msgId}`, PHONE_NUMBER_ID, from, reply, 'Auto Bot']
-              );
-            }
-          }
 
           const reqWithIo = req as any;
           if (reqWithIo.io && savedRows?.length > 0) {
