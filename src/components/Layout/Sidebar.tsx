@@ -39,7 +39,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     { name: 'Tasks', path: '/tasks', icon: CheckSquare, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
     { name: 'Projects', path: '/projects', icon: Briefcase, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
     { name: 'Notes', path: '/notes', icon: StickyNote, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
-    { name: 'WhatsApp', path: '/whatsapp', icon: MessageSquare, roles: ['ADMIN', 'MANAGER'] },
+    { name: 'WhatsApp', path: '/whatsapp', icon: MessageSquare, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
     { name: 'Campaigns', path: '/campaigns', icon: Target, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
     { name: 'Reports', path: '/reports', icon: BarChart3, roles: ['ADMIN', 'MANAGER'] },
     { name: 'Settings', path: '/settings', icon: Settings, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
@@ -82,7 +82,28 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       </div>
 
       <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto no-scrollbar">
-        {filteredNavItems.map((item) => (
+        {filteredNavItems.map((item) => {
+          const isWhatsAppEmployee = item.path === '/whatsapp' && user?.role === 'EMPLOYEE';
+          if (isWhatsAppEmployee) {
+            const phone = (user?.phone || '').replace(/[^0-9]/g, '');
+            return (
+              <button
+                key={item.path}
+                onClick={() => window.open(phone ? `https://wa.me/?phone=${phone}` : 'https://web.whatsapp.com', '_blank')}
+                className="w-full flex items-center px-4 py-2.5 rounded-xl transition-all group relative overflow-hidden text-gray-500 hover:bg-green-50 hover:text-green-600"
+              >
+                <div className={cn("min-w-[20px] transition-transform group-hover:scale-110", isOpen ? "mr-3" : "mx-auto")}>
+                  <item.icon size={18} />
+                </div>
+                {isOpen && (
+                  <span className="font-black uppercase tracking-widest text-[9px]">
+                    {item.name}
+                  </span>
+                )}
+              </button>
+            );
+          }
+          return (
           <NavLink
             key={item.path}
             to={item.path}
@@ -105,7 +126,8 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                <motion.div layoutId="sidebar-active" className="absolute right-0 top-1/4 bottom-1/4 w-1 bg-green-500 rounded-full shadow-sm" />
             )}
           </NavLink>
-        ))}
+          );
+        })}
       </nav>
 
       <div className="p-4 border-t border-gray-100">
