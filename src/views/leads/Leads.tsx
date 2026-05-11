@@ -311,6 +311,7 @@ export default function Leads() {
     }, 1000);
     setActiveCall({ lead, seconds: 0, interval, type });
     const phone = (lead.mobile || lead.whatsapp || '').replace(/[^0-9]/g, '');
+    console.log('Dialing:', phone, 'type:', type);
     if (phone) {
       if (type === 'whatsapp') {
         window.open(`https://wa.me/${phone}`, '_blank');
