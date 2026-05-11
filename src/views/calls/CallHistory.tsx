@@ -145,7 +145,7 @@ export default function CallHistory() {
     const matchesEndDate = !filters.endDate || callDate <= new Date(filters.endDate + 'T23:59:59');
     
     return matchesSearch && matchesStatus && matchesCampaign && matchesAgent && matchesStartDate && matchesEndDate;
-  }) : [];
+  });
 
   const exportCSV = () => {
     const data = filteredCalls.map(call => ({
