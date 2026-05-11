@@ -637,9 +637,9 @@ export default function WhatsAppInbox() {
 
   const StatusIcon = ({ status, direction }: { status: string; direction: string }) => {
     if (direction === 'inbound') return null;
-    if (status === 'read') return <CheckCheck size={13} className="text-aura-red" />;
-    if (status === 'delivered') return <CheckCheck size={13} className="text-gray-400" />;
-    if (status === 'sent') return <Check size={13} className="text-gray-400" />;
+    if (status === 'read') return <CheckCheck size={13} className="text-blue-400" />;
+    if (status === 'delivered') return <CheckCheck size={13} className="text-gray-300" />;
+    if (status === 'sent') return <Check size={13} className="text-gray-300" />;
     return null;
   };
 
