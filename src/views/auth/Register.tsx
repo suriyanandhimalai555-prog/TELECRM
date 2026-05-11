@@ -52,8 +52,8 @@ export default function Register() {
         <div className="bg-white py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-gray-100">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
-              <div className="bg-green-50 border-l-4 border-aura-red p-4">
-                <p className="text-[10px] font-black text-green-700 uppercase tracking-wider">{error}</p>
+              <div className="bg-blue-50 border-l-4 border-aura-red p-4">
+                <p className="text-[10px] font-black text-blue-700 uppercase tracking-wider">{error}</p>
               </div>
             )}
 
@@ -115,7 +115,7 @@ export default function Register() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-xs font-black text-white bg-aura-red hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-aura-red disabled:opacity-50 uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-xs font-black text-white bg-aura-red hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-aura-red disabled:opacity-50 uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
                 {loading ? 'Processing Engagement...' : 'Initialize Registry'}
               </button>

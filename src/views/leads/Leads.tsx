@@ -346,8 +346,8 @@ export default function Leads() {
       case 'CONTACTED': return 'bg-indigo-100/50 text-indigo-700 border border-indigo-200';
       case 'FOLLOW_UP': return 'bg-yellow-100/50 text-yellow-700 border border-yellow-200';
       case 'HOT': return 'bg-orange-100/50 text-orange-700 border border-orange-200';
-      case 'RECENTLY_WON': return 'bg-green-100/50 text-green-700 border border-green-200';
-      case 'LOST': return 'bg-red-100/50 text-red-700 border border-green-200';
+      case 'RECENTLY_WON': return 'bg-blue-100/50 text-blue-700 border border-blue-200';
+      case 'LOST': return 'bg-red-100/50 text-red-700 border border-blue-200';
       default: return 'bg-gray-100 text-gray-700';
     }
   };
@@ -394,7 +394,7 @@ export default function Leads() {
             <p className="text-xs text-gray-400 font-mono mb-5">{callPopup.mobile || callPopup.whatsapp}</p>
             <div className="flex flex-col gap-3">
               <button onClick={() => { setCallPopup(null); startCall(callPopup, 'phone'); }}
-                className="flex items-center gap-3 px-4 py-3 bg-green-50 hover:bg-green-100 text-green-700 rounded-xl font-bold text-sm transition-colors">
+                className="flex items-center gap-3 px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl font-bold text-sm transition-colors">
                 <Phone size={18} /> Call via Phone
               </button>
               <button onClick={() => { setCallPopup(null); startCall(callPopup, 'whatsapp'); }}
@@ -655,7 +655,7 @@ export default function Leads() {
                             <motion.button 
                               whileHover={{ scale: 1.1, color: 'var(--color-aura-red)' }}
                               onClick={() => { setLeadToDelete(lead.id); setShowDeleteConfirm(true); }}
-                              className="p-1.5 text-green-200 hover:text-aura-red hover:bg-aura-red/5 rounded-lg"
+                              className="p-1.5 text-blue-200 hover:text-aura-red hover:bg-aura-red/5 rounded-lg"
                             >
                               <Trash2 size={14} />
                             </motion.button>

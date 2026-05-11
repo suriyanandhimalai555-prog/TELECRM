@@ -30,13 +30,13 @@ export default function ConfirmationModal({
   if (!isOpen) return null;
 
   const variantStyles = {
-    danger: 'bg-green-700 hover:bg-green-700 text-white',
+    danger: 'bg-blue-700 hover:bg-blue-700 text-white',
     warning: 'bg-yellow-600 hover:bg-yellow-700 text-white',
     info: 'bg-blue-600 hover:bg-blue-700 text-white'
   };
 
   const iconStyles = {
-    danger: 'text-green-700 bg-green-50',
+    danger: 'text-blue-700 bg-blue-50',
     warning: 'text-yellow-600 bg-yellow-50',
     info: 'text-blue-600 bg-blue-50'
   };

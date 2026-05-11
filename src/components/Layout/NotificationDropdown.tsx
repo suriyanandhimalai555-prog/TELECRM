@@ -13,7 +13,7 @@ export default function NotificationDropdown({ isOpen, onClose }: NotificationDr
 
   const getIcon = (type: Notification['type']) => {
     switch (type) {
-      case 'success': return <CheckCircle className="text-green-500" size={16} />;
+      case 'success': return <CheckCircle className="text-blue-500" size={16} />;
       case 'warning': return <AlertTriangle className="text-amber-500" size={16} />;
       case 'error': return <AlertCircle className="text-aura-red" size={16} />;
       default: return <Info className="text-blue-500" size={16} />;

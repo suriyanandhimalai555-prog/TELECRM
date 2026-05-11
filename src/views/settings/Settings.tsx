@@ -405,7 +405,7 @@ export default function Settings() {
                                     setUserToDelete(u.id);
                                     setShowDeleteConfirm(true);
                                   }}
-                                  className="p-1.5 text-green-200 hover:text-aura-red hover:bg-aura-red/5 rounded-lg transition-all"
+                                  className="p-1.5 text-blue-200 hover:text-aura-red hover:bg-aura-red/5 rounded-lg transition-all"
                                 >
                                   <Trash2 size={14} />
                                 </motion.button>

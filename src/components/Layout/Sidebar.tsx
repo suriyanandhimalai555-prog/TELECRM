@@ -90,7 +90,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
               <button
                 key={item.path}
                 onClick={() => window.open(phone ? `https://wa.me/?phone=${phone}` : 'https://web.whatsapp.com', '_blank')}
-                className="w-full flex items-center px-4 py-2.5 rounded-xl transition-all group relative overflow-hidden text-gray-500 hover:bg-green-50 hover:text-green-600"
+                className="w-full flex items-center px-4 py-2.5 rounded-xl transition-all group relative overflow-hidden text-gray-500 hover:bg-blue-50 hover:text-blue-600"
               >
                 <div className={cn("min-w-[20px] transition-transform group-hover:scale-110", isOpen ? "mr-3" : "mx-auto")}>
                   <item.icon size={18} />
@@ -110,8 +110,8 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
             className={({ isActive }) => cn(
               "flex items-center px-4 py-2.5 rounded-xl transition-all group relative overflow-hidden",
               isActive 
-                ? "bg-green-50 text-green-600 shadow-sm font-bold" 
-                : "text-gray-500 hover:bg-green-50 hover:text-green-600"
+                ? "bg-blue-50 text-blue-600 shadow-sm font-bold" 
+                : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
             )}
           >
             <div className={cn("min-w-[20px] transition-transform group-hover:scale-110", isOpen ? "mr-3" : "mx-auto")}>
@@ -123,7 +123,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
               </span>
             )}
             {location.pathname === item.path && (
-               <motion.div layoutId="sidebar-active" className="absolute right-0 top-1/4 bottom-1/4 w-1 bg-green-500 rounded-full shadow-sm" />
+               <motion.div layoutId="sidebar-active" className="absolute right-0 top-1/4 bottom-1/4 w-1 bg-blue-500 rounded-full shadow-sm" />
             )}
           </NavLink>
           );

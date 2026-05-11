@@ -107,7 +107,7 @@ export default function Dashboard() {
       </div>
       <button 
         onClick={() => fetchStats()}
-        className="px-6 py-2 bg-aura-red text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg hover:bg-[#128C7E] transition-all"
+        className="px-6 py-2 bg-aura-red text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg hover:bg-[#2563EB] transition-all"
       >
         Retry Connection
       </button>

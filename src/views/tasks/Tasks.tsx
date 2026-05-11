@@ -386,7 +386,7 @@ export default function Tasks() {
                         setTaskToDelete(task.id);
                         setShowDeleteConfirm(true);
                       }}
-                      className="p-2 text-green-200 hover:text-aura-red hover:bg-aura-red/5 rounded-lg"
+                      className="p-2 text-blue-200 hover:text-aura-red hover:bg-aura-red/5 rounded-lg"
                     >
                       <Trash2 size={14} />
                     </motion.button>

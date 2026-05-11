@@ -4,7 +4,7 @@
 @theme {
   --color-aura-red: #2563EB;
   --color-aura-blue: #15803d;
-  --color-aura-green: #22c55e;
+  --color-aura-green: #2563EB;
   --color-aura-gold: #fbbf24;
   --color-aura-purple: #8b5cf6;
   --color-sakura-pink: #bbf7d0;
@@ -27,7 +27,7 @@
 
 @layer components {
   .ui-aura-glow { @apply transition-all duration-300; }
-  .ui-aura-glow:hover { box-shadow: 0 0 15px #16a34a; transform: translateY(-2px); }
+  .ui-aura-glow:hover { box-shadow: 0 0 15px #2563EB; transform: translateY(-2px); }
   .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
   .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
   .custom-scrollbar::-webkit-scrollbar-thumb { @apply bg-aura-red/20 rounded-full hover:bg-aura-red/40 transition-colors; }
@@ -40,7 +40,7 @@
 ::-webkit-scrollbar-thumb { @apply bg-aura-red/30 rounded-full hover:bg-aura-red/50; }
 
 @keyframes flash-red {
-  0% { background-color: #16a34a; opacity: 0.5; }
+  0% { background-color: #2563EB; opacity: 0.5; }
   100% { background-color: transparent; opacity: 0; }
 }
 .anime-flash-red { animation: flash-red 0.3s ease-out forwards; }
@@ -55,9 +55,9 @@
 }
 
 /* WhatsApp page keeps its own green colors */
-.whatsapp-page .bg-\[\#25D366\] { background-color: #25D366 !important; }
-.whatsapp-page .text-\[\#25D366\] { color: #25D366 !important; }
-.whatsapp-page .bg-\[\#D9FDD3\] { background-color: #D9FDD3 !important; }
+.whatsapp-page .bg-\[\#2563EB\] { background-color: #2563EB !important; }
+.whatsapp-page .text-\[\#2563EB\] { color: #2563EB !important; }
+.whatsapp-page .bg-\[\#2563EB\] { background-color: #2563EB !important; }
 /* force rebuild Mon May 11 18:22:49 IST 2026 */
 
 /* Force ALL/UNREAD button blue */
@@ -69,3 +69,6 @@ button.bg-\[\#2563EB\] {
 .bg-aura-red {
   background-color: #2563EB !important;
 }
+
+/* Professional SaaS */
+body { background-color: #F5F7FB !important; color: #111827; }
