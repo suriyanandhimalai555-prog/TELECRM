@@ -864,7 +864,7 @@ export default function WhatsAppInbox() {
                       <motion.div initial={{ opacity: 0, y: 6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
                         className={cn(
                           "max-w-[68%] p-3 px-3.5 rounded-2xl shadow-sm relative",
-                          isOut ? "bg-[#D9FDD3] text-gray-800 rounded-tr-sm" : "bg-white text-gray-800 rounded-tl-sm border border-gray-100"
+                          isOut ? "bg-[#D9FDD3] text-gray-900 rounded-tr-sm shadow-sm" : "bg-white text-gray-800 rounded-tl-sm border border-gray-100"
                         )}>
                         <MessageContent parsed={parsed} isOut={isOut}
                           onMediaClick={(url, type, filename) => setMediaPreview({ url, type, filename })} />
