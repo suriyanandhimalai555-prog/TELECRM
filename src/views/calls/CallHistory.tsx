@@ -50,6 +50,7 @@ export default function CallHistory() {
 
   const [showLogModal, setShowLogModal] = useState(false);
   const [editingCallId, setEditingCallId] = useState<number | null>(null);
+  const [historyPopup, setHistoryPopup] = useState<{ name: string; calls: any[] } | null>(null);
   const [activeWhatsApp, setActiveWhatsApp] = useState<{ phone: string; name: string } | null>(null);
   const [logFormData, setLogFormData] = useState({
     lead_id: '',
@@ -311,6 +312,15 @@ export default function CallHistory() {
                           <MessageCircle size={14} />
                         </motion.button>
                         <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                          onClick={async () => {
+                            const res = await api.get('/calls', { params: { lead_id: call.lead_id } });
+                            setHistoryPopup({ name: call.lead_name || 'Customer', calls: res.data });
+                          }}
+                          className="p-1.5 text-blue-400 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="History">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        </motion.button>
+                        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                           onClick={() => { setLogFormData({ lead_id: call.lead_id?.toString() || '', caller: call.agent_name || '', type: call.type || 'OUTGOING', status: call.status || 'CONNECTED', duration_seconds: call.duration_seconds || 0, outcome: call.outcome || '', notes: call.notes || '', campaign_id: call.campaign_id?.toString() || '' }); setEditingCallId(call.id); setShowLogModal(true); }}
                           className="p-1.5 text-gray-400 hover:bg-gray-50 rounded-lg transition-colors"
                           title="Edit">
@@ -411,7 +421,37 @@ export default function CallHistory() {
 
       {/* Floating WhatsApp Chat */}
       <AnimatePresence>
-        {activeWhatsApp && (
+        {historyPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={() => setHistoryPopup(null)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-[480px] z-10 max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-black text-gray-900">{historyPopup.name} — Call History</h3>
+              <button onClick={() => setHistoryPopup(null)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            {historyPopup.calls.length === 0 ? (
+              <p className="text-xs text-gray-400 text-center py-8">No call history found</p>
+            ) : (
+              <div className="space-y-2">
+                {historyPopup.calls.map((c: any) => (
+                  <div key={c.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                    <div>
+                      <p className="text-xs font-black text-gray-900">{c.agent_name || c.caller}</p>
+                      <p className="text-[10px] text-gray-400">{new Date(c.start_time).toLocaleString()}</p>
+                      {c.notes && <p className="text-[10px] text-gray-500 mt-0.5">{c.notes}</p>}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-black text-green-600">{Math.floor(c.duration_seconds/60)}:{String(c.duration_seconds%60).padStart(2,'0')}</p>
+                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${c.status === 'CONNECTED' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-500'}`}>{c.status}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {activeWhatsApp && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center">
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setActiveWhatsApp(null)} />
             <div className="relative z-10 shadow-2xl">
