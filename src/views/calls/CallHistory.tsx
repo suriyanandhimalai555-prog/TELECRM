@@ -288,6 +288,11 @@ export default function CallHistory() {
                     </td>
                     <td className="px-6 py-4 text-xs font-black text-gray-900 lowercase tracking-tight">
                        {call.lead_name || 'Classified Identity'}
+                       {(call.lead_mobile || call.lead_whatsapp) && (
+                         <p className="text-[10px] font-mono text-gray-400 mt-0.5">
+                           +{(call.lead_mobile || call.lead_whatsapp || '').replace(/[^0-9]/g, '')}
+                         </p>
+                       )}
                     </td>
                     <td className="px-6 py-4 text-[10px] font-black text-aura-red uppercase tracking-tighter">{call.agent_name}</td>
                     <td className="px-6 py-4 text-xs font-black text-gray-400 font-mono tracking-tighter">{formatDuration(call.duration_seconds)}</td>
