@@ -59,3 +59,13 @@
 .whatsapp-page .text-\[\#25D366\] { color: #25D366 !important; }
 .whatsapp-page .bg-\[\#D9FDD3\] { background-color: #D9FDD3 !important; }
 /* force rebuild Mon May 11 18:22:49 IST 2026 */
+
+/* Force ALL/UNREAD button blue */
+button.bg-\[\#2563EB\] {
+  background-color: #2563EB !important;
+}
+
+/* Override aura-red everywhere in whatsapp */
+.bg-aura-red {
+  background-color: #2563EB !important;
+}
