@@ -35,6 +35,7 @@ export default function Leads() {
   const [selectedLeadIds, setSelectedLeadIds] = useState<number[]>([]);
   const [activeCall, setActiveCall] = useState<{ lead: Lead; seconds: number; interval: any; type: 'phone' | 'whatsapp' } | null>(null);
   const [callPopup, setCallPopup] = useState<Lead | null>(null);
+  const [historyPopup, setHistoryPopup] = useState<{ lead: Lead; calls: any[] } | null>(null);
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [bulkMessage, setBulkMessage] = useState('');
   const [sendingBulk, setSendingBulk] = useState(false);
@@ -345,6 +346,38 @@ export default function Leads() {
 
   return (
     <div className="space-y-6 relative">
+      {historyPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={() => setHistoryPopup(null)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-[480px] z-10 max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-black text-gray-900">{historyPopup.lead.contact_name}</h3>
+                <p className="text-xs text-gray-400 font-mono">{historyPopup.lead.mobile}</p>
+              </div>
+              <button onClick={() => setHistoryPopup(null)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            {historyPopup.calls.length === 0 ? (
+              <p className="text-xs text-gray-400 text-center py-8">No call history found</p>
+            ) : (
+              <div className="space-y-2">
+                {historyPopup.calls.map((call: any) => (
+                  <div key={call.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                    <div>
+                      <p className="text-xs font-black text-gray-900">{call.agent_name || call.caller}</p>
+                      <p className="text-[10px] text-gray-400">{new Date(call.start_time).toLocaleString()}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-black text-green-600">{Math.floor(call.duration_seconds/60)}:{String(call.duration_seconds%60).padStart(2,'0')}</p>
+                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${call.status === 'CONNECTED' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-500'}`}>{call.status}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {callPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={() => setCallPopup(null)}>
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
@@ -575,6 +608,15 @@ export default function Leads() {
                           title="Call"
                           className={cn("p-1.5 rounded-lg transition-colors", activeCall?.lead.id === lead.id ? "text-red-500 bg-red-50 animate-pulse" : "text-green-600 hover:bg-green-50")}>
                           <Phone size={14} />
+                        </motion.button>
+                        <motion.button whileHover={{ scale: 1.2 }}
+                          onClick={async () => {
+                            const res = await api.get('/calls', { params: { lead_id: lead.id } });
+                            setHistoryPopup({ lead, calls: res.data });
+                          }}
+                          title="Call History"
+                          className="p-1.5 rounded-lg transition-colors text-blue-400 hover:bg-blue-50">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                         </motion.button>
                         {(user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
                           <>
