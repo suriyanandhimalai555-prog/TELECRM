@@ -2,7 +2,7 @@
 @import "tailwindcss";
 
 @theme {
-  --color-aura-red: #16a34a;
+  --color-aura-red: #2563EB;
   --color-aura-blue: #15803d;
   --color-aura-green: #22c55e;
   --color-aura-gold: #fbbf24;
