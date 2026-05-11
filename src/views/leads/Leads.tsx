@@ -288,7 +288,7 @@ export default function Leads() {
     navigate(`/whatsapp?phone=${phone.replace(/\D/g, '')}`);
   };
 
-  const startCall = (lead: Lead) => {
+  const startCall = (lead: Lead, type: 'phone' | 'whatsapp' = 'phone') => {
     if (activeCall) {
       clearInterval(activeCall.interval);
       api.post('/calls', {
@@ -309,8 +309,14 @@ export default function Leads() {
       setActiveCall(prev => prev ? { ...prev, seconds: prev.seconds + 1 } : null);
     }, 1000);
     setActiveCall({ lead, seconds: 0, interval });
-    const phone = (lead.whatsapp || lead.mobile || '').replace(/\D/g, '');
-    if (phone) window.open(`https://wa.me/${phone}`, '_blank');
+    const phone = (lead.mobile || lead.whatsapp || '').replace(/[^0-9]/g, '');
+    if (phone) {
+      if (type === 'whatsapp') {
+        window.open(`https://wa.me/${phone}`, '_blank');
+      } else {
+        window.open(`tel:${phone}`, '_self');
+      }
+    }
   };
 
   const formatCallTime = (s: number) => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
