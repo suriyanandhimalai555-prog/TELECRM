@@ -308,7 +308,7 @@ export default function Leads() {
     const interval = setInterval(() => {
       setActiveCall(prev => prev ? { ...prev, seconds: prev.seconds + 1 } : null);
     }, 1000);
-    setActiveCall({ lead, seconds: 0, interval });
+    setActiveCall({ lead, seconds: 0, interval, type });
     const phone = (lead.mobile || lead.whatsapp || '').replace(/[^0-9]/g, '');
     if (phone) {
       if (type === 'whatsapp') {
