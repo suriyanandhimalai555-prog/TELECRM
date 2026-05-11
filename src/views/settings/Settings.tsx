@@ -347,7 +347,7 @@ export default function Settings() {
                           <td className="py-4 px-2">
                             <div className="font-black text-gray-900 lowercase tracking-tight">{u.name}</div>
                             <div className="text-[9px] text-gray-400 font-mono tracking-wider">{u.email}</div>
-                            {u.phone && <div className="text-[9px] text-green-600 font-mono tracking-wider">📞 {u.phone}</div>}
+                            {u.phone && <div className="text-[9px] text-blue-600 font-mono tracking-wider">📞 {u.phone}</div>}
                           </td>
                           <td className="py-4 px-2">
                             <span className={cn(

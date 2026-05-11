@@ -280,7 +280,7 @@ export default function CallHistory() {
                       <div className={cn(
                         "p-2 rounded-lg border w-fit shadow-sm transition-transform group-hover:scale-110",
                         call.type === 'INCOMING' ? "bg-aura-red/10 border-aura-red/20 text-aura-red" : 
-                        call.type === 'OUTGOING' ? "bg-green-600/10 border-green-600/20 text-green-600" : "bg-gray-100 border-gray-200 text-gray-400"
+                        call.type === 'OUTGOING' ? "bg-blue-600/10 border-blue-600/20 text-blue-600" : "bg-gray-100 border-gray-200 text-gray-400"
                       )}>
                         {call.type === 'INCOMING' ? <PhoneIncoming size={14} /> : 
                          call.type === 'OUTGOING' ? <PhoneOutgoing size={14} /> : <PhoneMissed size={14} />}
@@ -304,7 +304,7 @@ export default function CallHistory() {
                     <td className="px-6 py-4">
                       <span className={cn(
                         "px-2 py-0.5 rounded-md text-[9px] font-black uppercase border",
-                        call.status === 'CONNECTED' ? "bg-green-600/10 text-green-600 border-green-600/20" : "bg-aura-red/10 text-aura-red border-aura-red/20"
+                        call.status === 'CONNECTED' ? "bg-blue-600/10 text-blue-600 border-blue-600/20" : "bg-aura-red/10 text-aura-red border-aura-red/20"
                       )}>
                         {call.status}
                       </span>
@@ -317,13 +317,13 @@ export default function CallHistory() {
                       <div className="flex items-center gap-1">
                         <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                           onClick={() => { const phone = (call.lead_mobile || call.lead_whatsapp || '').replace(/[^0-9]/g, ''); if(phone) window.open(`tel:${phone}`,'_self'); }}
-                          className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           title="Phone Call">
                           <Phone size={14} />
                         </motion.button>
                         <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                           onClick={() => { const ph = (call.lead_whatsapp || call.lead_mobile || '').replace(/[^0-9]/g, ''); setActiveWhatsApp({ phone: ph, name: call.lead_name || 'Customer' }); }}
-                          className="p-1.5 text-green-500 hover:bg-green-50 rounded-lg transition-colors"
+                          className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
                           title="WhatsApp Chat">
                           <MessageCircle size={14} />
                         </motion.button>
@@ -457,8 +457,8 @@ export default function CallHistory() {
                       {c.notes && <p className="text-[10px] text-gray-500 mt-0.5">{c.notes}</p>}
                     </div>
                     <div className="text-right">
-                      <p className="text-xs font-black text-green-600">{Math.floor(c.duration_seconds/60)}:{String(c.duration_seconds%60).padStart(2,'0')}</p>
-                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${c.status === 'CONNECTED' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-500'}`}>{c.status}</span>
+                      <p className="text-xs font-black text-blue-600">{Math.floor(c.duration_seconds/60)}:{String(c.duration_seconds%60).padStart(2,'0')}</p>
+                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${c.status === 'CONNECTED' ? 'bg-blue-100 text-blue-600' : 'bg-red-100 text-red-500'}`}>{c.status}</span>
                     </div>
                   </div>
                 ))}

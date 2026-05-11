@@ -283,7 +283,7 @@ export default function Dashboard() {
                   <div className={cn(
                     "w-10 h-10 rounded-xl mr-4 flex items-center justify-center border transition-all",
                     call.type === 'INCOMING' ? "bg-aura-red/5 border-aura-red/20 text-aura-red" : 
-                    call.type === 'OUTGOING' ? "bg-green-600/5 border-green-600/20 text-blue-600" : "bg-gray-100 border-gray-200 text-gray-400"
+                    call.type === 'OUTGOING' ? "bg-blue-600/5 border-blue-600/20 text-blue-600" : "bg-gray-100 border-gray-200 text-gray-400"
                   )}>
                     {call.type === 'INCOMING' ? <PhoneIncoming size={16} /> : 
                      call.type === 'OUTGOING' ? <PhoneOutgoing size={16} /> : <PhoneMissed size={16} />}
@@ -297,7 +297,7 @@ export default function Dashboard() {
                   <p className="text-xs font-black text-gray-900 font-mono tracking-tighter uppercase">{formatDuration(call.duration_seconds)}</p>
                   <span className={cn(
                     "text-[8px] font-black uppercase px-2 py-0.5 rounded-md mt-2 inline-block border",
-                    call.status === 'CONNECTED' ? "bg-green-600/10 text-blue-600 border-green-600/20" : "bg-aura-red/10 text-aura-red border-aura-red/20"
+                    call.status === 'CONNECTED' ? "bg-blue-600/10 text-blue-600 border-blue-600/20" : "bg-aura-red/10 text-aura-red border-aura-red/20"
                   )}>{call.status}</span>
                 </div>
               </div>

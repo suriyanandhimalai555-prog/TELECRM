@@ -42,7 +42,7 @@ export default function Register() {
         </h2>
         <p className="mt-2 text-center text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">
           Or{' '}
-          <Link to="/login" className="text-aura-red hover:text-green-600 transition-colors underline decoration-aura-red/30 underline-offset-4">
+          <Link to="/login" className="text-aura-red hover:text-blue-600 transition-colors underline decoration-aura-red/30 underline-offset-4">
             sign in to your account
           </Link>
         </p>

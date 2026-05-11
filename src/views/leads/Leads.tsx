@@ -376,8 +376,8 @@ export default function Leads() {
                       <p className="text-[10px] text-gray-400">{new Date(call.start_time).toLocaleString()}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs font-black text-green-600">{Math.floor(call.duration_seconds/60)}:{String(call.duration_seconds%60).padStart(2,'0')}</p>
-                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${call.status === 'CONNECTED' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-500'}`}>{call.status}</span>
+                      <p className="text-xs font-black text-blue-600">{Math.floor(call.duration_seconds/60)}:{String(call.duration_seconds%60).padStart(2,'0')}</p>
+                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${call.status === 'CONNECTED' ? 'bg-blue-100 text-blue-600' : 'bg-red-100 text-red-500'}`}>{call.status}</span>
                     </div>
                   </div>
                 ))}
@@ -398,7 +398,7 @@ export default function Leads() {
                 <Phone size={18} /> Call via Phone
               </button>
               <button onClick={() => { setCallPopup(null); startCall(callPopup, 'whatsapp'); }}
-                className="flex items-center gap-3 px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold text-sm transition-colors">
+                className="flex items-center gap-3 px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold text-sm transition-colors">
                 <MessageSquare size={18} /> Call via WhatsApp
               </button>
             </div>
@@ -410,7 +410,7 @@ export default function Leads() {
         </div>
       )}
       {activeCall && (
-        <div className="fixed bottom-4 right-4 z-50 bg-green-600 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-4">
+        <div className="fixed bottom-4 right-4 z-50 bg-blue-600 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-4">
           <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
           <div>
             <p className="text-xs font-bold">{activeCall.lead.contact_name}</p>
@@ -573,7 +573,7 @@ export default function Leads() {
                       <input type="checkbox" checked={selectedLeadIds.includes(lead.id)}
                         onChange={() => toggleLeadSelection(lead.id)} className="accent-aura-red" />
                     </td>
-                    <td className="px-6 py-4 text-[9px] font-black text-green-600 uppercase">
+                    <td className="px-6 py-4 text-[9px] font-black text-blue-600 uppercase">
                       {lead.owner_name || users.find(u => u.id === lead.owner_id)?.name || 'Admin'}
                     </td>
                     <td className="px-6 py-4">
@@ -590,7 +590,7 @@ export default function Leads() {
                             whileHover={{ scale: 1.2 }}
                             onClick={() => openWhatsAppChat(lead)}
                             title="Open in CRM WhatsApp"
-                            className="text-green-500 hover:text-green-600 transition-colors"
+                            className="text-blue-500 hover:text-blue-600 transition-colors"
                           >
                             <MessageSquare size={14} />
                           </motion.button>
@@ -614,7 +614,7 @@ export default function Leads() {
                         <motion.button whileHover={{ scale: 1.2 }}
                           onClick={() => setCallPopup(lead)}
                           title="Call"
-                          className={cn("p-1.5 rounded-lg transition-colors", activeCall?.lead.id === lead.id ? "text-red-500 bg-red-50 animate-pulse" : "text-green-600 hover:bg-green-50")}>
+                          className={cn("p-1.5 rounded-lg transition-colors", activeCall?.lead.id === lead.id ? "text-red-500 bg-red-50 animate-pulse" : "text-blue-600 hover:bg-blue-50")}>
                           <Phone size={14} />
                         </motion.button>
                         <motion.button whileHover={{ scale: 1.2 }}
