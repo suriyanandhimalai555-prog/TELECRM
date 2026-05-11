@@ -123,7 +123,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
               </span>
             )}
             {location.pathname === item.path && (
-               <motion.div layoutId="sidebar-active" className="absolute right-0 top-1/4 bottom-1/4 w-1 bg-blue-500 rounded-full shadow-sm" />
+               <motion.div layoutId="sidebar-active" className="absolute right-0 top-1/4 bottom-1/4 w-1 bg-[#3b9eff] rounded-full shadow-sm" />
             )}
           </NavLink>
           );

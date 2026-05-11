@@ -782,7 +782,7 @@ export default function WhatsAppInbox() {
                 {selectedContact?.contact_number === conv.contact_number && (
                   <motion.div
                     layoutId="activeChat"
-                    className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-r-full"
+                    className="absolute left-0 top-0 bottom-0 w-1 bg-[#3b9eff] rounded-r-full"
                     initial={{ scaleY: 0 }}
                     animate={{ scaleY: 1 }}
                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
@@ -839,7 +839,7 @@ export default function WhatsAppInbox() {
               </div>
               <div className="flex items-center gap-1.5">
                 <button onClick={handleResolve}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 text-white rounded-lg text-[11px] font-black hover:bg-[#2a85cc] transition-colors shadow-sm">
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#3b9eff] text-white rounded-lg text-[11px] font-black hover:bg-[#2a85cc] transition-colors shadow-sm">
                   <Check size={12} /> Resolve
                 </button>
                 <button onClick={() => setShowContactInfo(v => !v)}

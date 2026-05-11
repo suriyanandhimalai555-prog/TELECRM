@@ -39,7 +39,7 @@ import {
   Cell
 } from 'recharts';
 
-const COLORS = ['#2a85cc', '#60A5FA', '#fbbf24', '#8b5cf6'];
+const COLORS = ['#2a85cc', '#7ec8f7', '#fbbf24', '#8b5cf6'];
 
 const PowerCounter = ({ value }: { value: number }) => {
   const count = useMotionValue(0);

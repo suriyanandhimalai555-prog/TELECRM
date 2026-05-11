@@ -11,7 +11,7 @@ import {
   ResponsiveContainer, Legend, PieChart, Pie, Cell
 } from 'recharts';
 
-const COLORS = ['#2a85cc', '#60A5FA', '#93C5FD', '#BFDBFE', '#f59e0b'];
+const COLORS = ['#2a85cc', '#7ec8f7', '#93C5FD', '#BFDBFE', '#f59e0b'];
 
 export default function Reports() {
   const { user } = useAuth();
@@ -127,7 +127,7 @@ export default function Reports() {
     if (reportType === 'whatsapp') return (
       <>
         <Bar dataKey="inbound"  name="Received" fill="#2a85cc" radius={[4,4,0,0]} />
-        <Bar dataKey="outbound" name="Sent"     fill="#60A5FA" radius={[4,4,0,0]} />
+        <Bar dataKey="outbound" name="Sent"     fill="#7ec8f7" radius={[4,4,0,0]} />
       </>
     );
     if (reportType === 'leads' || reportType === 'projects') return (
@@ -136,13 +136,13 @@ export default function Reports() {
     if (reportType === 'team') return (
       <>
         <Bar dataKey="total_calls"     name="Total Calls" fill="#2a85cc" radius={[4,4,0,0]} />
-        <Bar dataKey="connected_calls" name="Connected"   fill="#60A5FA" radius={[4,4,0,0]} />
+        <Bar dataKey="connected_calls" name="Connected"   fill="#7ec8f7" radius={[4,4,0,0]} />
       </>
     );
     return (
       <>
         <Bar dataKey="connected" name="Connected" fill="#2a85cc" radius={[4,4,0,0]} />
-        <Bar dataKey="failed"    name="Failed"    fill="#60A5FA" radius={[4,4,0,0]} />
+        <Bar dataKey="failed"    name="Failed"    fill="#7ec8f7" radius={[4,4,0,0]} />
       </>
     );
   };

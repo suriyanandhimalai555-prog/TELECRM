@@ -398,7 +398,7 @@ export default function Leads() {
                 <Phone size={18} /> Call via Phone
               </button>
               <button onClick={() => { setCallPopup(null); startCall(callPopup, 'whatsapp'); }}
-                className="flex items-center gap-3 px-4 py-3 bg-blue-500 hover:bg-[#2a85cc] text-white rounded-xl font-bold text-sm transition-colors">
+                className="flex items-center gap-3 px-4 py-3 bg-[#3b9eff] hover:bg-[#2a85cc] text-white rounded-xl font-bold text-sm transition-colors">
                 <MessageSquare size={18} /> Call via WhatsApp
               </button>
             </div>

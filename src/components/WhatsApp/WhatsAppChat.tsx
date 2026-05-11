@@ -812,7 +812,7 @@ export default function WhatsAppInbox() {
               </div>
               <div className="flex items-center gap-1.5">
                 <button onClick={handleResolve}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 text-white rounded-lg text-[11px] font-black hover:bg-[#2a85cc] transition-colors shadow-sm">
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#3b9eff] text-white rounded-lg text-[11px] font-black hover:bg-[#2a85cc] transition-colors shadow-sm">
                   <Check size={12} /> Resolve
                 </button>
                 <button onClick={() => setShowContactInfo(v => !v)}
