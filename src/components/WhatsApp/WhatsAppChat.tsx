@@ -280,7 +280,7 @@ function ContactInfoDrawer({ contact, messages, onClose }: {
       </div>
       <div className="flex-1 overflow-y-auto">
         <div className="p-5 flex flex-col items-center border-b border-gray-100">
-          <div className="w-16 h-16 rounded-full bg-[#2563EB] flex items-center justify-center text-white font-black text-xl mb-3">
+          <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center text-white font-black text-xl mb-3">
             {contact.contact_name?.[0]?.toUpperCase() || contact.contact_number.slice(-1)}
           </div>
           <h4 className="font-black text-gray-900 text-sm text-center">{contact.contact_name || contact.contact_number}</h4>
@@ -657,7 +657,7 @@ export default function WhatsAppInbox() {
                 Whats<span className="text-[#2563EB]">App</span>
               </h2>
               {totalUnread > 0 && (
-                <span className="px-1.5 py-0.5 bg-[#2563EB] text-white text-[9px] font-black rounded-full leading-none">{totalUnread}</span>
+                <span className="px-1.5 py-0.5 bg-blue-600 text-white text-[9px] font-black rounded-full leading-none">{totalUnread}</span>
               )}
             </div>
             <div className="flex items-center gap-0.5">
@@ -763,7 +763,7 @@ export default function WhatsAppInbox() {
                 )}>
                 <div className={cn(
                   "w-10 h-10 rounded-full flex items-center justify-center text-white font-black text-sm shrink-0",
-                  conv.last_direction === 'inbound' ? "bg-[#2563EB]" : "bg-gray-400"
+                  conv.last_direction === 'inbound' ? "bg-blue-600" : "bg-gray-400"
                 )}>
                   {conv.contact_name?.[0]?.toUpperCase() || conv.contact_number.slice(-1)}
                 </div>
@@ -783,7 +783,7 @@ export default function WhatsAppInbox() {
                       {previewMessage(conv.last_message)}
                     </p>
                     {(conv.unread_count || 0) > 0 && (
-                      <span className="w-4 h-4 bg-[#2563EB] text-white text-[8px] font-black flex items-center justify-center rounded-full shrink-0">
+                      <span className="w-4 h-4 bg-blue-600 text-white text-[8px] font-black flex items-center justify-center rounded-full shrink-0">
                         {conv.unread_count > 9 ? '9+' : conv.unread_count}
                       </span>
                     )}
@@ -802,7 +802,7 @@ export default function WhatsAppInbox() {
             {/* Chat Header */}
             <div className="px-4 py-3 bg-white border-b border-gray-100 flex items-center justify-between shadow-sm z-10 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-[#2563EB] flex items-center justify-center text-white font-black text-sm">
+                <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-black text-sm">
                   {selectedContact.contact_name?.[0]?.toUpperCase() || selectedContact.contact_number.slice(-1)}
                 </div>
                 <div>
@@ -914,7 +914,7 @@ export default function WhatsAppInbox() {
                 </div>
                 <motion.button whileTap={{ scale: 0.9 }} onClick={handleSendMessage}
                   disabled={!input.trim() || sending}
-                  className="shrink-0 w-10 h-10 bg-[#2563EB] text-white rounded-full flex items-center justify-center disabled:opacity-40 shadow-md hover:bg-blue-700 transition-colors">
+                  className="shrink-0 w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center disabled:opacity-40 shadow-md hover:bg-blue-700 transition-colors">
                   {sending
                     ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                     : <Send size={16} />}
@@ -1029,7 +1029,7 @@ export default function WhatsAppInbox() {
                   <div className="pt-4 border-t border-gray-200 flex justify-end">
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                       disabled={!selectedTemplate || sending} onClick={handleSendTemplate}
-                      className="flex items-center gap-2 px-5 py-2 bg-[#2563EB] text-white rounded-xl text-xs font-black shadow-lg disabled:opacity-50 hover:bg-blue-700 transition-colors">
+                      className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-xl text-xs font-black shadow-lg disabled:opacity-50 hover:bg-blue-700 transition-colors">
                       <Send size={13} />{sending ? 'Sending...' : 'Send Message'}
                     </motion.button>
                   </div>
