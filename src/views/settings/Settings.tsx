@@ -145,8 +145,8 @@ export default function Settings() {
       triggerFlash('white');
       setShowUserModal(false);
       fetchUsers();
-    } catch (error) {
-      alert('Failed to save user');
+    } catch (error: any) {
+      alert(error.response?.data?.message || error.response?.data?.error || 'Failed to save user: ' + JSON.stringify(error.response?.data));
     }
   };
 
