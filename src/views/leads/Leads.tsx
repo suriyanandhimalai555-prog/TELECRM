@@ -286,7 +286,11 @@ export default function Leads() {
   const openWhatsAppChat = (lead: Lead) => {
     const phone = (lead.mobile || lead.whatsapp || '').replace(/[^0-9]/g, '');
     if (!phone) return;
-    window.open(`https://wa.me/${phone}`, '_blank');
+    if (user?.role === 'EMPLOYEE') {
+      window.open(`https://wa.me/${phone}`, '_blank');
+    } else {
+      navigate(`/whatsapp?phone=${phone}`);
+    }
   };
 
   const startCall = (lead: Lead, type: 'phone' | 'whatsapp' = 'phone') => {

@@ -30,7 +30,6 @@ export const getLeads = async (req: AuthRequest, res: Response) => {
       whereClauses.push(`(
         l.owner_id = $1 
         OR l.project_id IN (SELECT project_id FROM user_projects WHERE user_id = $2)
-        OR l.source = 'WHATSAPP'
       )`);
       queryParams.push(req.user.id, req.user.id);
     }
