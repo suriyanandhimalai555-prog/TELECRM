@@ -286,7 +286,7 @@ export default function Leads() {
   const openWhatsAppChat = (lead: Lead) => {
     const phone = (lead.mobile || lead.whatsapp || '').replace(/[^0-9]/g, '');
     if (!phone) return;
-    navigate(`/whatsapp?phone=${phone.replace(/\D/g, '')}`);
+    window.open(`https://wa.me/${phone}`, '_blank');
   };
 
   const startCall = (lead: Lead, type: 'phone' | 'whatsapp' = 'phone') => {
