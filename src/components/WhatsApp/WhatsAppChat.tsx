@@ -566,11 +566,12 @@ export default function WhatsAppInbox() {
     // Optimistic update - show message instantly
     const tempId = `temp_${Date.now()}`;
     const tempMsg = {
+      id: 0,
       message_id: tempId,
       from_number: '',
       to_number: selectedContact.contact_number,
       message_text: text,
-      direction: 'outbound',
+      direction: 'outbound' as const,
       status: 'sending',
       timestamp: new Date().toISOString(),
       contact_name: selectedContact.contact_name,
