@@ -310,8 +310,11 @@ export default function Leads() {
       setActiveCall(prev => prev ? { ...prev, seconds: prev.seconds + 1 } : null);
     }, 1000);
     setActiveCall({ lead, seconds: 0, interval, type });
-    const phone = (lead.mobile || lead.whatsapp || '').replace(/[^0-9]/g, '');
-    console.log('Dialing:', phone, 'type:', type);
+    let raw = (lead.mobile || lead.whatsapp || '').replace(/[^0-9]/g, '');
+    // Normalize to Indian format: remove leading 91 or 0, then add 91
+    if (raw.startsWith('91') && raw.length === 12) raw = raw.slice(2);
+    if (raw.startsWith('0') && raw.length === 11) raw = raw.slice(1);
+    const phone = '91' + raw;
     if (phone) {
       if (type === 'whatsapp') {
         window.open(`https://wa.me/${phone}`, '_blank');
