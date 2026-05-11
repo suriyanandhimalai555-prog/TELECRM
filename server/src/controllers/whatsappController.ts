@@ -431,9 +431,11 @@ export const getConversations = async (req: Request, res: Response) => {
     const uid = (req as any).user?.id || 0;
 
     if (role === 'MANAGER') {
-      query += ` AND (l.owner_id = $${params.length + 1} OR l.owner_id IN (SELECT id FROM users WHERE reporting_to = $${params.length + 1}))`;
+      // Manager sees: their own leads + team leads + unassigned (website) conversations
+      query += ` AND (l.owner_id IS NULL OR l.owner_id = $${params.length + 1} OR l.owner_id IN (SELECT id FROM users WHERE reporting_to = $${params.length + 1}))`;
       params.push(uid);
     } else if (role !== 'ADMIN') {
+      // Employee sees only their assigned leads
       query += ` AND l.owner_id = $${params.length + 1}`;
       params.push(uid);
     }
