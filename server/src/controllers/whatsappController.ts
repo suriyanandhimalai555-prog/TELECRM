@@ -427,8 +427,19 @@ export const getConversations = async (req: Request, res: Response) => {
     `;
 
     const params: any[] = [];
+    const role = (req as any).user?.role || 'EMPLOYEE';
+    const uid = (req as any).user?.id || 0;
+
+    if (role === 'MANAGER') {
+      query += ` AND (l.owner_id = $${params.length + 1} OR l.owner_id IN (SELECT id FROM users WHERE reporting_to = $${params.length + 1}))`;
+      params.push(uid);
+    } else if (role !== 'ADMIN') {
+      query += ` AND l.owner_id = $${params.length + 1}`;
+      params.push(uid);
+    }
+
     if (search) {
-      query += ` AND (lead_name ILIKE $1 OR contact_name ILIKE $1 OR contact_number ILIKE $1 OR message_text ILIKE $1)`;
+      query += ` AND (lead_name ILIKE $${params.length + 1} OR contact_name ILIKE $${params.length + 1} OR contact_number ILIKE $${params.length + 1} OR message_text ILIKE $${params.length + 1})`;
       params.push(`%${search}%`);
     }
 
