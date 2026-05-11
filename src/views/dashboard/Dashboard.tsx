@@ -39,7 +39,7 @@ import {
   Cell
 } from 'recharts';
 
-const COLORS = ['#2563EB', '#60A5FA', '#fbbf24', '#8b5cf6'];
+const COLORS = ['#3b9eff', '#60A5FA', '#fbbf24', '#8b5cf6'];
 
 const PowerCounter = ({ value }: { value: number }) => {
   const count = useMotionValue(0);
@@ -107,7 +107,7 @@ export default function Dashboard() {
       </div>
       <button 
         onClick={() => fetchStats()}
-        className="px-6 py-2 bg-aura-red text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg hover:bg-[#2563EB] transition-all"
+        className="px-6 py-2 bg-aura-red text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg hover:bg-[#3b9eff] transition-all"
       >
         Retry Connection
       </button>
@@ -116,8 +116,8 @@ export default function Dashboard() {
 
   const statCards = [
     { name: 'Total Contacts', value: stats.totalContacts || 0, icon: Users, color: 'bg-aura-red', filter: 'all', path: '/leads' },
-    { name: 'Sent Today', value: stats.messagesToday || 0, icon: PhoneOutgoing, color: 'bg-[#2563EB]', filter: 'all', path: '/whatsapp' },
-    { name: 'Unread WA', value: stats.unreadWhatsAppCount || 0, icon: MessageSquare, color: 'bg-[#2563EB]', filter: 'unread', path: '/whatsapp' },
+    { name: 'Sent Today', value: stats.messagesToday || 0, icon: PhoneOutgoing, color: 'bg-[#3b9eff]', filter: 'all', path: '/whatsapp' },
+    { name: 'Unread WA', value: stats.unreadWhatsAppCount || 0, icon: MessageSquare, color: 'bg-[#3b9eff]', filter: 'unread', path: '/whatsapp' },
     { name: 'Calls Made', value: stats.totalCalls || 0, icon: Phone, color: 'bg-aura-red', filter: 'all', path: '/calls' },
   ];
 
@@ -237,7 +237,7 @@ export default function Dashboard() {
                   />
                   <Bar 
                     dataKey="count" 
-                    fill="#2563EB" 
+                    fill="#3b9eff" 
                     radius={[4, 4, 0, 0]}
                     animationDuration={1500}
                   />
@@ -283,7 +283,7 @@ export default function Dashboard() {
                   <div className={cn(
                     "w-10 h-10 rounded-xl mr-4 flex items-center justify-center border transition-all",
                     call.type === 'INCOMING' ? "bg-aura-red/5 border-aura-red/20 text-aura-red" : 
-                    call.type === 'OUTGOING' ? "bg-blue-600/5 border-blue-600/20 text-blue-600" : "bg-gray-100 border-gray-200 text-gray-400"
+                    call.type === 'OUTGOING' ? "bg-[#3b9eff]/5 border-blue-600/20 text-blue-600" : "bg-gray-100 border-gray-200 text-gray-400"
                   )}>
                     {call.type === 'INCOMING' ? <PhoneIncoming size={16} /> : 
                      call.type === 'OUTGOING' ? <PhoneOutgoing size={16} /> : <PhoneMissed size={16} />}
@@ -297,7 +297,7 @@ export default function Dashboard() {
                   <p className="text-xs font-black text-gray-900 font-mono tracking-tighter uppercase">{formatDuration(call.duration_seconds)}</p>
                   <span className={cn(
                     "text-[8px] font-black uppercase px-2 py-0.5 rounded-md mt-2 inline-block border",
-                    call.status === 'CONNECTED' ? "bg-blue-600/10 text-blue-600 border-blue-600/20" : "bg-aura-red/10 text-aura-red border-aura-red/20"
+                    call.status === 'CONNECTED' ? "bg-[#3b9eff]/10 text-blue-600 border-blue-600/20" : "bg-aura-red/10 text-aura-red border-aura-red/20"
                   )}>{call.status}</span>
                 </div>
               </div>

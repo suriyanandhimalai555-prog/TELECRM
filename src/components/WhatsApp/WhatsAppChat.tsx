@@ -280,7 +280,7 @@ function ContactInfoDrawer({ contact, messages, onClose }: {
       </div>
       <div className="flex-1 overflow-y-auto">
         <div className="p-5 flex flex-col items-center border-b border-gray-100">
-          <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center text-white font-black text-xl mb-3">
+          <div className="w-16 h-16 rounded-full bg-[#3b9eff] flex items-center justify-center text-white font-black text-xl mb-3">
             {contact.contact_name?.[0]?.toUpperCase() || contact.contact_number.slice(-1)}
           </div>
           <h4 className="font-black text-gray-900 text-sm text-center">{contact.contact_name || contact.contact_number}</h4>
@@ -293,7 +293,7 @@ function ContactInfoDrawer({ contact, messages, onClose }: {
             ...(contact.lead_id ? [{ icon: User, label: 'Lead ID', value: `#${contact.lead_id}` }] : []),
           ].map(({ icon: Icon, label, value }) => (
             <div key={label} className="flex items-center gap-2.5 p-2.5 bg-gray-50 rounded-xl">
-              <Icon size={14} className="text-[#2563EB] shrink-0" />
+              <Icon size={14} className="text-[#3b9eff] shrink-0" />
               <div>
                 <p className="text-[9px] font-black text-gray-400 uppercase">{label}</p>
                 <p className="text-xs font-bold text-gray-900">{value}</p>
@@ -342,7 +342,7 @@ function DeleteModal({ type, onConfirm, onCancel }: {
   type: 'delete' | 'archive' | 'clear'; onConfirm: () => void; onCancel: () => void;
 }) {
   const cfg = {
-    delete: { title: 'Delete Conversation', desc: 'Permanently delete this conversation. Cannot be undone.', btn: 'Delete', cls: 'bg-blue-600 hover:bg-blue-700' },
+    delete: { title: 'Delete Conversation', desc: 'Permanently delete this conversation. Cannot be undone.', btn: 'Delete', cls: 'bg-[#3b9eff] hover:bg-blue-700' },
     archive: { title: 'Archive Conversation', desc: 'Move this conversation to archive.', btn: 'Archive', cls: 'bg-gray-500 hover:bg-gray-600' },
     clear: { title: 'Clear Chat', desc: 'All messages will be cleared from view.', btn: 'Clear', cls: 'bg-orange-500 hover:bg-orange-600' },
   }[type];
@@ -638,7 +638,7 @@ export default function WhatsAppInbox() {
 
   const StatusIcon = ({ status, direction }: { status: string; direction: string }) => {
     if (direction === 'inbound') return null;
-    if (status === 'read') return <CheckCheck size={13} style={{color: "#2563EB"}} />;
+    if (status === 'read') return <CheckCheck size={13} style={{color: "#3b9eff"}} />;
     if (status === 'delivered') return <CheckCheck size={13} className="text-gray-400" />;
     if (status === 'sent') return <Check size={13} className="text-gray-400" />;
     return null;
@@ -654,10 +654,10 @@ export default function WhatsAppInbox() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-black text-gray-900 uppercase tracking-tighter">
-                Whats<span className="text-[#2563EB]">App</span>
+                Whats<span className="text-[#3b9eff]">App</span>
               </h2>
               {totalUnread > 0 && (
-                <span className="px-1.5 py-0.5 bg-blue-600 text-white text-[9px] font-black rounded-full leading-none">{totalUnread}</span>
+                <span className="px-1.5 py-0.5 bg-[#3b9eff] text-white text-[9px] font-black rounded-full leading-none">{totalUnread}</span>
               )}
             </div>
             <div className="flex items-center gap-0.5">
@@ -665,7 +665,7 @@ export default function WhatsAppInbox() {
               <div className="relative" ref={filterRef}>
                 <button onClick={() => setShowFilterMenu(v => !v)}
                   className={cn("p-2 rounded-lg transition-colors text-sm",
-                    showFilterMenu ? "bg-blue-50 text-[#2563EB]" : "text-gray-400 hover:text-[#2563EB] hover:bg-blue-50")}>
+                    showFilterMenu ? "bg-blue-50 text-[#3b9eff]" : "text-gray-400 hover:text-[#3b9eff] hover:bg-blue-50")}>
                   <Filter size={15} />
                 </button>
                 <AnimatePresence>
@@ -678,7 +678,7 @@ export default function WhatsAppInbox() {
                       ].map(({ label, val, icon: Icon }) => (
                         <button key={val} onClick={() => { setActiveFilter(val); setShowFilterMenu(false); }}
                           className={cn("w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold transition-colors",
-                            activeFilter === val ? "bg-blue-50 text-[#2563EB]" : "text-gray-700 hover:bg-gray-50")}>
+                            activeFilter === val ? "bg-blue-50 text-[#3b9eff]" : "text-gray-700 hover:bg-gray-50")}>
                           <Icon size={13} />{label}
                         </button>
                       ))}
@@ -696,7 +696,7 @@ export default function WhatsAppInbox() {
               <div className="relative" ref={dotsRef}>
                 <button onClick={() => setShowDotsMenu(v => !v)}
                   className={cn("p-2 rounded-lg transition-colors",
-                    showDotsMenu ? "bg-blue-50 text-[#2563EB]" : "text-gray-400 hover:text-[#2563EB] hover:bg-blue-50")}>
+                    showDotsMenu ? "bg-blue-50 text-[#3b9eff]" : "text-gray-400 hover:text-[#3b9eff] hover:bg-blue-50")}>
                   <MoreVertical size={15} />
                 </button>
                 <AnimatePresence>
@@ -741,7 +741,7 @@ export default function WhatsAppInbox() {
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           {loading ? (
             <div className="flex flex-col items-center justify-center p-10 gap-3">
-              <div className="w-7 h-7 border-2 border-blue-200 border-t-[#2563EB] rounded-full animate-spin" />
+              <div className="w-7 h-7 border-2 border-blue-200 border-t-[#3b9eff] rounded-full animate-spin" />
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Loading...</p>
             </div>
           ) : filteredConversations.length === 0 ? (
@@ -763,7 +763,7 @@ export default function WhatsAppInbox() {
                 )}>
                 <div className={cn(
                   "w-10 h-10 rounded-full flex items-center justify-center text-white font-black text-sm shrink-0",
-                  conv.last_direction === 'inbound' ? "bg-blue-600" : "bg-gray-400"
+                  conv.last_direction === 'inbound' ? "bg-[#3b9eff]" : "bg-gray-400"
                 )}>
                   {conv.contact_name?.[0]?.toUpperCase() || conv.contact_number.slice(-1)}
                 </div>
@@ -783,7 +783,7 @@ export default function WhatsAppInbox() {
                       {previewMessage(conv.last_message)}
                     </p>
                     {(conv.unread_count || 0) > 0 && (
-                      <span className="w-4 h-4 bg-blue-600 text-white text-[8px] font-black flex items-center justify-center rounded-full shrink-0">
+                      <span className="w-4 h-4 bg-[#3b9eff] text-white text-[8px] font-black flex items-center justify-center rounded-full shrink-0">
                         {conv.unread_count > 9 ? '9+' : conv.unread_count}
                       </span>
                     )}
@@ -802,7 +802,7 @@ export default function WhatsAppInbox() {
             {/* Chat Header */}
             <div className="px-4 py-3 bg-white border-b border-gray-100 flex items-center justify-between shadow-sm z-10 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-black text-sm">
+                <div className="w-9 h-9 rounded-full bg-[#3b9eff] flex items-center justify-center text-white font-black text-sm">
                   {selectedContact.contact_name?.[0]?.toUpperCase() || selectedContact.contact_number.slice(-1)}
                 </div>
                 <div>
@@ -812,17 +812,17 @@ export default function WhatsAppInbox() {
               </div>
               <div className="flex items-center gap-1.5">
                 <button onClick={handleResolve}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 text-white rounded-lg text-[11px] font-black hover:bg-blue-600 transition-colors shadow-sm">
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 text-white rounded-lg text-[11px] font-black hover:bg-[#3b9eff] transition-colors shadow-sm">
                   <Check size={12} /> Resolve
                 </button>
                 <button onClick={() => setShowContactInfo(v => !v)}
-                  className={cn("p-2 rounded-lg transition-colors", showContactInfo ? "bg-blue-50 text-[#2563EB]" : "text-gray-400 hover:bg-gray-100")}>
+                  className={cn("p-2 rounded-lg transition-colors", showContactInfo ? "bg-blue-50 text-[#3b9eff]" : "text-gray-400 hover:bg-gray-100")}>
                   <Info size={17} />
                 </button>
                 {/* Chat menu */}
                 <div className="relative" ref={chatMenuRef}>
                   <button onClick={() => setShowChatMenu(v => !v)}
-                    className={cn("p-2 rounded-lg transition-colors", showChatMenu ? "bg-blue-50 text-[#2563EB]" : "text-gray-400 hover:bg-gray-100")}>
+                    className={cn("p-2 rounded-lg transition-colors", showChatMenu ? "bg-blue-50 text-[#3b9eff]" : "text-gray-400 hover:bg-gray-100")}>
                     <MoreVertical size={17} />
                   </button>
                   <AnimatePresence>
@@ -888,7 +888,7 @@ export default function WhatsAppInbox() {
                 <div className="flex items-center gap-1 shrink-0 pb-1.5">
                   <div className="relative" ref={emojiRef}>
                     <button onClick={() => setShowEmojiPicker(v => !v)}
-                      className={cn("p-2 rounded-lg transition-colors", showEmojiPicker ? "text-[#2563EB]" : "text-gray-400 hover:text-[#2563EB]")}>
+                      className={cn("p-2 rounded-lg transition-colors", showEmojiPicker ? "text-[#3b9eff]" : "text-gray-400 hover:text-[#3b9eff]")}>
                       <Smile size={19} />
                     </button>
                     <AnimatePresence>
@@ -898,10 +898,10 @@ export default function WhatsAppInbox() {
                     </AnimatePresence>
                   </div>
                   <button onClick={() => setShowTemplateModal(true)} title="Templates"
-                    className="p-2 text-gray-400 hover:text-[#2563EB] rounded-lg transition-colors">
+                    className="p-2 text-gray-400 hover:text-[#3b9eff] rounded-lg transition-colors">
                     <Layout size={19} />
                   </button>
-                  <button className="p-2 text-gray-400 hover:text-[#2563EB] rounded-lg transition-colors">
+                  <button className="p-2 text-gray-400 hover:text-[#3b9eff] rounded-lg transition-colors">
                     <Paperclip size={19} />
                   </button>
                 </div>
@@ -914,7 +914,7 @@ export default function WhatsAppInbox() {
                 </div>
                 <motion.button whileTap={{ scale: 0.9 }} onClick={handleSendMessage}
                   disabled={!input.trim() || sending}
-                  className="shrink-0 w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center disabled:opacity-40 shadow-md hover:bg-blue-700 transition-colors">
+                  className="shrink-0 w-10 h-10 bg-[#3b9eff] text-white rounded-full flex items-center justify-center disabled:opacity-40 shadow-md hover:bg-blue-700 transition-colors">
                   {sending
                     ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                     : <Send size={16} />}
@@ -927,7 +927,7 @@ export default function WhatsAppInbox() {
             <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center text-gray-200 mb-5 shadow-md">
               <MessageSquare size={40} strokeWidth={1} />
             </div>
-            <h3 className="text-base font-black text-gray-700 mb-1.5">Inbox <span className="text-[#2563EB]">Inactive</span></h3>
+            <h3 className="text-base font-black text-gray-700 mb-1.5">Inbox <span className="text-[#3b9eff]">Inactive</span></h3>
             <p className="text-xs text-gray-400 max-w-[200px] uppercase tracking-widest font-black">Select a conversation from the sidebar to start messaging</p>
           </div>
         )}
@@ -951,13 +951,13 @@ export default function WhatsAppInbox() {
               <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
                 <div>
                   <h3 className="text-base font-black text-gray-900 uppercase tracking-tight">
-                    Message <span className="text-[#2563EB]">Templates</span>
+                    Message <span className="text-[#3b9eff]">Templates</span>
                   </h3>
                   <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Select a pre-approved template</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={handleSyncTemplates} disabled={syncingTemplates}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-[10px] font-black text-[#2563EB] hover:bg-blue-50 disabled:opacity-50 transition-colors">
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-[10px] font-black text-[#3b9eff] hover:bg-blue-50 disabled:opacity-50 transition-colors">
                     <RefreshCw size={11} className={cn(syncingTemplates && "animate-spin")} />
                     {syncingTemplates ? 'Syncing...' : 'Sync Meta'}
                   </button>
@@ -980,7 +980,7 @@ export default function WhatsAppInbox() {
                           ? "bg-blue-50 border-blue-300 shadow-sm"
                           : "bg-white border-gray-100 hover:border-blue-200")}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[8px] font-black text-[#2563EB] uppercase bg-blue-50 px-1.5 py-0.5 rounded">{tpl.category}</span>
+                        <span className="text-[8px] font-black text-[#3b9eff] uppercase bg-blue-50 px-1.5 py-0.5 rounded">{tpl.category}</span>
                         <span className="text-[8px] text-gray-400">{tpl.language}</span>
                       </div>
                       <h4 className="text-xs font-black text-gray-900">{tpl.name}</h4>
@@ -1012,7 +1012,7 @@ export default function WhatsAppInbox() {
                             {comp.type === 'BUTTONS' && (
                               <div className="mt-2 space-y-1">
                                 {comp.buttons?.map((btn: any, bi: number) => (
-                                  <div key={bi} className="text-center text-[10px] font-bold text-[#2563EB] py-1 bg-blue-50 rounded-lg">{btn.text}</div>
+                                  <div key={bi} className="text-center text-[10px] font-bold text-[#3b9eff] py-1 bg-blue-50 rounded-lg">{btn.text}</div>
                                 ))}
                               </div>
                             )}
@@ -1029,7 +1029,7 @@ export default function WhatsAppInbox() {
                   <div className="pt-4 border-t border-gray-200 flex justify-end">
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                       disabled={!selectedTemplate || sending} onClick={handleSendTemplate}
-                      className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-xl text-xs font-black shadow-lg disabled:opacity-50 hover:bg-blue-700 transition-colors">
+                      className="flex items-center gap-2 px-5 py-2 bg-[#3b9eff] text-white rounded-xl text-xs font-black shadow-lg disabled:opacity-50 hover:bg-blue-700 transition-colors">
                       <Send size={13} />{sending ? 'Sending...' : 'Send Message'}
                     </motion.button>
                   </div>

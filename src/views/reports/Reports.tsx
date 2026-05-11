@@ -11,7 +11,7 @@ import {
   ResponsiveContainer, Legend, PieChart, Pie, Cell
 } from 'recharts';
 
-const COLORS = ['#2563EB', '#60A5FA', '#93C5FD', '#BFDBFE', '#f59e0b'];
+const COLORS = ['#3b9eff', '#60A5FA', '#93C5FD', '#BFDBFE', '#f59e0b'];
 
 export default function Reports() {
   const { user } = useAuth();
@@ -92,7 +92,7 @@ export default function Reports() {
   };
 
   const tooltipStyle = {
-    backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e5e7eb',
+    backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #d0e8f8',
     boxShadow: '0 10px 30px rgba(15,23,42,0.08)', fontWeight: 900,
     textTransform: 'uppercase' as const, fontSize: '9px', color: '#111827', padding: '12px'
   };
@@ -126,22 +126,22 @@ export default function Reports() {
   const renderBars = () => {
     if (reportType === 'whatsapp') return (
       <>
-        <Bar dataKey="inbound"  name="Received" fill="#2563EB" radius={[4,4,0,0]} />
+        <Bar dataKey="inbound"  name="Received" fill="#3b9eff" radius={[4,4,0,0]} />
         <Bar dataKey="outbound" name="Sent"     fill="#60A5FA" radius={[4,4,0,0]} />
       </>
     );
     if (reportType === 'leads' || reportType === 'projects') return (
-      <Bar dataKey="value" name="Count" fill="#2563EB" radius={[4,4,0,0]} />
+      <Bar dataKey="value" name="Count" fill="#3b9eff" radius={[4,4,0,0]} />
     );
     if (reportType === 'team') return (
       <>
-        <Bar dataKey="total_calls"     name="Total Calls" fill="#2563EB" radius={[4,4,0,0]} />
+        <Bar dataKey="total_calls"     name="Total Calls" fill="#3b9eff" radius={[4,4,0,0]} />
         <Bar dataKey="connected_calls" name="Connected"   fill="#60A5FA" radius={[4,4,0,0]} />
       </>
     );
     return (
       <>
-        <Bar dataKey="connected" name="Connected" fill="#2563EB" radius={[4,4,0,0]} />
+        <Bar dataKey="connected" name="Connected" fill="#3b9eff" radius={[4,4,0,0]} />
         <Bar dataKey="failed"    name="Failed"    fill="#60A5FA" radius={[4,4,0,0]} />
       </>
     );
@@ -158,7 +158,7 @@ export default function Reports() {
   if (error)   return (
     <div className="h-full flex items-center justify-center flex-col gap-4">
       <p className="text-blue-600 font-bold">{error}</p>
-      <button onClick={fetchData} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-black uppercase">Retry</button>
+      <button onClick={fetchData} className="px-4 py-2 bg-[#3b9eff] text-white rounded-xl text-xs font-black uppercase">Retry</button>
     </div>
   );
 
@@ -174,11 +174,11 @@ export default function Reports() {
         </motion.div>
         <div className="flex items-center gap-3">
           <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={exportCSV}
-            className="flex items-center px-4 py-2 bg-white border border-gray-100 rounded-xl text-[10px] font-black text-gray-500 hover:bg-blue-600 hover:text-white transition-all uppercase tracking-widest shadow-sm">
+            className="flex items-center px-4 py-2 bg-white border border-gray-100 rounded-xl text-[10px] font-black text-gray-500 hover:bg-[#3b9eff] hover:text-white transition-all uppercase tracking-widest shadow-sm">
             <TableIcon size={16} className="mr-2" />Export CSV
           </motion.button>
           <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={exportPDF}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-600/20">
+            className="flex items-center px-4 py-2 bg-[#3b9eff] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-600/20">
             <FileText size={16} className="mr-2" />Export PDF
           </motion.button>
         </div>
@@ -197,7 +197,7 @@ export default function Reports() {
           ].map(type => (
             <button key={type.id} onClick={() => setReportType(type.id)}
               className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                reportType === type.id ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'
+                reportType === type.id ? 'bg-[#3b9eff] text-white shadow-sm' : 'text-gray-400 hover:text-gray-600'
               }`}>
               {type.label}
             </button>
@@ -246,7 +246,7 @@ export default function Reports() {
             {getMainChartData().length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={getMainChartData()}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#d0e8f8" />
                   <XAxis dataKey={getXAxisKey()} stroke="#6b7280" fontSize={9} fontWeight={900} tickLine={false} axisLine={false} />
                   <YAxis stroke="#6b7280" fontSize={9} fontWeight={900} tickLine={false} axisLine={false} />
                   <Tooltip cursor={{ fill: 'rgba(239,68,68,0.08)' }} contentStyle={tooltipStyle} />
@@ -256,7 +256,7 @@ export default function Reports() {
               </ResponsiveContainer>
             ) : (
               <div className="flex flex-col items-center justify-center space-y-3">
-                <div className="w-16 h-16 rounded-full bg-blue-600/10 flex items-center justify-center border border-blue-600/20">
+                <div className="w-16 h-16 rounded-full bg-[#3b9eff]/10 flex items-center justify-center border border-blue-600/20">
                   <RefreshCw className="text-blue-600" size={24} />
                 </div>
                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">No data available</p>
@@ -293,7 +293,7 @@ export default function Reports() {
               </ResponsiveContainer>
             ) : (
               <div className="flex flex-col items-center justify-center h-full space-y-3">
-                <div className="w-16 h-16 rounded-full bg-blue-600/10 flex items-center justify-center border border-blue-600/20">
+                <div className="w-16 h-16 rounded-full bg-[#3b9eff]/10 flex items-center justify-center border border-blue-600/20">
                   <RefreshCw className="text-blue-600" size={24} />
                 </div>
                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">No data available</p>
@@ -331,7 +331,7 @@ export default function Reports() {
                         <td className="py-4 px-3 text-center font-bold text-gray-600">{agent.total_leads}</td>
                         <td className="py-4 px-3 text-center font-bold text-gray-600">{agent.total_calls}</td>
                         <td className="py-4 px-3 text-center">
-                          <span className="bg-blue-600/20 text-blue-600 px-2 py-0.5 rounded-full font-black text-[9px]">{agent.connected_calls}</span>
+                          <span className="bg-[#3b9eff]/20 text-blue-600 px-2 py-0.5 rounded-full font-black text-[9px]">{agent.connected_calls}</span>
                         </td>
                         <td className="py-4 px-3 text-right font-bold text-gray-600">{Math.round((agent.total_duration || 0) / 60)}</td>
                       </tr>
