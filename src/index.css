@@ -2,7 +2,7 @@
 @import "tailwindcss";
 
 @theme {
-  --color-aura-red: #25D366;
+  --color-aura-red: #6B7FD4;
   --color-aura-blue: #15803d;
   --color-aura-green: #22c55e;
   --color-aura-gold: #fbbf24;
@@ -53,3 +53,8 @@
   background-color: #bbf7d0;
   color: #166534;
 }
+
+/* WhatsApp page keeps its own green colors */
+.whatsapp-page .bg-\[\#25D366\] { background-color: #25D366 !important; }
+.whatsapp-page .text-\[\#25D366\] { color: #25D366 !important; }
+.whatsapp-page .bg-\[\#D9FDD3\] { background-color: #D9FDD3 !important; }
