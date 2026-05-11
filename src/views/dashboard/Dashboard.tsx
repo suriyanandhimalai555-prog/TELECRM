@@ -39,7 +39,7 @@ import {
   Cell
 } from 'recharts';
 
-const COLORS = ['#16a34a', '#22c55e', '#fbbf24', '#8b5cf6'];
+const COLORS = ['#25D366', '#128C7E', '#fbbf24', '#8b5cf6'];
 
 const PowerCounter = ({ value }: { value: number }) => {
   const count = useMotionValue(0);
@@ -107,7 +107,7 @@ export default function Dashboard() {
       </div>
       <button 
         onClick={() => fetchStats()}
-        className="px-6 py-2 bg-aura-red text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg hover:bg-green-700 transition-all"
+        className="px-6 py-2 bg-aura-red text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg hover:bg-[#128C7E] transition-all"
       >
         Retry Connection
       </button>
@@ -116,8 +116,8 @@ export default function Dashboard() {
 
   const statCards = [
     { name: 'Total Contacts', value: stats.totalContacts || 0, icon: Users, color: 'bg-aura-red', filter: 'all', path: '/leads' },
-    { name: 'Sent Today', value: stats.messagesToday || 0, icon: PhoneOutgoing, color: 'bg-green-600', filter: 'all', path: '/whatsapp' },
-    { name: 'Unread WA', value: stats.unreadWhatsAppCount || 0, icon: MessageSquare, color: 'bg-green-500', filter: 'unread', path: '/whatsapp' },
+    { name: 'Sent Today', value: stats.messagesToday || 0, icon: PhoneOutgoing, color: 'bg-[#25D366]', filter: 'all', path: '/whatsapp' },
+    { name: 'Unread WA', value: stats.unreadWhatsAppCount || 0, icon: MessageSquare, color: 'bg-[#25D366]', filter: 'unread', path: '/whatsapp' },
     { name: 'Calls Made', value: stats.totalCalls || 0, icon: Phone, color: 'bg-aura-red', filter: 'all', path: '/calls' },
   ];
 
@@ -169,7 +169,7 @@ export default function Dashboard() {
             className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 transition-all cursor-pointer group"
           >
             <div className="flex items-center justify-between mb-6">
-              <div className={cn(card.color, "p-4 rounded-xl text-white shadow-lg shadow-green-500/20 transform group-hover:scale-110 transition-transform")}>
+              <div className={cn(card.color, "p-4 rounded-xl text-white shadow-lg shadow-green-300/20 transform group-hover:scale-110 transition-transform")}>
                 <card.icon size={24} />
               </div>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{card.name}</p>
@@ -237,7 +237,7 @@ export default function Dashboard() {
                   />
                   <Bar 
                     dataKey="count" 
-                    fill="#16a34a" 
+                    fill="#25D366" 
                     radius={[4, 4, 0, 0]}
                     animationDuration={1500}
                   />
