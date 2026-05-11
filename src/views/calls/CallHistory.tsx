@@ -294,7 +294,12 @@ export default function CallHistory() {
                          </p>
                        )}
                     </td>
-                    <td className="px-6 py-4 text-[10px] font-black text-aura-red uppercase tracking-tighter">{call.agent_name}</td>
+                    <td className="px-6 py-4 text-[10px] font-black text-aura-red uppercase tracking-tighter">
+                      {call.agent_name}
+                      {call.agent_phone && (
+                        <p className="text-[10px] font-mono text-gray-400 mt-0.5 normal-case">{call.agent_phone}</p>
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-xs font-black text-gray-400 font-mono tracking-tighter">{formatDuration(call.duration_seconds)}</td>
                     <td className="px-6 py-4">
                       <span className={cn(
