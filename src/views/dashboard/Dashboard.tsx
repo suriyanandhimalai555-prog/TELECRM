@@ -39,7 +39,7 @@ import {
   Cell
 } from 'recharts';
 
-const COLORS = ['#25D366', '#128C7E', '#fbbf24', '#8b5cf6'];
+const COLORS = ['#2563EB', '#60A5FA', '#fbbf24', '#8b5cf6'];
 
 const PowerCounter = ({ value }: { value: number }) => {
   const count = useMotionValue(0);
@@ -116,8 +116,8 @@ export default function Dashboard() {
 
   const statCards = [
     { name: 'Total Contacts', value: stats.totalContacts || 0, icon: Users, color: 'bg-aura-red', filter: 'all', path: '/leads' },
-    { name: 'Sent Today', value: stats.messagesToday || 0, icon: PhoneOutgoing, color: 'bg-[#25D366]', filter: 'all', path: '/whatsapp' },
-    { name: 'Unread WA', value: stats.unreadWhatsAppCount || 0, icon: MessageSquare, color: 'bg-[#25D366]', filter: 'unread', path: '/whatsapp' },
+    { name: 'Sent Today', value: stats.messagesToday || 0, icon: PhoneOutgoing, color: 'bg-[#2563EB]', filter: 'all', path: '/whatsapp' },
+    { name: 'Unread WA', value: stats.unreadWhatsAppCount || 0, icon: MessageSquare, color: 'bg-[#2563EB]', filter: 'unread', path: '/whatsapp' },
     { name: 'Calls Made', value: stats.totalCalls || 0, icon: Phone, color: 'bg-aura-red', filter: 'all', path: '/calls' },
   ];
 
@@ -169,7 +169,7 @@ export default function Dashboard() {
             className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 transition-all cursor-pointer group"
           >
             <div className="flex items-center justify-between mb-6">
-              <div className={cn(card.color, "p-4 rounded-xl text-white shadow-lg shadow-green-300/20 transform group-hover:scale-110 transition-transform")}>
+              <div className={cn(card.color, "p-4 rounded-xl text-white shadow-lg shadow-blue-300/20 transform group-hover:scale-110 transition-transform")}>
                 <card.icon size={24} />
               </div>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{card.name}</p>
@@ -199,7 +199,7 @@ export default function Dashboard() {
             {[
               { label: 'Total Engagement Time', value: formatDuration(stats.totalDuration || 0), icon: History, color: 'text-aura-red' },
               { label: 'Average Signal Strength', value: formatDuration(stats.avgDuration || 0), icon: Zap, color: 'text-aura-red' },
-              { label: 'Pending Directives', value: stats.dailyTasks || 0, icon: CheckSquare, color: 'text-green-600' }
+              { label: 'Pending Directives', value: stats.dailyTasks || 0, icon: CheckSquare, color: 'text-blue-600' }
             ].map((item) => (
               <div 
                 key={item.label}
@@ -237,7 +237,7 @@ export default function Dashboard() {
                   />
                   <Bar 
                     dataKey="count" 
-                    fill="#25D366" 
+                    fill="#2563EB" 
                     radius={[4, 4, 0, 0]}
                     animationDuration={1500}
                   />
@@ -283,7 +283,7 @@ export default function Dashboard() {
                   <div className={cn(
                     "w-10 h-10 rounded-xl mr-4 flex items-center justify-center border transition-all",
                     call.type === 'INCOMING' ? "bg-aura-red/5 border-aura-red/20 text-aura-red" : 
-                    call.type === 'OUTGOING' ? "bg-green-600/5 border-green-600/20 text-green-600" : "bg-gray-100 border-gray-200 text-gray-400"
+                    call.type === 'OUTGOING' ? "bg-green-600/5 border-green-600/20 text-blue-600" : "bg-gray-100 border-gray-200 text-gray-400"
                   )}>
                     {call.type === 'INCOMING' ? <PhoneIncoming size={16} /> : 
                      call.type === 'OUTGOING' ? <PhoneOutgoing size={16} /> : <PhoneMissed size={16} />}
@@ -297,7 +297,7 @@ export default function Dashboard() {
                   <p className="text-xs font-black text-gray-900 font-mono tracking-tighter uppercase">{formatDuration(call.duration_seconds)}</p>
                   <span className={cn(
                     "text-[8px] font-black uppercase px-2 py-0.5 rounded-md mt-2 inline-block border",
-                    call.status === 'CONNECTED' ? "bg-green-600/10 text-green-600 border-green-600/20" : "bg-aura-red/10 text-aura-red border-aura-red/20"
+                    call.status === 'CONNECTED' ? "bg-green-600/10 text-blue-600 border-green-600/20" : "bg-aura-red/10 text-aura-red border-aura-red/20"
                   )}>{call.status}</span>
                 </div>
               </div>
