@@ -127,7 +127,13 @@ export default function CallHistory() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const filteredCalls = Array.isArray(calls) ? calls.filter(call => {
+  const deduplicatedCalls = Array.isArray(calls) ? calls.reduce((acc: any[], call: any) => {
+    const exists = acc.find(c => c.lead_id === call.lead_id);
+    if (!exists) acc.push(call);
+    return acc;
+  }, []) : [];
+
+  const filteredCalls = deduplicatedCalls.filter(call => {
     const matchesSearch = true; // Handled server-side
     
     const matchesStatus = filters.status === 'all' || call.status === filters.status;
