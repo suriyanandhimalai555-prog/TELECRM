@@ -561,16 +561,36 @@ export default function WhatsAppInbox() {
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!input.trim() || !selectedContact || sending) return;
-    setSending(true);
     const text = input;
     setInput('');
+    // Optimistic update - show message instantly
+    const tempId = `temp_${Date.now()}`;
+    const tempMsg = {
+      message_id: tempId,
+      from_number: '',
+      to_number: selectedContact.contact_number,
+      message_text: text,
+      direction: 'outbound',
+      status: 'sending',
+      timestamp: new Date().toISOString(),
+      contact_name: selectedContact.contact_name,
+      is_read: true,
+    };
+    setMessages(prev => [...prev, tempMsg]);
+    setSending(true);
     try {
       await api.post('/whatsapp/send', {
         to: selectedContact.contact_number,
         message: text,
         contactName: selectedContact.contact_name
       });
-    } catch { } finally { setSending(false); }
+      // Update temp message to sent
+      setMessages(prev => prev.map(m => m.message_id === tempId ? { ...m, status: 'sent' } : m));
+    } catch {
+      // Remove temp message on failure
+      setMessages(prev => prev.filter(m => m.message_id !== tempId));
+      setInput(text);
+    } finally { setSending(false); }
   };
 
   const handleResolve = () => {
