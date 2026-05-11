@@ -48,7 +48,7 @@ export const createUser = async (req: AuthRequest, res: Response) => {
     const hashedPassword = bcrypt.hashSync(password, salt);
 
     const result = await db.query(
-      'INSERT INTO users (email, password, name, role, reporting_to) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+      'INSERT INTO users (email, password, name, role, reporting_to, phone) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
       [email, hashedPassword, name, role, reporting_to || null, req.body.phone || null]
     );
 
