@@ -430,15 +430,11 @@ export const getConversations = async (req: Request, res: Response) => {
     const role = (req as any).user?.role || 'EMPLOYEE';
     const uid = (req as any).user?.id || 0;
 
-    if (role === 'MANAGER') {
-      // Manager sees: their own leads + team leads + any unlinked conversations
-      query += ` AND (l.id IS NULL OR l.owner_id IS NULL OR l.owner_id = $${params.length + 1} OR l.owner_id IN (SELECT id FROM users WHERE reporting_to = $${params.length + 1}))`;
-      params.push(uid);
-    } else if (role !== 'ADMIN') {
-      // Employee sees only their assigned leads
-      query += ` AND l.owner_id = $${params.length + 1}`;
+    if (role === 'EMPLOYEE') {
+      query += ` AND lead_id IN (SELECT id FROM leads WHERE owner_id = $${params.length + 1})`;
       params.push(uid);
     }
+    // ADMIN and MANAGER see all conversations
 
     if (search) {
       query += ` AND (lead_name ILIKE $${params.length + 1} OR contact_name ILIKE $${params.length + 1} OR contact_number ILIKE $${params.length + 1} OR message_text ILIKE $${params.length + 1})`;
