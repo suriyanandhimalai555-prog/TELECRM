@@ -9,7 +9,7 @@ export default function Layout() {
   const location = useLocation();
 
   return (
-    <div className="flex h-screen bg-[#f0f8ff] overflow-hidden selection:bg-aura-red selection:text-white">
+    <div className="flex h-screen bg-[#daeaf8] overflow-hidden selection:bg-aura-red selection:text-white">
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
       
       <div className="flex-1 flex flex-col overflow-hidden relative">

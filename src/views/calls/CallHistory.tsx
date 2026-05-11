@@ -280,7 +280,7 @@ export default function CallHistory() {
                       <div className={cn(
                         "p-2 rounded-lg border w-fit shadow-sm transition-transform group-hover:scale-110",
                         call.type === 'INCOMING' ? "bg-aura-red/10 border-aura-red/20 text-aura-red" : 
-                        call.type === 'OUTGOING' ? "bg-[#3b9eff]/10 border-blue-600/20 text-blue-600" : "bg-gray-100 border-gray-200 text-gray-400"
+                        call.type === 'OUTGOING' ? "bg-[#2a85cc]/10 border-blue-600/20 text-blue-600" : "bg-gray-100 border-gray-200 text-gray-400"
                       )}>
                         {call.type === 'INCOMING' ? <PhoneIncoming size={14} /> : 
                          call.type === 'OUTGOING' ? <PhoneOutgoing size={14} /> : <PhoneMissed size={14} />}
@@ -304,7 +304,7 @@ export default function CallHistory() {
                     <td className="px-6 py-4">
                       <span className={cn(
                         "px-2 py-0.5 rounded-md text-[9px] font-black uppercase border",
-                        call.status === 'CONNECTED' ? "bg-[#3b9eff]/10 text-blue-600 border-blue-600/20" : "bg-aura-red/10 text-aura-red border-aura-red/20"
+                        call.status === 'CONNECTED' ? "bg-[#2a85cc]/10 text-blue-600 border-blue-600/20" : "bg-aura-red/10 text-aura-red border-aura-red/20"
                       )}>
                         {call.status}
                       </span>

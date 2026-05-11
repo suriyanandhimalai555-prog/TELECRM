@@ -398,7 +398,7 @@ export default function Leads() {
                 <Phone size={18} /> Call via Phone
               </button>
               <button onClick={() => { setCallPopup(null); startCall(callPopup, 'whatsapp'); }}
-                className="flex items-center gap-3 px-4 py-3 bg-blue-500 hover:bg-[#3b9eff] text-white rounded-xl font-bold text-sm transition-colors">
+                className="flex items-center gap-3 px-4 py-3 bg-blue-500 hover:bg-[#2a85cc] text-white rounded-xl font-bold text-sm transition-colors">
                 <MessageSquare size={18} /> Call via WhatsApp
               </button>
             </div>
@@ -410,7 +410,7 @@ export default function Leads() {
         </div>
       )}
       {activeCall && (
-        <div className="fixed bottom-4 right-4 z-50 bg-[#3b9eff] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-4">
+        <div className="fixed bottom-4 right-4 z-50 bg-[#2a85cc] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-4">
           <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
           <div>
             <p className="text-xs font-bold">{activeCall.lead.contact_name}</p>
