@@ -19,9 +19,11 @@ export const getCalls = async (req: AuthRequest, res: Response) => {
     let whereClauses = [];
     let queryParams: any[] = [];
 
-    // Every user sees only their own calls
-    whereClauses.push(`c.agent_id = $${queryParams.length + 1}`);
-    queryParams.push(req.user.id);
+    // Admin sees all calls, others see only their own
+    if (req.user.role !== 'ADMIN') {
+      whereClauses.push(`c.agent_id = $${queryParams.length + 1}`);
+      queryParams.push(req.user.id);
+    }
     // Filter by lead_id if provided
     if (req.query.lead_id) {
       whereClauses.push(`c.lead_id = $${queryParams.length + 1}`);
