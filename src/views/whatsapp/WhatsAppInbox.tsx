@@ -80,7 +80,7 @@ function previewMessage(text: string): string {
 }
 
 function mediaUrl(mediaId: string): string {
-  return `${window.location.origin}/api/whatsapp/media/${mediaId}`;
+  return `https://telecrm-copy-production.up.railway.app/api/whatsapp/media/${mediaId}`;
 }
 
 function linkifyText(text: string) {
