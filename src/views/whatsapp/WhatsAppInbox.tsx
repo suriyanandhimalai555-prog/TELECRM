@@ -693,7 +693,7 @@ export default function WhatsAppInbox() {
               <button key={f} onClick={() => setActiveFilter(f)}
                 className={cn("px-2.5 py-1 rounded-full text-[10px] font-black uppercase transition-colors",
                   activeFilter === f ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200")}>
-                {f === 'all' ? 'All' : `Unread${totalUnread > 0 ? ` (${totalUnread})` : ''}`}
+                {f === 'all' ? 'All' : (totalUnread > 0 ? 'Unread (' + totalUnread + ')' : 'Unread')}
               </button>
             ))}
           </div>
