@@ -229,8 +229,8 @@ function MessageContent({ parsed, isOut, onMediaClick }: {
       return (
         <div className="relative rounded-lg overflow-hidden max-w-[280px] cursor-pointer"
           onClick={() => onMediaClick(mediaUrl(parsed.mediaId), 'video')}>
-          <video 
-            src={mediaUrl(parsed.mediaId)} 
+          <video
+            src={mediaUrl(parsed.mediaId)}
             preload="metadata"
             className="w-full max-h-[220px] rounded-lg bg-black"
           />
@@ -434,19 +434,39 @@ export default function WhatsAppInbox() {
     return () => document.removeEventListener('mousedown', h);
   }, []);
 
+  // ── FIXED: Navigate to contact from ?phone= query param ──────────────────
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const phone = params.get('phone');
-    if (!phone || loading) return;
-    const found = conversations.find(c =>
-      c.contact_number === phone ||
-      c.contact_number.replace(/\D/g, '') === phone
-    );
-    if (found) { selectContact(found); navigate('/whatsapp', { replace: true }); return; }
+    if (!phone) return;
+    if (loading) return; // wait until conversations are loaded
+
+    const cleanPhone = phone.replace(/\D/g, '');
+
+    const found = conversations.find(c => {
+      const clean = c.contact_number.replace(/\D/g, '');
+      return (
+        clean === cleanPhone ||
+        clean.endsWith(cleanPhone) ||
+        cleanPhone.endsWith(clean)
+      );
+    });
+
+    if (found) {
+      selectContact(found);
+      navigate('/whatsapp', { replace: true });
+      return;
+    }
+
+    // Contact not in conversation list yet — create a placeholder and open chat
     const placeholder: Conversation = {
-      contact_number: phone, contact_name: phone, last_message: '',
-      last_timestamp: new Date().toISOString(), last_direction: 'outbound',
-      last_status: '', unread_count: 0,
+      contact_number: phone,
+      contact_name: phone,
+      last_message: '',
+      last_timestamp: new Date().toISOString(),
+      last_direction: 'outbound',
+      last_status: '',
+      unread_count: 0,
     };
     setSelectedContact(placeholder);
     fetchMessages(phone);
@@ -718,8 +738,8 @@ export default function WhatsAppInbox() {
                       className="absolute right-0 top-full mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-50 w-48 py-1 overflow-hidden">
                       {[
                         { label: 'Sort by Latest', icon: SortDesc, action: () => {
-          setConversations(prev => [...prev].sort((a, b) => new Date(b.last_timestamp).getTime() - new Date(a.last_timestamp).getTime()));
-        } },
+                          setConversations(prev => [...prev].sort((a, b) => new Date(b.last_timestamp).getTime() - new Date(a.last_timestamp).getTime()));
+                        }},
                         { label: 'Sync Templates', icon: RefreshCw, action: handleSyncTemplates },
                       ].map(({ label, icon: Icon, action }) => (
                         <button key={label} onClick={() => { setShowDotsMenu(false); setTimeout(() => action(), 50); }}
@@ -956,7 +976,6 @@ export default function WhatsAppInbox() {
                         fd.append('to', selectedContact.contact_number);
                         fd.append('contactName', selectedContact.contact_name || selectedContact.contact_number);
                         const res = await api.post('/whatsapp/send-media', fd);
-                        // Immediately show in chat
                         const mediaId = res.data.mediaId;
                         const mime = file.type;
                         let msgText = mime.startsWith('image/') ? `[image:${mediaId}]`
