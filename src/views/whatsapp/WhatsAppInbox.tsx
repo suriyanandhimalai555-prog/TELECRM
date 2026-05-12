@@ -515,3 +515,458 @@ export default function WhatsAppInbox() {
   }, [fetchConversations, fetchTemplates, handleMessage, handleRead, handleStatus]);
 
   useEffect(() => {
+    if (selectedContact) fetchMessages(selectedContact.contact_number);
+  }, [selectedContact, fetchMessages]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const selectContact = async (conv: Conversation) => {
+    setSelectedContact(conv);
+    setShowContactInfo(false);
+    if (conv.unread_count > 0) {
+      try {
+        await api.put(`/whatsapp/mark-read/${conv.contact_number}`);
+        setConversations(prev => prev.map(c => c.contact_number === conv.contact_number ? { ...c, unread_count: 0 } : c));
+      } catch { }
+    }
+  };
+
+  const handleSendMessage = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!input.trim() || !selectedContact || sending) return;
+    setSending(true);
+    const text = input;
+    setInput('');
+    try {
+      await api.post('/whatsapp/send', {
+        to: selectedContact.contact_number,
+        message: text,
+        contactName: selectedContact.contact_name
+      });
+    } catch { } finally { setSending(false); }
+  };
+
+  const handleResolve = () => {
+    if (!selectedContact) return;
+    setConversations(prev => prev.filter(c => c.contact_number !== selectedContact.contact_number));
+    setSelectedContact(null);
+  };
+
+  const handleDeleteAction = (type: 'delete' | 'archive' | 'clear') => {
+    if (!selectedContact) return;
+    if (type === 'clear') {
+      setMessages([]);
+    } else {
+      setConversations(prev => prev.filter(c => c.contact_number !== selectedContact.contact_number));
+      setSelectedContact(null);
+    }
+    setDeleteModal(null);
+  };
+
+  const handleDeleteMessage = async (msgId: number | string) => {
+    setMessages(prev => prev.filter(m => m.id !== msgId));
+    try { await api.delete(`/whatsapp/message/${msgId}`); } catch {}
+  };
+
+  const togglePin = (phone: string) => {
+    setPinnedChats(prev => prev.includes(phone) ? prev.filter(p => p !== phone) : [...prev, phone]);
+  };
+
+  const filteredConversations = conversations
+    .filter(c => activeFilter === 'unread' ? c.unread_count > 0 : true)
+    .filter(c =>
+      c.contact_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.contact_number.includes(searchTerm)
+    )
+    .sort((a, b) => {
+      const ap = pinnedChats.includes(a.contact_number);
+      const bp = pinnedChats.includes(b.contact_number);
+      return ap === bp ? 0 : ap ? -1 : 1;
+    });
+
+  const totalUnread = conversations.reduce((s, c) => s + (Number(c.unread_count) || 0), 0);
+
+  const formatTime = (ts: string) => {
+    const d = new Date(ts);
+    const now = new Date();
+    if (d.toDateString() === now.toDateString()) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  };
+
+  const formatDateSeparator = (ts: string) => {
+    const d = new Date(ts);
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (d.toDateString() === now.toDateString()) return 'Today';
+    if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return d.toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' });
+  };
+
+  const StatusIcon = ({ status, direction }: { status: string; direction: string }) => {
+    if (direction === 'inbound') return null;
+    if (status === 'read') return <CheckCheck size={13} className="text-blue-400" />;
+    if (status === 'delivered') return <CheckCheck size={13} className="text-gray-400" />;
+    if (status === 'sent') return <Check size={13} className="text-gray-400" />;
+    return null;
+  };
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; msgId: number | string } | null>(null);
+
+  return (
+    <div className="flex h-[calc(100vh-140px)] bg-white rounded-[2rem] shadow-2xl border border-gray-100 overflow-hidden">
+      <div className="w-80 lg:w-96 border-r border-gray-100 flex flex-col bg-gray-50/50 shrink-0">
+        <div className="p-4 border-b border-gray-100 bg-white">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-black text-gray-900 uppercase tracking-tighter">
+                Whats<span className="text-blue-600">App</span>
+              </h2>
+              {totalUnread > 0 && (
+                <span className="px-1.5 py-0.5 bg-blue-500 text-white text-[9px] font-black rounded-full leading-none">{totalUnread}</span>
+              )}
+            </div>
+            <div className="flex items-center gap-0.5">
+              <div className="relative" ref={filterRef}>
+                <button onClick={() => setShowFilterMenu(v => !v)} className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                  <Filter size={15} />
+                </button>
+                <AnimatePresence>
+                  {showFilterMenu && (
+                    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+                      className="absolute right-0 top-full mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-50 w-48 py-1 overflow-hidden">
+                      {[
+                        { label: 'All Chats', val: 'all' as const, icon: Inbox },
+                        { label: `Unread (${totalUnread})`, val: 'unread' as const, icon: MessageSquare },
+                      ].map(({ label, val, icon: Icon }) => (
+                        <button key={val} onClick={() => { setActiveFilter(val); setShowFilterMenu(false); }}
+                          className={cn("w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold transition-colors",
+                            activeFilter === val ? "bg-blue-50 text-blue-600" : "text-gray-700 hover:bg-gray-50")}>
+                          <Icon size={13} />{label}
+                        </button>
+                      ))}
+                      <div className="border-t border-gray-100 mt-1 pt-1">
+                        <button onClick={() => { fetchConversations(); setShowFilterMenu(false); }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50">
+                          <RefreshCw size={13} />Refresh
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              <div className="relative" ref={dotsRef}>
+                <button onClick={() => setShowDotsMenu(v => !v)} className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                  <MoreVertical size={15} />
+                </button>
+                <AnimatePresence>
+                  {showDotsMenu && (
+                    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+                      className="absolute right-0 top-full mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-50 w-48 py-1 overflow-hidden">
+                      {[
+                        { label: 'Sort by Latest', icon: SortDesc, action: () => setConversations(prev => [...prev].sort((a, b) => new Date(b.last_timestamp).getTime() - new Date(a.last_timestamp).getTime())) },
+                        { label: 'Sync Templates', icon: RefreshCw, action: handleSyncTemplates },
+                      ].map(({ label, icon: Icon, action }) => (
+                        <button key={label} onClick={() => { setShowDotsMenu(false); setTimeout(() => action(), 50); }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50">
+                          <Icon size={13} />{label}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+            <input type="text" placeholder="Search conversations..." value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-gray-100 rounded-xl focus:outline-none text-xs font-bold text-gray-900" />
+          </div>
+          <div className="flex gap-2 mt-2.5">
+            {(['all', 'unread'] as const).map(f => (
+              <button key={f} onClick={() => setActiveFilter(f)}
+                className={cn("px-2.5 py-1 rounded-full text-[10px] font-black uppercase transition-colors",
+                  activeFilter === f ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200")}>
+                {f === 'all' ? 'All' : `Unread${totalUnread > 0 ? ` (${totalUnread})` : ''}`}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="flex items-center justify-center p-10">
+              <div className="w-7 h-7 border-2 border-blue-200 border-t-blue-500 rounded-full animate-spin" />
+            </div>
+          ) : filteredConversations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-10 gap-3">
+              <MessageSquare size={28} className="text-gray-200" />
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">No conversations</p>
+            </div>
+          ) : (
+            filteredConversations.map(conv => (
+              <div key={conv.contact_number}
+                onClick={() => selectContact(conv)}
+                className={cn("px-4 py-3 flex items-center gap-3 cursor-pointer border-b border-gray-50 transition-all hover:bg-gray-50",
+                  selectedContact?.contact_number === conv.contact_number ? "bg-blue-50 border-l-4 border-l-blue-500" : "")}>
+                <div className={cn("w-10 h-10 rounded-full flex items-center justify-center text-white font-black text-sm shrink-0",
+                  conv.last_direction === 'inbound' ? "bg-blue-500" : "bg-gray-400")}>
+                  {conv.contact_name?.[0]?.toUpperCase() || conv.contact_number.slice(-1)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-xs font-black text-gray-900 truncate">{conv.contact_name || conv.contact_number}</span>
+                    <span className="text-[9px] text-gray-400 shrink-0 ml-2">{formatTime(conv.last_timestamp)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] text-gray-500 truncate max-w-[80%]">{previewMessage(conv.last_message)}</p>
+                    {(Number(conv.unread_count) || 0) > 0 && (
+                      <span className="w-4 h-4 bg-blue-500 text-white text-[8px] font-black flex items-center justify-center rounded-full shrink-0">
+                        {Number(conv.unread_count) > 9 ? '9+' : Number(conv.unread_count)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+      <div className="flex-1 flex min-w-0">
+        {selectedContact ? (
+          <div className="flex-1 flex flex-col min-w-0">
+            <div className="px-4 py-3 bg-white border-b border-gray-100 flex items-center justify-between shadow-sm z-10 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center text-white font-black text-sm">
+                  {selectedContact.contact_name?.[0]?.toUpperCase() || selectedContact.contact_number.slice(-1)}
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-gray-900">{selectedContact.contact_name || selectedContact.contact_number}</h3>
+                  <p className="text-[10px] text-gray-500">{selectedContact.contact_number}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button onClick={handleResolve} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 text-white rounded-lg text-[11px] font-black hover:bg-blue-600 transition-colors">
+                  <Check size={12} /> Resolve
+                </button>
+                <button onClick={() => setShowContactInfo(v => !v)} className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors">
+                  <Info size={17} />
+                </button>
+                <div className="relative" ref={chatMenuRef}>
+                  <button onClick={() => setShowChatMenu(v => !v)} className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors">
+                    <MoreVertical size={17} />
+                  </button>
+                  <AnimatePresence>
+                    {showChatMenu && (
+                      <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+                        className="absolute right-0 top-full mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-50 w-48 py-1 overflow-hidden">
+                        <button onClick={() => { togglePin(selectedContact.contact_number); setShowChatMenu(false); }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50">
+                          <Star size={13} />{pinnedChats.includes(selectedContact.contact_number) ? 'Unpin Chat' : 'Pin Chat'}
+                        </button>
+                        <div className="border-t border-gray-100 my-1" />
+                        <button onClick={() => { setDeleteModal('clear'); setShowChatMenu(false); }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-orange-500 hover:bg-orange-50">
+                          <XCircle size={13} />Clear Chat
+                        </button>
+                        <button onClick={() => { setDeleteModal('delete'); setShowChatMenu(false); }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50">
+                          <Trash2 size={13} />Delete Chat
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5 space-y-3 bg-[#f0f2f5]">
+              {messages.map((m, idx) => {
+                const isOut = m.direction === 'outbound';
+                const parsed = parseMessage(m.message_text);
+                const showDate = idx === 0 || new Date(m.timestamp).toDateString() !== new Date(messages[idx-1].timestamp).toDateString();
+                return (
+                  <div key={m.id}>
+                    {showDate && (
+                      <div className="flex items-center justify-center my-3">
+                        <span className="px-3 py-1 bg-white text-gray-400 text-[10px] font-bold rounded-full shadow-sm border border-gray-100">
+                          {formatDateSeparator(m.timestamp)}
+                        </span>
+                      </div>
+                    )}
+                    <div className={cn("flex", isOut ? "justify-end" : "justify-start")}
+                      onContextMenu={e => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, msgId: m.id }); }}>
+                      <div className={cn("max-w-[68%] p-3 px-3.5 rounded-2xl shadow-sm",
+                        isOut ? "bg-blue-500 text-white rounded-tr-sm" : "bg-white text-gray-800 rounded-tl-sm border border-gray-100")}>
+                        <MessageContent parsed={parsed} isOut={isOut}
+                          onMediaClick={(url, type, filename) => setMediaPreview({ url, type, filename })} />
+                        <div className="flex items-center justify-end mt-1 gap-1">
+                          <span className={cn("text-[10px]", isOut ? "text-blue-200" : "text-gray-400")}>
+                            {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase()}
+                          </span>
+                          {isOut && <StatusIcon status={m.status} direction="outbound" />}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={chatEndRef} />
+            </div>
+            <div className="px-4 py-3 bg-white border-t border-gray-100 shrink-0">
+              <div className="flex items-end gap-2">
+                <div className="flex items-center gap-1 shrink-0 pb-1.5">
+                  <div className="relative" ref={emojiRef}>
+                    <button onClick={() => setShowEmojiPicker(v => !v)} className="p-2 rounded-lg text-gray-400 hover:text-blue-600 transition-colors">
+                      <Smile size={19} />
+                    </button>
+                    <AnimatePresence>
+                      {showEmojiPicker && <EmojiPicker onSelect={e => setInput(prev => prev + e)} onClose={() => setShowEmojiPicker(false)} />}
+                    </AnimatePresence>
+                  </div>
+                  <button onClick={() => setShowTemplateModal(true)} className="p-2 text-gray-400 hover:text-blue-600 rounded-lg transition-colors">
+                    <Layout size={19} />
+                  </button>
+                  <input ref={fileInputRef} type="file" className="hidden"
+                    accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.txt"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file || !selectedContact) return;
+                      e.target.value = '';
+                      setUploadingFile(true);
+                      try {
+                        const fd = new FormData();
+                        fd.append('file', file);
+                        fd.append('to', selectedContact.contact_number);
+                        fd.append('contactName', selectedContact.contact_name || selectedContact.contact_number);
+                        const res = await api.post('/whatsapp/send-media', fd);
+                        fetchMessages(selectedContact.contact_number);
+                      } catch(err) { console.error('Upload failed', err); }
+                      finally { setUploadingFile(false); }
+                    }} />
+                  <button onClick={() => fileInputRef.current?.click()} disabled={uploadingFile}
+                    className="p-2 rounded-lg text-gray-400 hover:text-blue-600 transition-colors">
+                    <Paperclip size={19} />
+                  </button>
+                </div>
+                <div className="flex-1 bg-gray-100 rounded-2xl overflow-hidden">
+                  <textarea rows={1} value={input} onChange={e => setInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+                    placeholder="Type a message..."
+                    style={{ minHeight: 42, maxHeight: 120, resize: 'none' }}
+                    className="w-full bg-transparent px-4 py-2.5 text-sm focus:outline-none text-gray-900" />
+                </div>
+                <button onClick={handleSendMessage} disabled={!input.trim() || sending}
+                  className="shrink-0 w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center disabled:opacity-40 shadow-md hover:bg-blue-600 transition-colors">
+                  {sending ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Send size={16} />}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center p-12 text-center bg-gray-50/50">
+            <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center text-gray-200 mb-5 shadow-md">
+              <MessageSquare size={40} strokeWidth={1} />
+            </div>
+            <h3 className="text-base font-black text-gray-700 mb-1.5">Select a conversation</h3>
+            <p className="text-xs text-gray-400 max-w-[200px]">Choose a contact from the sidebar to start messaging</p>
+          </div>
+        )}
+        {ctxMenu && (
+          <div className="fixed inset-0 z-50" onClick={() => setCtxMenu(null)}>
+            <div className="absolute bg-white border border-gray-100 rounded-xl shadow-xl py-1 w-40"
+              style={{ left: ctxMenu.x, top: ctxMenu.y }}>
+              <button onClick={() => handleDeleteMessage(ctxMenu.msgId)}
+                className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50">
+                <Trash2 size={13} />Delete Message
+              </button>
+            </div>
+          </div>
+        )}
+        <AnimatePresence>
+          {showContactInfo && selectedContact && (
+            <ContactInfoDrawer contact={selectedContact} messages={messages} onClose={() => setShowContactInfo(false)} />
+          )}
+        </AnimatePresence>
+      </div>
+      <AnimatePresence>
+        {showTemplateModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowTemplateModal(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[80vh] overflow-hidden relative z-10 flex flex-col">
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+                <h3 className="text-base font-black text-gray-900 uppercase">Message Templates</h3>
+                <div className="flex items-center gap-2">
+                  <button onClick={handleSyncTemplates} disabled={syncingTemplates}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-[10px] font-black text-blue-600 hover:bg-blue-50 disabled:opacity-50">
+                    <RefreshCw size={11} className={cn(syncingTemplates && "animate-spin")} />
+                    {syncingTemplates ? 'Syncing...' : 'Sync Meta'}
+                  </button>
+                  <button onClick={() => setShowTemplateModal(false)} className="text-gray-400 hover:text-gray-700 p-1">
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+              <div className="flex-1 overflow-hidden flex">
+                <div className="w-1/2 border-r border-gray-100 overflow-y-auto p-4 space-y-2">
+                  {templates.length === 0 ? (
+                    <div className="text-center py-10 text-gray-400">
+                      <p className="text-[9px] font-black uppercase">No templates. Click Sync Meta.</p>
+                    </div>
+                  ) : templates.map(tpl => (
+                    <div key={tpl.id} onClick={() => setSelectedTemplate(tpl)}
+                      className={cn("p-3 rounded-xl border cursor-pointer transition-all",
+                        selectedTemplate?.id === tpl.id ? "bg-blue-50 border-blue-300" : "bg-white border-gray-100 hover:border-blue-200")}>
+                      <h4 className="text-xs font-black text-gray-900">{tpl.name}</h4>
+                      <span className="text-[8px] text-gray-400 uppercase">{tpl.status}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex-1 bg-gray-50 p-5 flex flex-col">
+                  <div className="flex-1 flex items-center justify-center">
+                    {selectedTemplate ? (
+                      <div className="bg-white rounded-xl shadow border border-gray-100 p-4 w-full max-w-xs">
+                        {selectedTemplate.components?.map((comp: any, i: number) => (
+                          <div key={i} className="mb-3">
+                            {comp.type === 'BODY' && <div className="text-xs text-gray-600 whitespace-pre-wrap">{comp.text}</div>}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center text-gray-300">
+                        <ShieldAlert size={36} className="mx-auto mb-2" />
+                        <p className="text-[9px] font-black uppercase">Select a template to preview</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="pt-4 border-t border-gray-200 flex justify-end">
+                    <button disabled={!selectedTemplate || sending} onClick={handleSendTemplate}
+                      className="flex items-center gap-2 px-5 py-2 bg-blue-500 text-white rounded-xl text-xs font-black disabled:opacity-50 hover:bg-blue-600 transition-colors">
+                      <Send size={13} />{sending ? 'Sending...' : 'Send Message'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {deleteModal && (
+          <DeleteModal type={deleteModal} onCancel={() => setDeleteModal(null)} onConfirm={() => handleDeleteAction(deleteModal)} />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {mediaPreview && (
+          <MediaPreviewModal url={mediaPreview.url} type={mediaPreview.type} filename={mediaPreview.filename} onClose={() => setMediaPreview(null)} />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
