@@ -4,7 +4,7 @@ import {
   Filter, User, Smile, Paperclip, Layout, RefreshCw, X,
   Eye, FileText, Download, Image as ImageIcon, Music, MapPin,
   ExternalLink, Phone, Clock, Trash2, Archive,
-  ZoomIn, Play, Inbox, Info,
+  ZoomIn, Play, SortDesc, Inbox, Info,
   AlertCircle, XCircle, Star, ShieldAlert
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -14,7 +14,7 @@ import { Message } from '../../types';
 import { socket } from '../../services/socket';
 import { useAuth } from '../../hooks/useAuth';
 import { useSearch } from '../../context/SearchContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Conversation {
@@ -65,11 +65,6 @@ function parseMessage(text: string): ParsedMessage {
     const [lat, lng] = coords.split(',');
     return { type: 'location', lat: lat || '', lng: lng || '', name: locName };
   }
-  if (text.startsWith('[reaction:')) {
-    const emoji = text.slice(10, -1);
-    return { type: 'text', text: emoji };
-  }
-  if (text === '[reaction]') return { type: 'text', text: '👍' };
   return { type: 'text', text };
 }
 
@@ -143,11 +138,7 @@ function MediaPreviewModal({ url, type, filename, onClose }: {
         </div>
         <div className="mt-12 w-full flex items-center justify-center">
           {type === 'image' && <img src={url} alt={filename} className="max-h-[75vh] max-w-full rounded-xl object-contain" />}
-          {type === 'video' && (
-            <video src={url} controls autoPlay playsInline
-              className="max-h-[80vh] max-w-[90vw] rounded-xl outline-none"
-              style={{ minWidth: 320 }} />
-          )}
+          {type === 'video' && <video src={url} controls autoPlay className="max-h-[75vh] max-w-full rounded-xl" />}
           {type === 'audio' && (
             <div className="bg-white/10 rounded-xl p-8 flex flex-col items-center gap-4">
               <Music size={48} className="text-white" />
@@ -202,8 +193,8 @@ function MessageContent({ parsed, isOut, onMediaClick }: {
           className={cn("flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all",
             isOut ? "bg-white/10 border-white/20 hover:bg-white/20" : "bg-gray-50 border-gray-200 hover:bg-gray-100")}>
           <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
-            isOut ? "bg-white/20" : "bg-blue-50")}>
-            <FileText size={18} className={isOut ? "text-white" : "text-blue-600"} />
+            isOut ? "bg-white/20" : "bg-red-50")}>
+            <FileText size={18} className={isOut ? "text-white" : "text-red-500"} />
           </div>
           <div className="min-w-0 flex-1">
             <div className={cn("text-xs font-bold truncate", tc)}>{parsed.filename}</div>
@@ -227,17 +218,11 @@ function MessageContent({ parsed, isOut, onMediaClick }: {
 
     case 'video':
       return (
-        <div className="relative rounded-lg overflow-hidden max-w-[280px] cursor-pointer"
+        <div className="relative cursor-pointer"
           onClick={() => onMediaClick(mediaUrl(parsed.mediaId), 'video')}>
-          <video
-            src={mediaUrl(parsed.mediaId)}
-            preload="metadata"
-            className="w-full max-h-[220px] rounded-lg bg-black"
-          />
+          <video src={mediaUrl(parsed.mediaId)} className="max-w-[220px] max-h-[180px] rounded-lg" />
           <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg">
-            <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
-              <Play size={20} className="text-gray-800 ml-1" fill="currentColor" />
-            </div>
+            <Play size={28} className="text-white" fill="white" />
           </div>
         </div>
       );
@@ -253,8 +238,8 @@ function MessageContent({ parsed, isOut, onMediaClick }: {
           className={cn("flex items-center gap-3 p-3 rounded-xl border transition-all",
             isOut ? "bg-white/10 border-white/20 hover:bg-white/20" : "bg-gray-50 border-gray-200 hover:bg-gray-100")}>
           <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
-            isOut ? "bg-white/20" : "bg-blue-50")}>
-            <MapPin size={18} className={isOut ? "text-white" : "text-blue-600"} />
+            isOut ? "bg-white/20" : "bg-red-50")}>
+            <MapPin size={18} className={isOut ? "text-white" : "text-red-500"} />
           </div>
           <div className="min-w-0">
             <div className={cn("text-xs font-bold", tc)}>{parsed.name || 'Location'}</div>
@@ -295,7 +280,7 @@ function ContactInfoDrawer({ contact, messages, onClose }: {
       </div>
       <div className="flex-1 overflow-y-auto">
         <div className="p-5 flex flex-col items-center border-b border-gray-100">
-          <div className="w-16 h-16 rounded-full bg-[#2a85cc] flex items-center justify-center text-white font-black text-xl mb-3">
+          <div className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center text-white font-black text-xl mb-3">
             {contact.contact_name?.[0]?.toUpperCase() || contact.contact_number.slice(-1)}
           </div>
           <h4 className="font-black text-gray-900 text-sm text-center">{contact.contact_name || contact.contact_number}</h4>
@@ -308,7 +293,7 @@ function ContactInfoDrawer({ contact, messages, onClose }: {
             ...(contact.lead_id ? [{ icon: User, label: 'Lead ID', value: `#${contact.lead_id}` }] : []),
           ].map(({ icon: Icon, label, value }) => (
             <div key={label} className="flex items-center gap-2.5 p-2.5 bg-gray-50 rounded-xl">
-              <Icon size={14} className="text-blue-600 shrink-0" />
+              <Icon size={14} className="text-red-500 shrink-0" />
               <div>
                 <p className="text-[9px] font-black text-gray-400 uppercase">{label}</p>
                 <p className="text-xs font-bold text-gray-900">{value}</p>
@@ -337,8 +322,8 @@ function ContactInfoDrawer({ contact, messages, onClose }: {
                   </div>
                 );
                 if (p.type === 'document') return (
-                  <div key={i} className="aspect-square bg-blue-50 rounded-lg flex flex-col items-center justify-center gap-1 p-1">
-                    <FileText size={14} className="text-blue-600" />
+                  <div key={i} className="aspect-square bg-red-50 rounded-lg flex flex-col items-center justify-center gap-1 p-1">
+                    <FileText size={14} className="text-red-500" />
                     <span className="text-[7px] text-gray-500 truncate w-full text-center">{p.filename}</span>
                   </div>
                 );
@@ -357,7 +342,7 @@ function DeleteModal({ type, onConfirm, onCancel }: {
   type: 'delete' | 'archive' | 'clear'; onConfirm: () => void; onCancel: () => void;
 }) {
   const cfg = {
-    delete: { title: 'Delete Conversation', desc: 'Permanently delete this conversation. Cannot be undone.', btn: 'Delete', cls: 'bg-[#2a85cc] hover:bg-blue-700' },
+    delete: { title: 'Delete Conversation', desc: 'Permanently delete this conversation. Cannot be undone.', btn: 'Delete', cls: 'bg-red-500 hover:bg-red-600' },
     archive: { title: 'Archive Conversation', desc: 'Move this conversation to archive.', btn: 'Archive', cls: 'bg-gray-500 hover:bg-gray-600' },
     clear: { title: 'Clear Chat', desc: 'All messages will be cleared from view.', btn: 'Clear', cls: 'bg-orange-500 hover:bg-orange-600' },
   }[type];
@@ -368,8 +353,8 @@ function DeleteModal({ type, onConfirm, onCancel }: {
       <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
         className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative z-10">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center">
-            <AlertCircle size={18} className="text-blue-600" />
+          <div className="w-9 h-9 rounded-full bg-red-50 flex items-center justify-center">
+            <AlertCircle size={18} className="text-red-500" />
           </div>
           <h3 className="font-black text-gray-900 text-sm">{cfg.title}</h3>
         </div>
@@ -387,7 +372,6 @@ function DeleteModal({ type, onConfirm, onCancel }: {
 export default function WhatsAppInbox() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedContact, setSelectedContact] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -396,15 +380,13 @@ export default function WhatsAppInbox() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadingFile, setUploadingFile] = useState(false);
-  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; msgId: number | string } | null>(null);
 
   // UI toggles
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showContactInfo, setShowContactInfo] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [showDotsMenu, setShowDotsMenu] = useState(false);
   const [showChatMenu, setShowChatMenu] = useState(false);
   const [deleteModal, setDeleteModal] = useState<'delete' | 'archive' | 'clear' | null>(null);
   const [mediaPreview, setMediaPreview] = useState<{ url: string; type: string; filename?: string } | null>(null);
@@ -418,6 +400,7 @@ export default function WhatsAppInbox() {
 
   const emojiRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
+  const dotsRef = useRef<HTMLDivElement>(null);
   const chatMenuRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns on outside click
@@ -425,46 +408,12 @@ export default function WhatsAppInbox() {
     const h = (e: MouseEvent) => {
       if (emojiRef.current && !emojiRef.current.contains(e.target as Node)) setShowEmojiPicker(false);
       if (filterRef.current && !filterRef.current.contains(e.target as Node)) setShowFilterMenu(false);
+      if (dotsRef.current && !dotsRef.current.contains(e.target as Node)) setShowDotsMenu(false);
       if (chatMenuRef.current && !chatMenuRef.current.contains(e.target as Node)) setShowChatMenu(false);
     };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
   }, []);
-
-  // ── Auto-select contact from ?phone= query param ──────────────────────────
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const phone = params.get('phone');
-    if (!phone) return;
-    if (loading) return;
-
-    const cleanPhone = phone.replace(/\D/g, '');
-
-    const found = conversations.find(c => {
-      const clean = c.contact_number.replace(/\D/g, '');
-      return clean === cleanPhone || clean.endsWith(cleanPhone) || cleanPhone.endsWith(clean);
-    });
-
-    if (found) {
-      selectContact(found);
-      navigate('/whatsapp', { replace: true });
-      return;
-    }
-
-    // Not in list yet — open as placeholder and load messages
-    const placeholder: Conversation = {
-      contact_number: phone,
-      contact_name: phone,
-      last_message: '',
-      last_timestamp: new Date().toISOString(),
-      last_direction: 'outbound',
-      last_status: '',
-      unread_count: 0,
-    };
-    setSelectedContact(placeholder);
-    fetchMessages(phone);
-    navigate('/whatsapp', { replace: true });
-  }, [location.search, loading, conversations]);
 
   const fetchTemplates = useCallback(async () => {
     try {
@@ -476,7 +425,7 @@ export default function WhatsAppInbox() {
   const fetchConversations = useCallback(async () => {
     try {
       const res = await api.get(`/whatsapp/conversations${searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : ''}`);
-      setConversations((res.data.conversations || []).map((c: any) => ({ ...c, unread_count: Number(c.unread_count) || 0 })));
+      setConversations(res.data.conversations || []);
     } catch { } finally {
       setLoading(false);
     }
@@ -570,12 +519,7 @@ export default function WhatsAppInbox() {
   }, [selectedContact, fetchMessages]);
 
   useEffect(() => {
-    const container = chatEndRef.current?.parentElement;
-    if (container) {
-      const { scrollTop, scrollHeight, clientHeight } = container;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
-      if (isNearBottom) chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const selectContact = async (conv: Conversation) => {
@@ -621,12 +565,6 @@ export default function WhatsAppInbox() {
     setDeleteModal(null);
   };
 
-  const handleDeleteMessage = async (msgId: number | string) => {
-    setMessages(prev => prev.filter(m => m.id !== msgId));
-    setCtxMenu(null);
-    try { await api.delete(`/whatsapp/message/${msgId}`); } catch {}
-  };
-
   const togglePin = (phone: string) => {
     setPinnedChats(prev => prev.includes(phone) ? prev.filter(p => p !== phone) : [...prev, phone]);
   };
@@ -643,23 +581,13 @@ export default function WhatsAppInbox() {
       return ap === bp ? 0 : ap ? -1 : 1;
     });
 
-  const totalUnread = conversations.reduce((s, c) => s + (Number(c.unread_count) || 0), 0);
+  const totalUnread = conversations.reduce((s, c) => s + (c.unread_count || 0), 0);
 
   const formatTime = (ts: string) => {
     const d = new Date(ts);
     const now = new Date();
     if (d.toDateString() === now.toDateString()) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
-  };
-
-  const formatDateSeparator = (ts: string) => {
-    const d = new Date(ts);
-    const now = new Date();
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-    if (d.toDateString() === now.toDateString()) return 'Today';
-    if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
-    return d.toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' });
   };
 
   const StatusIcon = ({ status, direction }: { status: string; direction: string }) => {
@@ -680,42 +608,68 @@ export default function WhatsAppInbox() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-black text-gray-900 uppercase tracking-tighter">
-                Whats<span className="text-blue-600">App</span>
+                Whats<span className="text-red-500">App</span>
               </h2>
               {totalUnread > 0 && (
-                <span className="px-1.5 py-0.5 bg-[#2a85cc] text-white text-[9px] font-black rounded-full leading-none">{totalUnread}</span>
+                <span className="px-1.5 py-0.5 bg-red-500 text-white text-[9px] font-black rounded-full leading-none">{totalUnread}</span>
               )}
             </div>
-            {/* Filter only — dots menu removed */}
-            <div className="relative" ref={filterRef}>
-              <button onClick={() => setShowFilterMenu(v => !v)}
-                className={cn("p-2 rounded-lg transition-colors text-sm",
-                  showFilterMenu ? "bg-blue-50 text-blue-600" : "text-gray-400 hover:text-blue-600 hover:bg-blue-50")}>
-                <Filter size={15} />
-              </button>
-              <AnimatePresence>
-                {showFilterMenu && (
-                  <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
-                    className="absolute right-0 top-full mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-50 w-48 py-1 overflow-hidden">
-                    {[
-                      { label: 'All Chats', val: 'all' as const, icon: Inbox },
-                      { label: `Unread (${totalUnread})`, val: 'unread' as const, icon: MessageSquare },
-                    ].map(({ label, val, icon: Icon }) => (
-                      <button key={val} onClick={() => { setActiveFilter(val); setShowFilterMenu(false); }}
-                        className={cn("w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold transition-colors",
-                          activeFilter === val ? "bg-blue-50 text-blue-600" : "text-gray-700 hover:bg-gray-50")}>
-                        <Icon size={13} />{label}
-                      </button>
-                    ))}
-                    <div className="border-t border-gray-100 mt-1 pt-1">
-                      <button onClick={() => { fetchConversations(); setShowFilterMenu(false); }}
-                        className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50">
-                        <RefreshCw size={13} />Refresh
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+            <div className="flex items-center gap-0.5">
+              {/* Filter */}
+              <div className="relative" ref={filterRef}>
+                <button onClick={() => setShowFilterMenu(v => !v)}
+                  className={cn("p-2 rounded-lg transition-colors text-sm",
+                    showFilterMenu ? "bg-red-50 text-red-500" : "text-gray-400 hover:text-red-500 hover:bg-red-50")}>
+                  <Filter size={15} />
+                </button>
+                <AnimatePresence>
+                  {showFilterMenu && (
+                    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+                      className="absolute right-0 top-full mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-50 w-48 py-1 overflow-hidden">
+                      {[
+                        { label: 'All Chats', val: 'all' as const, icon: Inbox },
+                        { label: `Unread (${totalUnread})`, val: 'unread' as const, icon: MessageSquare },
+                      ].map(({ label, val, icon: Icon }) => (
+                        <button key={val} onClick={() => { setActiveFilter(val); setShowFilterMenu(false); }}
+                          className={cn("w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold transition-colors",
+                            activeFilter === val ? "bg-red-50 text-red-500" : "text-gray-700 hover:bg-gray-50")}>
+                          <Icon size={13} />{label}
+                        </button>
+                      ))}
+                      <div className="border-t border-gray-100 mt-1 pt-1">
+                        <button onClick={() => { fetchConversations(); setShowFilterMenu(false); }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50">
+                          <RefreshCw size={13} />Refresh
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              {/* 3-dots */}
+              <div className="relative" ref={dotsRef}>
+                <button onClick={() => setShowDotsMenu(v => !v)}
+                  className={cn("p-2 rounded-lg transition-colors",
+                    showDotsMenu ? "bg-red-50 text-red-500" : "text-gray-400 hover:text-red-500 hover:bg-red-50")}>
+                  <MoreVertical size={15} />
+                </button>
+                <AnimatePresence>
+                  {showDotsMenu && (
+                    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+                      className="absolute right-0 top-full mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-50 w-48 py-1 overflow-hidden">
+                      {[
+                        { label: 'Sort by Latest', icon: SortDesc, action: () => {} },
+                        { label: 'Sync Templates', icon: RefreshCw, action: handleSyncTemplates },
+                      ].map(({ label, icon: Icon, action }) => (
+                        <button key={label} onClick={() => { action(); setShowDotsMenu(false); }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50">
+                          <Icon size={13} />{label}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </div>
 
@@ -723,14 +677,14 @@ export default function WhatsAppInbox() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
             <input type="text" placeholder="Search conversations..." value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 text-xs font-bold text-gray-900 transition-all" />
+              className="w-full pl-9 pr-4 py-2 bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-200 text-xs font-bold text-gray-900 transition-all" />
           </div>
 
           <div className="flex gap-2 mt-2.5">
             {(['all', 'unread'] as const).map(f => (
               <button key={f} onClick={() => setActiveFilter(f)}
                 className={cn("px-2.5 py-1 rounded-full text-[10px] font-black uppercase transition-colors",
-                  activeFilter === f ? "bg-[#2a85cc] text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200")}>
+                  activeFilter === f ? "bg-red-500 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200")}>
                 {f === 'all' ? 'All' : `Unread${totalUnread > 0 ? ` (${totalUnread})` : ''}`}
               </button>
             ))}
@@ -741,7 +695,7 @@ export default function WhatsAppInbox() {
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           {loading ? (
             <div className="flex flex-col items-center justify-center p-10 gap-3">
-              <div className="w-7 h-7 border-2 border-blue-200 border-t-red-500 rounded-full animate-spin" />
+              <div className="w-7 h-7 border-2 border-red-200 border-t-red-500 rounded-full animate-spin" />
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Loading...</p>
             </div>
           ) : filteredConversations.length === 0 ? (
@@ -753,29 +707,17 @@ export default function WhatsAppInbox() {
             </div>
           ) : (
             filteredConversations.map(conv => (
-              <motion.div key={conv.contact_number}
-                whileHover={{ x: 3, backgroundColor: '#f0fdf4' }}
-                whileTap={{ scale: 0.98 }}
-                animate={selectedContact?.contact_number === conv.contact_number ? { x: 4 } : { x: 0 }}
+              <motion.div key={conv.contact_number} whileHover={{ x: 2 }}
                 onClick={() => selectContact(conv)}
                 className={cn(
-                  "px-4 py-3 flex items-center gap-3 cursor-pointer transition-all border-b border-gray-50 relative",
+                  "px-4 py-3 flex items-center gap-3 cursor-pointer transition-all border-b border-gray-50",
                   selectedContact?.contact_number === conv.contact_number
-                    ? "bg-gradient-to-r from-green-50 to-white border-l-[4px] border-l-green-500 shadow-sm"
+                    ? "bg-red-50 border-l-[3px] border-l-red-500"
                     : "hover:bg-gray-50/80"
                 )}>
-                {selectedContact?.contact_number === conv.contact_number && (
-                  <motion.div
-                    layoutId="activeChat"
-                    className="absolute left-0 top-0 bottom-0 w-1 bg-[#3b9eff] rounded-r-full"
-                    initial={{ scaleY: 0 }}
-                    animate={{ scaleY: 1 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                  />
-                )}
                 <div className={cn(
                   "w-10 h-10 rounded-full flex items-center justify-center text-white font-black text-sm shrink-0",
-                  conv.last_direction === 'inbound' ? "bg-[#2a85cc]" : "bg-gray-400"
+                  conv.last_direction === 'inbound' ? "bg-red-500" : "bg-gray-400"
                 )}>
                   {conv.contact_name?.[0]?.toUpperCase() || conv.contact_number.slice(-1)}
                 </div>
@@ -795,7 +737,7 @@ export default function WhatsAppInbox() {
                       {previewMessage(conv.last_message)}
                     </p>
                     {(conv.unread_count || 0) > 0 && (
-                      <span className="w-4 h-4 bg-[#2a85cc] text-white text-[8px] font-black flex items-center justify-center rounded-full shrink-0">
+                      <span className="w-4 h-4 bg-red-500 text-white text-[8px] font-black flex items-center justify-center rounded-full shrink-0">
                         {conv.unread_count > 9 ? '9+' : conv.unread_count}
                       </span>
                     )}
@@ -814,7 +756,7 @@ export default function WhatsAppInbox() {
             {/* Chat Header */}
             <div className="px-4 py-3 bg-white border-b border-gray-100 flex items-center justify-between shadow-sm z-10 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-[#2a85cc] flex items-center justify-center text-white font-black text-sm">
+                <div className="w-9 h-9 rounded-full bg-red-500 flex items-center justify-center text-white font-black text-sm">
                   {selectedContact.contact_name?.[0]?.toUpperCase() || selectedContact.contact_number.slice(-1)}
                 </div>
                 <div>
@@ -824,17 +766,17 @@ export default function WhatsAppInbox() {
               </div>
               <div className="flex items-center gap-1.5">
                 <button onClick={handleResolve}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#3b9eff] text-white rounded-lg text-[11px] font-black hover:bg-[#2a85cc] transition-colors shadow-sm">
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500 text-white rounded-lg text-[11px] font-black hover:bg-green-600 transition-colors shadow-sm">
                   <Check size={12} /> Resolve
                 </button>
                 <button onClick={() => setShowContactInfo(v => !v)}
-                  className={cn("p-2 rounded-lg transition-colors", showContactInfo ? "bg-blue-50 text-blue-600" : "text-gray-400 hover:bg-gray-100")}>
+                  className={cn("p-2 rounded-lg transition-colors", showContactInfo ? "bg-red-50 text-red-500" : "text-gray-400 hover:bg-gray-100")}>
                   <Info size={17} />
                 </button>
                 {/* Chat menu */}
                 <div className="relative" ref={chatMenuRef}>
                   <button onClick={() => setShowChatMenu(v => !v)}
-                    className={cn("p-2 rounded-lg transition-colors", showChatMenu ? "bg-blue-50 text-blue-600" : "text-gray-400 hover:bg-gray-100")}>
+                    className={cn("p-2 rounded-lg transition-colors", showChatMenu ? "bg-red-50 text-red-500" : "text-gray-400 hover:bg-gray-100")}>
                     <MoreVertical size={17} />
                   </button>
                   <AnimatePresence>
@@ -859,7 +801,7 @@ export default function WhatsAppInbox() {
                           <Archive size={13} />Archive
                         </button>
                         <button onClick={() => { setDeleteModal('delete'); setShowChatMenu(false); }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-blue-600 hover:bg-blue-50">
+                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50">
                           <Trash2 size={13} />Delete Chat
                         </button>
                       </motion.div>
@@ -872,36 +814,25 @@ export default function WhatsAppInbox() {
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-5 space-y-3 custom-scrollbar bg-[#f0f2f5]">
               <AnimatePresence initial={false}>
-                {messages.map((m, idx) => {
+                {messages.map(m => {
                   const isOut = m.direction === 'outbound';
                   const parsed = parseMessage(m.message_text);
-                  const showDate = idx === 0 || new Date(m.timestamp).toDateString() !== new Date(messages[idx-1].timestamp).toDateString();
                   return (
-                    <div key={m.id}>
-                    {showDate && (
-                      <div className="flex items-center justify-center my-3">
-                        <span className="px-3 py-1 bg-white text-gray-400 text-[10px] font-bold rounded-full shadow-sm border border-gray-100">
-                          {formatDateSeparator(m.timestamp)}
-                        </span>
-                      </div>
-                    )}
-                    <div className={cn("flex", isOut ? "justify-end" : "justify-start")}
-                      onContextMenu={e => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, msgId: m.id }); }}>
+                    <div key={m.id} className={cn("flex", isOut ? "justify-end" : "justify-start")}>
                       <motion.div initial={{ opacity: 0, y: 6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
                         className={cn(
-                          "max-w-[68%] p-3 px-3.5 rounded-2xl shadow-sm relative cursor-pointer",
-                          isOut ? "bg-[#2a85cc] text-white rounded-tr-sm" : "bg-white text-gray-800 rounded-tl-sm border border-gray-100"
+                          "max-w-[68%] p-3 px-3.5 rounded-2xl shadow-sm relative",
+                          isOut ? "bg-red-500 text-white rounded-tr-sm" : "bg-white text-gray-800 rounded-tl-sm border border-gray-100"
                         )}>
                         <MessageContent parsed={parsed} isOut={isOut}
                           onMediaClick={(url, type, filename) => setMediaPreview({ url, type, filename })} />
                         <div className="flex items-center justify-end mt-1 gap-1">
-                          <span className={cn("text-[10px]", isOut ? "text-blue-200" : "text-gray-400")}>
+                          <span className={cn("text-[10px]", isOut ? "text-red-200" : "text-gray-400")}>
                             {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase()}
                           </span>
                           {isOut && <StatusIcon status={m.status} direction="outbound" />}
                         </div>
                       </motion.div>
-                    </div>
                     </div>
                   );
                 })}
@@ -915,7 +846,7 @@ export default function WhatsAppInbox() {
                 <div className="flex items-center gap-1 shrink-0 pb-1.5">
                   <div className="relative" ref={emojiRef}>
                     <button onClick={() => setShowEmojiPicker(v => !v)}
-                      className={cn("p-2 rounded-lg transition-colors", showEmojiPicker ? "text-blue-600" : "text-gray-400 hover:text-blue-600")}>
+                      className={cn("p-2 rounded-lg transition-colors", showEmojiPicker ? "text-red-500" : "text-gray-400 hover:text-red-500")}>
                       <Smile size={19} />
                     </button>
                     <AnimatePresence>
@@ -925,43 +856,11 @@ export default function WhatsAppInbox() {
                     </AnimatePresence>
                   </div>
                   <button onClick={() => setShowTemplateModal(true)} title="Templates"
-                    className="p-2 text-gray-400 hover:text-blue-600 rounded-lg transition-colors">
+                    className="p-2 text-gray-400 hover:text-red-500 rounded-lg transition-colors">
                     <Layout size={19} />
                   </button>
-                  <input ref={fileInputRef} type="file" className="hidden"
-                    accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.txt"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file || !selectedContact) return;
-                      e.target.value = '';
-                      setUploadingFile(true);
-                      try {
-                        const fd = new FormData();
-                        fd.append('file', file);
-                        fd.append('to', selectedContact.contact_number);
-                        fd.append('contactName', selectedContact.contact_name || selectedContact.contact_number);
-                        const res = await api.post('/whatsapp/send-media', fd);
-                        const mediaId = res.data.mediaId;
-                        const mime = file.type;
-                        let msgText = mime.startsWith('image/') ? `[image:${mediaId}]`
-                          : mime.startsWith('video/') ? `[video:${mediaId}]`
-                          : mime.startsWith('audio/') ? `[audio:${mediaId}]`
-                          : `[document:${mediaId}:${file.name}:${mime}]`;
-                        setMessages(prev => [...prev, {
-                          id: Date.now(), message_id: res.data.messageId,
-                          from_number: 'me', to_number: selectedContact.contact_number,
-                          message_text: msgText, direction: 'outbound',
-                          status: 'sent', timestamp: new Date().toISOString(),
-                          contact_name: selectedContact.contact_name
-                        } as any]);
-                        fetchMessages(selectedContact.contact_number);
-                      } catch(err) { console.error('Upload failed', err); }
-                      finally { setUploadingFile(false); }
-                    }} />
-                  <button onClick={() => fileInputRef.current?.click()} disabled={uploadingFile}
-                    className={cn("p-2 rounded-lg transition-colors relative", uploadingFile ? "text-red-400 animate-pulse" : "text-gray-400 hover:text-blue-600")}>
+                  <button className="p-2 text-gray-400 hover:text-red-500 rounded-lg transition-colors">
                     <Paperclip size={19} />
-                    {uploadingFile && <span className="absolute top-1 right-1 w-2 h-2 bg-[#2a85cc] rounded-full animate-ping" />}
                   </button>
                 </div>
                 <div className="flex-1 bg-gray-100 rounded-2xl overflow-hidden">
@@ -973,7 +872,7 @@ export default function WhatsAppInbox() {
                 </div>
                 <motion.button whileTap={{ scale: 0.9 }} onClick={handleSendMessage}
                   disabled={!input.trim() || sending}
-                  className="shrink-0 w-10 h-10 bg-[#2a85cc] text-white rounded-full flex items-center justify-center disabled:opacity-40 shadow-md hover:bg-blue-700 transition-colors">
+                  className="shrink-0 w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center disabled:opacity-40 shadow-md hover:bg-red-600 transition-colors">
                   {sending
                     ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                     : <Send size={16} />}
@@ -991,18 +890,6 @@ export default function WhatsAppInbox() {
           </div>
         )}
 
-        {/* Message Context Menu */}
-        {ctxMenu && (
-          <div className="fixed inset-0 z-50" onClick={() => setCtxMenu(null)}>
-            <div className="absolute bg-white border border-gray-100 rounded-xl shadow-xl py-1 w-40"
-              style={{ left: ctxMenu.x, top: ctxMenu.y }}>
-              <button onClick={() => handleDeleteMessage(ctxMenu.msgId)}
-                className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50">
-                <Trash2 size={13} />Delete Message
-              </button>
-            </div>
-          </div>
-        )}
         {/* Contact Info Drawer */}
         <AnimatePresence>
           {showContactInfo && selectedContact && (
@@ -1022,13 +909,13 @@ export default function WhatsAppInbox() {
               <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
                 <div>
                   <h3 className="text-base font-black text-gray-900 uppercase tracking-tight">
-                    Message <span className="text-blue-600">Templates</span>
+                    Message <span className="text-red-500">Templates</span>
                   </h3>
                   <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Select a pre-approved template</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={handleSyncTemplates} disabled={syncingTemplates}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-[10px] font-black text-blue-600 hover:bg-blue-50 disabled:opacity-50 transition-colors">
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-red-200 rounded-lg text-[10px] font-black text-red-500 hover:bg-red-50 disabled:opacity-50 transition-colors">
                     <RefreshCw size={11} className={cn(syncingTemplates && "animate-spin")} />
                     {syncingTemplates ? 'Syncing...' : 'Sync Meta'}
                   </button>
@@ -1049,15 +936,15 @@ export default function WhatsAppInbox() {
                     <div key={tpl.id} onClick={() => setSelectedTemplate(tpl)}
                       className={cn("p-3 rounded-xl border cursor-pointer transition-all",
                         selectedTemplate?.id === tpl.id
-                          ? "bg-blue-50 border-blue-300 shadow-sm"
-                          : "bg-white border-gray-100 hover:border-blue-200")}>
+                          ? "bg-red-50 border-red-300 shadow-sm"
+                          : "bg-white border-gray-100 hover:border-red-200")}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[8px] font-black text-blue-600 uppercase bg-blue-50 px-1.5 py-0.5 rounded">{tpl.category}</span>
+                        <span className="text-[8px] font-black text-red-500 uppercase bg-red-50 px-1.5 py-0.5 rounded">{tpl.category}</span>
                         <span className="text-[8px] text-gray-400">{tpl.language}</span>
                       </div>
                       <h4 className="text-xs font-black text-gray-900">{tpl.name}</h4>
                       <div className="flex items-center gap-1 mt-1">
-                        <span className={cn("w-1.5 h-1.5 rounded-full", tpl.status === 'APPROVED' ? "bg-blue-400" : "bg-yellow-400")} />
+                        <span className={cn("w-1.5 h-1.5 rounded-full", tpl.status === 'APPROVED' ? "bg-green-400" : "bg-yellow-400")} />
                         <span className="text-[8px] text-gray-400 uppercase">{tpl.status}</span>
                       </div>
                     </div>
@@ -1085,7 +972,7 @@ export default function WhatsAppInbox() {
                             {comp.type === 'BUTTONS' && (
                               <div className="mt-2 space-y-1">
                                 {comp.buttons?.map((btn: any, bi: number) => (
-                                  <div key={bi} className="text-center text-[10px] font-bold text-blue-600 py-1 bg-blue-50 rounded-lg">{btn.text}</div>
+                                  <div key={bi} className="text-center text-[10px] font-bold text-red-500 py-1 bg-red-50 rounded-lg">{btn.text}</div>
                                 ))}
                               </div>
                             )}
@@ -1102,7 +989,7 @@ export default function WhatsAppInbox() {
                   <div className="pt-4 border-t border-gray-200 flex justify-end">
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                       disabled={!selectedTemplate || sending} onClick={handleSendTemplate}
-                      className="flex items-center gap-2 px-5 py-2 bg-[#2a85cc] text-white rounded-xl text-xs font-black shadow-lg disabled:opacity-50 hover:bg-blue-700 transition-colors">
+                      className="flex items-center gap-2 px-5 py-2 bg-red-500 text-white rounded-xl text-xs font-black shadow-lg disabled:opacity-50 hover:bg-red-600 transition-colors">
                       <Send size={13} />{sending ? 'Sending...' : 'Send Message'}
                     </motion.button>
                   </div>
