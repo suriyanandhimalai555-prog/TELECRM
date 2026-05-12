@@ -4,7 +4,7 @@ import {
   Filter, User, Smile, Paperclip, Layout, RefreshCw, X,
   Eye, FileText, Download, Image as ImageIcon, Music, MapPin,
   ExternalLink, Phone, Clock, Trash2, Archive,
-  ZoomIn, Play, SortDesc, Inbox, Info,
+  ZoomIn, Play, Inbox, Info,
   AlertCircle, XCircle, Star, ShieldAlert
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -405,7 +405,6 @@ export default function WhatsAppInbox() {
   const [showContactInfo, setShowContactInfo] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
-  const [showDotsMenu, setShowDotsMenu] = useState(false);
   const [showChatMenu, setShowChatMenu] = useState(false);
   const [deleteModal, setDeleteModal] = useState<'delete' | 'archive' | 'clear' | null>(null);
   const [mediaPreview, setMediaPreview] = useState<{ url: string; type: string; filename?: string } | null>(null);
@@ -419,7 +418,6 @@ export default function WhatsAppInbox() {
 
   const emojiRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
-  const dotsRef = useRef<HTMLDivElement>(null);
   const chatMenuRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns on outside click
@@ -427,29 +425,24 @@ export default function WhatsAppInbox() {
     const h = (e: MouseEvent) => {
       if (emojiRef.current && !emojiRef.current.contains(e.target as Node)) setShowEmojiPicker(false);
       if (filterRef.current && !filterRef.current.contains(e.target as Node)) setShowFilterMenu(false);
-      if (dotsRef.current && !dotsRef.current.contains(e.target as Node)) setShowDotsMenu(false);
       if (chatMenuRef.current && !chatMenuRef.current.contains(e.target as Node)) setShowChatMenu(false);
     };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
   }, []);
 
-  // ── FIXED: Navigate to contact from ?phone= query param ──────────────────
+  // ── Auto-select contact from ?phone= query param ──────────────────────────
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const phone = params.get('phone');
     if (!phone) return;
-    if (loading) return; // wait until conversations are loaded
+    if (loading) return;
 
     const cleanPhone = phone.replace(/\D/g, '');
 
     const found = conversations.find(c => {
       const clean = c.contact_number.replace(/\D/g, '');
-      return (
-        clean === cleanPhone ||
-        clean.endsWith(cleanPhone) ||
-        cleanPhone.endsWith(clean)
-      );
+      return clean === cleanPhone || clean.endsWith(cleanPhone) || cleanPhone.endsWith(clean);
     });
 
     if (found) {
@@ -458,7 +451,7 @@ export default function WhatsAppInbox() {
       return;
     }
 
-    // Contact not in conversation list yet — create a placeholder and open chat
+    // Not in list yet — open as placeholder and load messages
     const placeholder: Conversation = {
       contact_number: phone,
       contact_name: phone,
@@ -693,64 +686,36 @@ export default function WhatsAppInbox() {
                 <span className="px-1.5 py-0.5 bg-[#2a85cc] text-white text-[9px] font-black rounded-full leading-none">{totalUnread}</span>
               )}
             </div>
-            <div className="flex items-center gap-0.5">
-              {/* Filter */}
-              <div className="relative" ref={filterRef}>
-                <button onClick={() => setShowFilterMenu(v => !v)}
-                  className={cn("p-2 rounded-lg transition-colors text-sm",
-                    showFilterMenu ? "bg-blue-50 text-blue-600" : "text-gray-400 hover:text-blue-600 hover:bg-blue-50")}>
-                  <Filter size={15} />
-                </button>
-                <AnimatePresence>
-                  {showFilterMenu && (
-                    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
-                      className="absolute right-0 top-full mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-50 w-48 py-1 overflow-hidden">
-                      {[
-                        { label: 'All Chats', val: 'all' as const, icon: Inbox },
-                        { label: `Unread (${totalUnread})`, val: 'unread' as const, icon: MessageSquare },
-                      ].map(({ label, val, icon: Icon }) => (
-                        <button key={val} onClick={() => { setActiveFilter(val); setShowFilterMenu(false); }}
-                          className={cn("w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold transition-colors",
-                            activeFilter === val ? "bg-blue-50 text-blue-600" : "text-gray-700 hover:bg-gray-50")}>
-                          <Icon size={13} />{label}
-                        </button>
-                      ))}
-                      <div className="border-t border-gray-100 mt-1 pt-1">
-                        <button onClick={() => { fetchConversations(); setShowFilterMenu(false); }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50">
-                          <RefreshCw size={13} />Refresh
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-              {/* 3-dots */}
-              <div className="relative" ref={dotsRef}>
-                <button onClick={() => setShowDotsMenu(v => !v)}
-                  className={cn("p-2 rounded-lg transition-colors",
-                    showDotsMenu ? "bg-blue-50 text-blue-600" : "text-gray-400 hover:text-blue-600 hover:bg-blue-50")}>
-                  <MoreVertical size={15} />
-                </button>
-                <AnimatePresence>
-                  {showDotsMenu && (
-                    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
-                      className="absolute right-0 top-full mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-50 w-48 py-1 overflow-hidden">
-                      {[
-                        { label: 'Sort by Latest', icon: SortDesc, action: () => {
-                          setConversations(prev => [...prev].sort((a, b) => new Date(b.last_timestamp).getTime() - new Date(a.last_timestamp).getTime()));
-                        }},
-                        { label: 'Sync Templates', icon: RefreshCw, action: handleSyncTemplates },
-                      ].map(({ label, icon: Icon, action }) => (
-                        <button key={label} onClick={() => { setShowDotsMenu(false); setTimeout(() => action(), 50); }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50">
-                          <Icon size={13} />{label}
-                        </button>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+            {/* Filter only — dots menu removed */}
+            <div className="relative" ref={filterRef}>
+              <button onClick={() => setShowFilterMenu(v => !v)}
+                className={cn("p-2 rounded-lg transition-colors text-sm",
+                  showFilterMenu ? "bg-blue-50 text-blue-600" : "text-gray-400 hover:text-blue-600 hover:bg-blue-50")}>
+                <Filter size={15} />
+              </button>
+              <AnimatePresence>
+                {showFilterMenu && (
+                  <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+                    className="absolute right-0 top-full mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-50 w-48 py-1 overflow-hidden">
+                    {[
+                      { label: 'All Chats', val: 'all' as const, icon: Inbox },
+                      { label: `Unread (${totalUnread})`, val: 'unread' as const, icon: MessageSquare },
+                    ].map(({ label, val, icon: Icon }) => (
+                      <button key={val} onClick={() => { setActiveFilter(val); setShowFilterMenu(false); }}
+                        className={cn("w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold transition-colors",
+                          activeFilter === val ? "bg-blue-50 text-blue-600" : "text-gray-700 hover:bg-gray-50")}>
+                        <Icon size={13} />{label}
+                      </button>
+                    ))}
+                    <div className="border-t border-gray-100 mt-1 pt-1">
+                      <button onClick={() => { fetchConversations(); setShowFilterMenu(false); }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50">
+                        <RefreshCw size={13} />Refresh
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
