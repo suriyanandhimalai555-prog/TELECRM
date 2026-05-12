@@ -280,11 +280,18 @@ export default function Leads() {
     }
   };
 
-  // ── Always navigate to CRM WhatsApp inbox for all roles ──
+  // ── ADMIN → CRM inbox | MANAGER → native WhatsApp ──
   const openWhatsAppChat = (lead: Lead) => {
-    const phone = (lead.mobile || lead.whatsapp || '').replace(/[^0-9]/g, '');
-    if (!phone) return;
-    navigate(`/whatsapp?phone=${phone}`);
+    let raw = (lead.mobile || lead.whatsapp || '').replace(/[^0-9]/g, '');
+    if (!raw) return;
+    if (raw.startsWith('91') && raw.length === 12) raw = raw.slice(2);
+    if (raw.startsWith('0') && raw.length === 11) raw = raw.slice(1);
+    const phone = '91' + raw;
+    if (user?.role === 'MANAGER') {
+      window.open(`https://wa.me/${phone}`, '_blank');
+    } else {
+      navigate(`/whatsapp?phone=${phone}`);
+    }
   };
 
   const startCall = (lead: Lead, type: 'phone' | 'whatsapp' = 'phone') => {
