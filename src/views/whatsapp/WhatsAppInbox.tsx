@@ -666,8 +666,8 @@ export default function WhatsAppInbox() {
                     <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
                       className="absolute right-0 top-full mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-50 w-48 py-1 overflow-hidden">
                       {[
-                        { label: 'Sort by Latest', icon: SortDesc, action: () => {} },
-                        { label: 'Sync Templates', icon: RefreshCw, action: handleSyncTemplates },
+                        { label: 'Export Conversations', icon: Download, action: () => { if (!conversations.length) return; const rows = ["Name,Number,Last Message,Last Time,Unread", ...conversations.map(c => `"${c.contact_name || ''}","${c.contact_number}","${(c.last_message || '').replace(/"/g, "'")}","${c.last_timestamp}","${c.unread_count}"`)].join("\n"); const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([rows], { type: "text/csv" })); a.download = "whatsapp_conversations.csv"; a.click(); } },
+                        
                       ].map(({ label, icon: Icon, action }) => (
                         <button key={label} onClick={() => { action(); setShowDotsMenu(false); }}
                           className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50">
