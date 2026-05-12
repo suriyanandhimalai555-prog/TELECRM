@@ -830,7 +830,7 @@ export default function WhatsAppInbox() {
                       <motion.div initial={{ opacity: 0, y: 6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
                         className={cn(
                           "max-w-[68%] p-3 px-3.5 rounded-2xl shadow-sm relative",
-                          isOut ? "bg-red-500 text-white rounded-tr-sm" : "bg-white text-gray-800 rounded-tl-sm border border-gray-100"
+                          isOut ? "bg-blue-500 text-white rounded-tr-sm" : "bg-white text-gray-800 rounded-tl-sm border border-gray-100"
                         )}>
                         <MessageContent parsed={parsed} isOut={isOut}
                           onMediaClick={(url, type, filename) => setMediaPreview({ url, type, filename })} />
@@ -880,7 +880,7 @@ export default function WhatsAppInbox() {
                 </div>
                 <motion.button whileTap={{ scale: 0.9 }} onClick={handleSendMessage}
                   disabled={!input.trim() || sending}
-                  className="shrink-0 w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center disabled:opacity-40 shadow-md hover:bg-red-600 transition-colors">
+                  className="shrink-0 w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center disabled:opacity-40 shadow-md hover:bg-blue-600 transition-colors">
                   {sending
                     ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                     : <Send size={16} />}
