@@ -59,7 +59,6 @@ export default function Leads() {
   const { searchTerm, setSearchTerm } = useSearch();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
-
   const [formData, setFormData] = useState({
     contact_name: '',
     mobile: '',
@@ -79,7 +78,7 @@ export default function Leads() {
     if (user?.id) {
       setFormData(prev => ({ ...prev, owner_id: user.id || prev.owner_id }));
     }
-  }, [user]);
+  }, [user?.id]);
 
   const triggerFlash = (type: 'white' | 'red') => {
     setFlash(type);
@@ -90,7 +89,6 @@ export default function Leads() {
     try {
       const res = await api.get('/leads', { params: { search } });
       let allLeads = res.data;
-      // Manager sees only leads assigned to them
       if (user?.role === 'MANAGER') {
         allLeads = allLeads.filter((l: any) => l.owner_id === user.id);
       }
@@ -282,15 +280,11 @@ export default function Leads() {
     }
   };
 
-  // ── Navigate to WhatsApp CRM chat instead of opening external WhatsApp ──
+  // ── Always navigate to CRM WhatsApp inbox for all roles ──
   const openWhatsAppChat = (lead: Lead) => {
     const phone = (lead.mobile || lead.whatsapp || '').replace(/[^0-9]/g, '');
     if (!phone) return;
-    if (user?.role === 'EMPLOYEE') {
-      window.open(`https://wa.me/${phone}`, '_blank');
-    } else {
-      navigate(`/whatsapp?phone=${phone}`);
-    }
+    navigate(`/whatsapp?phone=${phone}`);
   };
 
   const startCall = (lead: Lead, type: 'phone' | 'whatsapp' = 'phone') => {
@@ -315,7 +309,6 @@ export default function Leads() {
     }, 1000);
     setActiveCall({ lead, seconds: 0, interval, type });
     let raw = (lead.mobile || lead.whatsapp || '').replace(/[^0-9]/g, '');
-    // Normalize to Indian format: remove leading 91 or 0, then add 91
     if (raw.startsWith('91') && raw.length === 12) raw = raw.slice(2);
     if (raw.startsWith('0') && raw.length === 11) raw = raw.slice(1);
     const phone = '91' + raw;
