@@ -636,11 +636,11 @@ export default function WhatsAppInbox() {
                       className="absolute right-0 top-full mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-50 w-48 py-1 overflow-hidden">
                       {[
                         { label: 'All Chats', val: 'all' as const, icon: Inbox },
-                        { label: `Unread (${totalUnread})`, val: 'unread' as const, icon: MessageSquare },
+                        { label: "Unread (" + totalUnread + ")", val: 'unread' as const, icon: MessageSquare },
                       ].map(({ label, val, icon: Icon }) => (
                         <button key={val} onClick={() => { setActiveFilter(val); setShowFilterMenu(false); }}
                           className={cn("w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold transition-colors",
-                            activeFilter === val ? "bg-red-50 text-red-500" : "text-gray-700 hover:bg-gray-50")}>
+                            activeFilter === val ? "bg-blue-50 text-blue-500" : "text-gray-700 hover:bg-gray-50")}>
                           <Icon size={13} />{label}
                         </button>
                       ))}
