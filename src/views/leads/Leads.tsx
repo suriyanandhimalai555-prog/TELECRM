@@ -314,7 +314,7 @@ export default function Leads() {
     const phone = '91' + raw;
     if (phone) {
       if (type === 'whatsapp') {
-        window.open(`https://wa.me/${phone}`, '_blank');
+        navigate(`/whatsapp?phone=${phone}`);
       } else {
         window.open(`tel:+${phone}`, '_self');
       }

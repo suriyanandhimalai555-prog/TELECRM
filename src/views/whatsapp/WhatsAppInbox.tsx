@@ -14,7 +14,7 @@ import { Message } from '../../types';
 import { socket } from '../../services/socket';
 import { useAuth } from '../../hooks/useAuth';
 import { useSearch } from '../../context/SearchContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Conversation {
@@ -372,6 +372,7 @@ function DeleteModal({ type, onConfirm, onCancel }: {
 export default function WhatsAppInbox() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedContact, setSelectedContact] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -430,6 +431,13 @@ export default function WhatsAppInbox() {
       setLoading(false);
     }
   }, [searchTerm]);
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const phone = params.get("phone");
+    if (!phone || !conversations.length) return;
+    const match = conversations.find(c => c.contact_number.replace(/[^0-9]/g, "").endsWith(phone.replace(/[^0-9]/g, "")));
+    if (match) setSelectedContact(match);
+  }, [location.search, conversations]);
 
   const fetchMessages = useCallback(async (phone: string) => {
     try {
