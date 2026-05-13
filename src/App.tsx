@@ -44,7 +44,8 @@ export default function App() {
                 <Route path="calls" element={<CallHistory />} />
                 <Route path="tasks" element={<Tasks />} />
                 <Route path="notes" element={<Notes />} />
-                <Route path="whatsapp" element={<WhatsAppInbox />} />
+                <Route path="whatsapp" element={<WhatsAppInbox accountIndex={0} />} />
+                <Route path="whatsapp2" element={<WhatsAppInbox accountIndex={1} />} />
                 <Route path="campaigns" element={<Campaigns />} />
                 <Route path="projects" element={<Projects />} />
                 <Route path="reports" element={<Reports />} />

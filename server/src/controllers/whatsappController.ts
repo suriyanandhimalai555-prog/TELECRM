@@ -3,10 +3,18 @@ import FormDataNode from 'form-data';
 import { Request, Response } from 'express';
 import db from '../config/database';
 
-const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID || '1023163197557145';
-const VERIFY_TOKEN = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || 'avgcrm_webhook_2024';
-const WHATSAPP_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN || '';
-const WABA_ID = process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || '27198788186399333';
+const PHONE_NUMBER_ID   = process.env.WHATSAPP_PHONE_NUMBER_ID   || '1023163197557145';
+const PHONE_NUMBER_ID_2 = process.env.WHATSAPP_PHONE_NUMBER_ID_2 || ''; // ← add to .env
+const VERIFY_TOKEN      = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || 'avgcrm_webhook_2024';
+const WHATSAPP_TOKEN    = process.env.WHATSAPP_ACCESS_TOKEN || '';
+const WABA_ID           = process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || '27198788186399333';
+
+// ─── Helper: pick phone ID by account index ───────────────────────────────────
+function getPhoneId(account?: string | number): string {
+  return String(account) === '1' && PHONE_NUMBER_ID_2
+    ? PHONE_NUMBER_ID_2
+    : PHONE_NUMBER_ID;
+}
 
 // ─── Helper: normalize phone to last 10 digits for matching ─────────────────
 function normalizePhone(phone: string): string {
@@ -35,7 +43,7 @@ async function getAdminUserId(): Promise<number> {
 }
 
 // ─── Helper: get user's WhatsApp credentials ─────────────────────────────────
-async function getUserWACredentials(userId: number) {
+async function getUserWACredentials(userId: number, account?: string | number) {
   const { rows } = await db.query(
     'SELECT whatsapp_token, whatsapp_phone_id, whatsapp_waba_id FROM users WHERE id = $1',
     [userId]
@@ -43,7 +51,7 @@ async function getUserWACredentials(userId: number) {
   const u = rows[0];
   return {
     token:   u?.whatsapp_token    || WHATSAPP_TOKEN,
-    phoneId: u?.whatsapp_phone_id || PHONE_NUMBER_ID,
+    phoneId: getPhoneId(account) || u?.whatsapp_phone_id || PHONE_NUMBER_ID,
     wabaId:  u?.whatsapp_waba_id  || WABA_ID,
   };
 }
@@ -70,16 +78,12 @@ async function fetchMediaInfo(
 }
 
 // ─── Media proxy endpoint ─────────────────────────────────────────────────────
-// GET /api/whatsapp/media/:mediaId  (PUBLIC — no auth required)
-// Always redirects to Meta's signed URL — avoids Vercel 4.5MB response limit.
 export const proxyMedia = async (req: Request, res: Response) => {
   const { mediaId } = req.params;
 
   try {
-    // 1. Try env token first
     let token = WHATSAPP_TOKEN;
 
-    // 2. If env token is missing, fall back to admin user's DB token
     if (!token) {
       try {
         const adminId = await getAdminUserId();
@@ -94,19 +98,16 @@ export const proxyMedia = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'WhatsApp token missing. Please set it in Settings.' });
     }
 
-    // Get media metadata (signed URL) from Meta
     const metaRes = await fetch(`https://graph.facebook.com/v25.0/${mediaId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const metaData = await metaRes.json();
 
     if (metaData.error) {
-      
       console.error('[WA] proxyMedia meta error:', metaData.error);
       return res.status(400).json({ error: metaData.error.message });
     }
 
-    // Stream the file through our server (Meta CDN requires Authorization header)
     const mediaUrl: string = metaData.url;
     const mimeType: string = metaData.mime_type || 'application/octet-stream';
     const filename: string = metaData.filename || `file_${mediaId}`;
@@ -196,7 +197,7 @@ export const syncTemplates = async (req: Request, res: Response) => {
 };
 
 export const sendTemplate = async (req: Request, res: Response) => {
-  const { to, templateName, languageCode, components, contactName } = req.body;
+  const { to, templateName, languageCode, components, contactName, account } = req.body;
   const userId = (req as any).user?.id;
 
   if (!to || !templateName) {
@@ -204,7 +205,7 @@ export const sendTemplate = async (req: Request, res: Response) => {
   }
 
   try {
-    const { token, phoneId } = await getUserWACredentials(userId);
+    const { token, phoneId } = await getUserWACredentials(userId, account);
     const phone = to.replace(/[^0-9]/g, '');
 
     const waRes = await fetch(`https://graph.facebook.com/v25.0/${phoneId}/messages`, {
@@ -244,7 +245,7 @@ export const sendTemplate = async (req: Request, res: Response) => {
 // ─── Bulk Send ────────────────────────────────────────────────────────────────
 
 export const bulkSendMessage = async (req: Request, res: Response) => {
-  const { contacts, message } = req.body;
+  const { contacts, message, account } = req.body;
   const userId = (req as any).user?.id;
 
   if (!contacts || !Array.isArray(contacts) || !message) {
@@ -252,7 +253,7 @@ export const bulkSendMessage = async (req: Request, res: Response) => {
   }
 
   try {
-    const { token, phoneId } = await getUserWACredentials(userId);
+    const { token, phoneId } = await getUserWACredentials(userId, account);
     const results = [];
 
     for (const contact of contacts) {
@@ -309,13 +310,13 @@ export const bulkSendMessage = async (req: Request, res: Response) => {
 // ─── Send single message ──────────────────────────────────────────────────────
 
 export const sendMessage = async (req: Request, res: Response) => {
-  const { to, message, contactName } = req.body;
+  const { to, message, contactName, account } = req.body;
   const userId = (req as any).user?.id;
 
   if (!to || !message) return res.status(400).json({ error: 'to and message required' });
 
   try {
-    const { token, phoneId } = await getUserWACredentials(userId);
+    const { token, phoneId } = await getUserWACredentials(userId, account);
     if (!token) {
       return res.status(500).json({
         error: 'WhatsApp Access Token missing. Please configure it in Settings.',
@@ -382,7 +383,11 @@ export const getHistory = async (req: Request, res: Response) => {
 // ─── Get all conversations ────────────────────────────────────────────────────
 
 export const getConversations = async (req: Request, res: Response) => {
-  const { search } = req.query;
+  const { search, account } = req.query;
+
+  // Filter by which phone number ID sent/received the message
+  const phoneId = getPhoneId(account as string);
+
   try {
     let query = `
       SELECT
@@ -422,11 +427,16 @@ export const getConversations = async (req: Request, res: Response) => {
           OR RIGHT(l.whatsapp, 10) = RIGHT(
                CASE WHEN wm.direction = 'inbound' THEN wm.from_number ELSE wm.to_number END, 10
              )
+        WHERE
+          -- scope to the right phone number ID
+          (wm.direction = 'inbound'  AND wm.to_number   = $1)
+          OR
+          (wm.direction = 'outbound' AND wm.from_number = $1)
       ) t
       WHERE rn = 1
     `;
 
-    const params: any[] = [];
+    const params: any[] = [phoneId];
     const role = (req as any).user?.role || 'EMPLOYEE';
     const uid = (req as any).user?.id || 0;
 
@@ -434,7 +444,6 @@ export const getConversations = async (req: Request, res: Response) => {
       query += ` AND lead_id IN (SELECT id FROM leads WHERE owner_id = $${params.length + 1})`;
       params.push(uid);
     }
-    // ADMIN and MANAGER see all conversations
 
     if (search) {
       query += ` AND (lead_name ILIKE $${params.length + 1} OR contact_name ILIKE $${params.length + 1} OR contact_number ILIKE $${params.length + 1} OR message_text ILIKE $${params.length + 1})`;
@@ -504,6 +513,9 @@ export const handleWebhook = async (req: Request, res: Response) => {
       for (const change of entry.changes || []) {
         const val = change.value;
 
+        // Determine which of our phone IDs received this message
+        const receivingPhoneId = val?.metadata?.phone_number_id || PHONE_NUMBER_ID;
+
         for (const msg of val?.messages || []) {
           const from    = msg.from as string;
           const msgId   = msg.id as string;
@@ -545,7 +557,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
               text = `[${msg.type}]`;
           }
 
-          console.log(`[WA] 📩 INBOUND from ${from} (${name}): type=${msg.type}`);
+          console.log(`[WA] 📩 INBOUND from ${from} (${name}): type=${msg.type} → phoneId=${receivingPhoneId}`);
 
           let lead = await findLeadByPhone(from);
           if (!lead) {
@@ -561,13 +573,14 @@ export const handleWebhook = async (req: Request, res: Response) => {
             console.log(`[WA] ✅ Auto-created lead #${lead?.id} for ${from} (owner: ${adminId})`);
           }
 
+          // Store with the actual receiving phone ID so conversations are scoped correctly
           const { rows: savedRows } = await db.query(
             `INSERT INTO whatsapp_messages
                (message_id, from_number, to_number, message_text, direction, status, contact_name, timestamp, is_read)
              VALUES ($1, $2, $3, $4, 'inbound', 'received', $5, $6, false)
              ON CONFLICT (message_id) DO NOTHING
              RETURNING *`,
-            [msgId, from, PHONE_NUMBER_ID, text, name, ts]
+            [msgId, from, receivingPhoneId, text, name, ts]
           );
 
           const reqWithIo = req as any;
@@ -593,11 +606,13 @@ export const handleWebhook = async (req: Request, res: Response) => {
     console.error('[WA] Webhook processing error:', err);
   }
 };
+
 // ─── Send Media (file upload) ─────────────────────────────────────────────────
 export const sendMedia = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
-    const { token, phoneId } = await getUserWACredentials(userId);
+    const account = req.body.account;
+    const { token, phoneId } = await getUserWACredentials(userId, account);
     const to: string = req.body.to;
     const contactName: string = req.body.contactName || '';
 
@@ -606,15 +621,10 @@ export const sendMedia = async (req: Request, res: Response) => {
     const file = req.file;
     const mime = file.mimetype;
 
-    // Determine WhatsApp media type
     let waType = 'document';
     if (mime.startsWith('image/')) waType = 'image';
     else if (mime.startsWith('video/')) waType = 'video';
     else if (mime.startsWith('audio/')) waType = 'audio';
-
-    // Step 1: Upload file to Meta
-    
-    
 
     const uploadForm = new FormDataNode();
     uploadForm.append('file', file.buffer, { filename: file.originalname, contentType: mime });
@@ -629,7 +639,6 @@ export const sendMedia = async (req: Request, res: Response) => {
 
     const mediaId = uploadData.id;
 
-    // Step 2: Send media message
     const body: any = {
       messaging_product: 'whatsapp',
       to,
@@ -648,9 +657,7 @@ export const sendMedia = async (req: Request, res: Response) => {
 
     const messageId = sendData.messages[0].id;
     const lead = await findLeadByPhone(to);
-    const adminId = await getAdminUserId();
 
-    // Store in DB with [document:mediaId:filename:mime] format
     const msgText = waType === 'document'
       ? `[document:${mediaId}:${file.originalname}:${mime}]`
       : waType === 'image' ? `[image:${mediaId}]`

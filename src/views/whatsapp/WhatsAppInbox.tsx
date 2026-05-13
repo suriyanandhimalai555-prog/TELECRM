@@ -46,6 +46,11 @@ type ParsedMessage =
   | { type: 'sticker'; mediaId: string }
   | { type: 'location'; lat: string; lng: string; name: string };
 
+// ─── Props ────────────────────────────────────────────────────────────────────
+interface WhatsAppInboxProps {
+  accountIndex?: 0 | 1; // 0 = WA1 (default), 1 = WA2
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function parseMessage(text: string): ParsedMessage {
   if (!text) return { type: 'text', text: '' };
@@ -369,10 +374,14 @@ function DeleteModal({ type, onConfirm, onCancel }: {
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function WhatsAppInbox() {
+export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // ── localStorage key per account so each WA number has its own pinned list ──
+  const PINNED_KEY = `wa_pinned_chats_${accountIndex}`;
+
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedContact, setSelectedContact] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -392,7 +401,15 @@ export default function WhatsAppInbox() {
   const [deleteModal, setDeleteModal] = useState<'delete' | 'archive' | 'clear' | null>(null);
   const [mediaPreview, setMediaPreview] = useState<{ url: string; type: string; filename?: string } | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'unread'>('all');
-  const [pinnedChats, setPinnedChats] = useState<string[]>([]);
+
+  // ── Pinned chats — loaded from localStorage on mount, saved on every change ──
+  const [pinnedChats, setPinnedChats] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(PINNED_KEY) || '[]');
+    } catch {
+      return [];
+    }
+  });
 
   // Templates
   const [templates, setTemplates] = useState<WhatsAppTemplate[]>([]);
@@ -425,12 +442,17 @@ export default function WhatsAppInbox() {
 
   const fetchConversations = useCallback(async () => {
     try {
-      const res = await api.get(`/whatsapp/conversations${searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : ''}`);
+      // Pass account param so backend can filter by the right phone number ID
+      const params = new URLSearchParams();
+      if (searchTerm) params.set('search', searchTerm);
+      params.set('account', String(accountIndex));
+      const res = await api.get(`/whatsapp/conversations?${params.toString()}`);
       setConversations(res.data.conversations || []);
     } catch { } finally {
       setLoading(false);
     }
-  }, [searchTerm]);
+  }, [searchTerm, accountIndex]);
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const phone = params.get("phone");
@@ -460,7 +482,8 @@ export default function WhatsAppInbox() {
         to: selectedContact.contact_number,
         templateName: selectedTemplate.name,
         languageCode: selectedTemplate.language,
-        components: []
+        components: [],
+        account: accountIndex,
       });
       setShowTemplateModal(false);
       setSelectedTemplate(null);
@@ -543,7 +566,8 @@ export default function WhatsAppInbox() {
       await api.post('/whatsapp/send', {
         to: selectedContact.contact_number,
         message: text,
-        contactName: selectedContact.contact_name
+        contactName: selectedContact.contact_name,
+        account: accountIndex, // tells backend which phone number ID to use
       });
     } catch { } finally { setSending(false); }
   };
@@ -570,8 +594,17 @@ export default function WhatsAppInbox() {
     try { await api.delete(`/whatsapp/message/${msgId}`); } catch {}
   };
 
+  // ── Toggle pin: persist to localStorage immediately ───────────────────────
   const togglePin = (phone: string) => {
-    setPinnedChats(prev => prev.includes(phone) ? prev.filter(p => p !== phone) : [...prev, phone]);
+    setPinnedChats(prev => {
+      const next = prev.includes(phone)
+        ? prev.filter(p => p !== phone)
+        : [...prev, phone];
+      try {
+        localStorage.setItem(PINNED_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
   };
 
   const filteredConversations = conversations
@@ -617,6 +650,10 @@ export default function WhatsAppInbox() {
   const [uploadingFile, setUploadingFile] = useState(false);
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; msgId: number | string } | null>(null);
 
+  // ── Account label shown in the header ────────────────────────────────────
+  const accountLabel = accountIndex === 0 ? 'WhatsApp' : 'WhatsApp 2';
+  const accountColor = accountIndex === 0 ? 'text-blue-600' : 'text-green-600';
+
   return (
     <div className="flex h-[calc(100vh-140px)] bg-white rounded-[2rem] shadow-2xl border border-gray-100 overflow-hidden">
       <div className="w-80 lg:w-96 border-r border-gray-100 flex flex-col bg-gray-50/50 shrink-0">
@@ -624,13 +661,21 @@ export default function WhatsAppInbox() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-black text-gray-900 uppercase tracking-tighter">
-                Whats<span className="text-blue-600">App</span>
+                Whats<span className={accountColor}>App{accountIndex === 1 ? ' 2' : ''}</span>
               </h2>
               {totalUnread > 0 && (
                 <span className="px-1.5 py-0.5 bg-blue-500 text-white text-[9px] font-black rounded-full leading-none">{totalUnread}</span>
               )}
             </div>
             <div className="flex items-center gap-0.5">
+              {/* Quick switch between accounts */}
+              <button
+                onClick={() => navigate(accountIndex === 0 ? '/whatsapp2' : '/whatsapp')}
+                className="px-2 py-1 rounded-lg text-[9px] font-black uppercase border border-gray-200 text-gray-500 hover:bg-gray-100 transition-colors mr-1"
+                title={accountIndex === 0 ? 'Switch to WhatsApp 2' : 'Switch to WhatsApp 1'}
+              >
+                {accountIndex === 0 ? 'WA 2 →' : '← WA 1'}
+              </button>
               <div className="relative" ref={filterRef}>
                 <button onClick={() => setShowFilterMenu(v => !v)} className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
                   <Filter size={15} />
@@ -708,31 +753,43 @@ export default function WhatsAppInbox() {
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">No conversations</p>
             </div>
           ) : (
-            filteredConversations.map(conv => (
-              <div key={conv.contact_number}
-                onClick={() => selectContact(conv)}
-                className={cn("px-4 py-3 flex items-center gap-3 cursor-pointer border-b border-gray-50 transition-all hover:bg-gray-50",
-                  selectedContact?.contact_number === conv.contact_number ? "bg-blue-50 border-l-4 border-l-blue-500" : "")}>
-                <div className={cn("w-10 h-10 rounded-full flex items-center justify-center text-white font-black text-sm shrink-0",
-                  conv.last_direction === 'inbound' ? "bg-blue-500" : "bg-gray-400")}>
-                  {conv.contact_name?.[0]?.toUpperCase() || conv.contact_number.slice(-1)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-xs font-black text-gray-900 truncate">{conv.contact_name || conv.contact_number}</span>
-                    <span className="text-[9px] text-gray-400 shrink-0 ml-2">{formatTime(conv.last_timestamp)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-[11px] text-gray-500 truncate max-w-[80%]">{previewMessage(conv.last_message)}</p>
-                    {(Number(conv.unread_count) || 0) > 0 && (
-                      <span className="w-4 h-4 bg-blue-500 text-white text-[8px] font-black flex items-center justify-center rounded-full shrink-0">
-                        {Number(conv.unread_count) > 9 ? '9+' : Number(conv.unread_count)}
-                      </span>
+            filteredConversations.map(conv => {
+              const isPinned = pinnedChats.includes(conv.contact_number);
+              return (
+                <div key={conv.contact_number}
+                  onClick={() => selectContact(conv)}
+                  className={cn("px-4 py-3 flex items-center gap-3 cursor-pointer border-b border-gray-50 transition-all hover:bg-gray-50",
+                    selectedContact?.contact_number === conv.contact_number ? "bg-blue-50 border-l-4 border-l-blue-500" : "")}>
+                  <div className="relative shrink-0">
+                    <div className={cn("w-10 h-10 rounded-full flex items-center justify-center text-white font-black text-sm",
+                      conv.last_direction === 'inbound' ? "bg-blue-500" : "bg-gray-400")}>
+                      {conv.contact_name?.[0]?.toUpperCase() || conv.contact_number.slice(-1)}
+                    </div>
+                    {/* ⭐ pinned indicator dot */}
+                    {isPinned && (
+                      <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-yellow-400 rounded-full border-2 border-white" />
                     )}
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-xs font-black text-gray-900 truncate flex items-center gap-1">
+                        {isPinned && <Star size={9} className="text-yellow-400 shrink-0" fill="currentColor" />}
+                        {conv.contact_name || conv.contact_number}
+                      </span>
+                      <span className="text-[9px] text-gray-400 shrink-0 ml-2">{formatTime(conv.last_timestamp)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-[11px] text-gray-500 truncate max-w-[80%]">{previewMessage(conv.last_message)}</p>
+                      {(Number(conv.unread_count) || 0) > 0 && (
+                        <span className="w-4 h-4 bg-blue-500 text-white text-[8px] font-black flex items-center justify-center rounded-full shrink-0">
+                          {Number(conv.unread_count) > 9 ? '9+' : Number(conv.unread_count)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
@@ -842,7 +899,8 @@ export default function WhatsAppInbox() {
                         fd.append('file', file);
                         fd.append('to', selectedContact.contact_number);
                         fd.append('contactName', selectedContact.contact_name || selectedContact.contact_number);
-                        const res = await api.post('/whatsapp/send-media', fd);
+                        fd.append('account', String(accountIndex));
+                        await api.post('/whatsapp/send-media', fd);
                         fetchMessages(selectedContact.contact_number);
                       } catch(err) { console.error('Upload failed', err); }
                       finally { setUploadingFile(false); }
