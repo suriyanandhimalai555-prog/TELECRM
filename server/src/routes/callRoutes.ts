@@ -1,12 +1,12 @@
 import express from 'express';
 import * as callController from '../controllers/callController';
-import { authenticateToken } from '../middleware/auth';
+import { authenticate } from "../middleware/auth";
 
 const router = express.Router();
 
-router.get('/', authenticateToken, callController.getCalls);
-router.post('/', authenticateToken, callController.createCall);
-router.put('/:id', authenticateToken, callController.updateCall);
-router.delete('/:id', authenticateToken, callController.deleteCall);
+router.get('/', authenticate, callController.getCalls);
+router.post('/', authenticate, callController.createCall);
+router.put('/:id', authenticate, callController.updateCall);
+router.delete('/:id', authenticate, callController.deleteCall);
 
 export default router;
