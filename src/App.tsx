@@ -3,7 +3,6 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 import { SearchProvider } from './context/SearchContext';
 import { NotificationProvider } from './context/NotificationContext';
 import Layout from './components/Layout/Layout';
-import { useAuthStore } from './store/authStore';
 
 // Views
 import Login from './views/auth/Login';
@@ -26,9 +25,9 @@ const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   return user ? <>{children}</> : <Navigate to="/login" />;
 };
 
-// ── Role guard ────────────────────────────────────────────────────────────────
 const RequireRole: React.FC<{ roles: string[]; children: React.ReactNode }> = ({ roles, children }) => {
-  const { user } = useAuthStore();
+  const { user, loading } = useAuth();
+  if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>;
   if (!user) return <Navigate to="/login" />;
   if (!roles.includes(user.role)) return <Navigate to="/" />;
   return <>{children}</>;
@@ -43,12 +42,7 @@ export default function App() {
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              
-              <Route path="/" element={
-                <PrivateRoute>
-                  <Layout />
-                </PrivateRoute>
-              }>
+              <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
                 <Route index element={<Dashboard />} />
                 <Route path="leads" element={<Leads />} />
                 <Route path="tasks" element={<Tasks />} />
@@ -59,8 +53,6 @@ export default function App() {
                 <Route path="projects" element={<Projects />} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="settings" element={<Settings />} />
-
-                {/* ── New multi-tenant routes ── */}
                 <Route path="companies" element={
                   <RequireRole roles={['master_admin']}>
                     <CompaniesPage />

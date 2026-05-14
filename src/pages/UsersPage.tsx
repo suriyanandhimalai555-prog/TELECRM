@@ -16,7 +16,7 @@ export default function UsersPage() {
   const [form, setForm] = useState(emptyForm);
   const [filterCompany, setFilterCompany] = useState('');
   const [loading, setLoading] = useState(false);
-  const allowedRoles = user?.role === 'master_admin' ? ['company_admin','ADMIN','MANAGER','employee'] : ['MANAGER','employee'];
+  const allowedRoles = user?.role === 'master_admin' ? ['master_admin','company_admin','ADMIN','MANAGER','employee'] : ['MANAGER','employee'];
   const loadUsers = () => apiGet<User[]>('/api/users').then(setUsers);
   useEffect(() => { loadUsers(); if (user?.role === 'master_admin') apiGet<Company[]>('/api/companies').then(setCompanies); }, []);
   const createUser = async () => {
