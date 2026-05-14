@@ -4,13 +4,11 @@ import { Server } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-import bcrypt from 'bcryptjs';
 import cors from 'cors';
 import fs from 'fs';
 import db, { initDb } from './server/src/config/database';
 import authRoutes from './server/src/routes/authRoutes';
 import leadRoutes from './server/src/routes/leadRoutes';
-import callRoutes from './server/src/routes/callRoutes';
 import taskRoutes from './server/src/routes/taskRoutes';
 import campaignRoutes from './server/src/routes/campaignRoutes';
 import noteRoutes from './server/src/routes/noteRoutes';
@@ -18,6 +16,8 @@ import reportRoutes from './server/src/routes/reportRoutes';
 import settingsRoutes from './server/src/routes/settingsRoutes';
 import projectRoutes from './server/src/routes/projectRoutes';
 import whatsappRoutes from './server/src/routes/whatsappRoutes';
+import companyRoutes from './server/src/routes/companyRoutes';
+import userRoutes from './server/src/routes/userRoutes';
 
 dotenv.config();
 
@@ -26,10 +26,6 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const httpServer = createServer(app);
-
-// ─── CORS ────────────────────────────────────────────────────────────────────
-// Put CORS + preflight BEFORE everything else — including express.json()
-// so that OPTIONS requests never hit a parser or auth middleware.
 
 const allowedOrigins = [
   'http://localhost:5173',
@@ -41,7 +37,7 @@ const allowedOrigins = [
 ];
 
 const isOriginAllowed = (origin: string | undefined): boolean => {
-  if (!origin) return true; // same-origin / server-to-server calls
+  if (!origin) return true;
   if (allowedOrigins.includes(origin)) return true;
   if (origin.endsWith('.vercel.app')) return true;
   if (origin.endsWith('.railway.app')) return true;
@@ -62,16 +58,12 @@ const corsOptions: cors.CorsOptions = {
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
-  optionsSuccessStatus: 200, // some browsers (IE11) choke on 204
+  optionsSuccessStatus: 200,
 };
 
-// ✅ Handle ALL preflight OPTIONS requests first — before any other middleware
 app.options('*', cors(corsOptions));
-
-// ✅ Apply CORS to every subsequent request
 app.use(cors(corsOptions));
 
-// ✅ Extra safety net: manually inject headers in case cors() misses anything
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (origin && isOriginAllowed(origin)) {
@@ -80,18 +72,13 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS,PATCH');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With');
   }
-  // Short-circuit OPTIONS immediately
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
 });
 
-// ─── Body parsers (after CORS) ───────────────────────────────────────────────
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// ─── Socket.IO ───────────────────────────────────────────────────────────────
 const isVercel = process.env.VERCEL === '1';
 let io: any = null;
 
@@ -114,35 +101,15 @@ if (!isVercel) {
   });
 }
 
-// ─── DB init ─────────────────────────────────────────────────────────────────
 let dbConnected = false;
 
 const initialize = async () => {
   try {
     await initDb();
     dbConnected = true;
-
-    const userCountResult = await db.query('SELECT COUNT(*) as count FROM users');
-    const userCount = parseInt(userCountResult.rows[0].count);
-
-    if (userCount === 0) {
-      const salt = bcrypt.genSaltSync(10);
-      const hashedPassword = bcrypt.hashSync('password', salt);
-
-      await db.query(
-        'INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4)',
-        ['admin@avgcrm.com', hashedPassword, 'Admin User', 'admin']
-      );
-      await db.query(
-        'INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4)',
-        ['manager@avgcrm.com', hashedPassword, 'Manager User', 'manager']
-      );
-      await db.query(
-        'INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4)',
-        ['employee@avgcrm.com', hashedPassword, 'Employee User', 'employee']
-      );
-      console.log('Demo users seeded');
-    }
+    console.log('Database initialized successfully');
+    // ← REMOVED: demo user seeding block (admin@avgcrm.com etc.)
+    // master_admin is created manually via SQL
   } catch (err) {
     console.error('Initialization error:', err);
   }
@@ -150,7 +117,6 @@ const initialize = async () => {
 
 const initializePromise = initialize();
 
-// ─── Health checks ───────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -163,7 +129,6 @@ app.get('/api/ping', (req, res) => {
   res.json({ pong: true, timestamp: new Date().toISOString() });
 });
 
-// ─── Attach socket.io to every request ───────────────────────────────────────
 app.use((req: any, _res, next) => {
   req.io = io;
   next();
@@ -172,7 +137,6 @@ app.use((req: any, _res, next) => {
 // ─── API routes ───────────────────────────────────────────────────────────────
 app.use('/api/auth',      authRoutes);
 app.use('/api/leads',     leadRoutes);
-app.use('/api/calls',     callRoutes);
 app.use('/api/tasks',     taskRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/notes',     noteRoutes);
@@ -180,8 +144,10 @@ app.use('/api/reports',   reportRoutes);
 app.use('/api/settings',  settingsRoutes);
 app.use('/api/projects',  projectRoutes);
 app.use('/api/whatsapp',  whatsappRoutes);
+app.use('/api/companies', companyRoutes);
+app.use('/api/users',     userRoutes);
+// ← REMOVED: callRoutes
 
-// ─── Frontend static serving ─────────────────────────────────────────────────
 (async () => {
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');
@@ -211,7 +177,6 @@ app.use('/api/whatsapp',  whatsappRoutes);
   }
 })();
 
-// ─── Global error handler ────────────────────────────────────────────────────
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Global Error:', err);
   res.status(500).json({ message: 'Internal Server Error', error: err.message });
@@ -219,7 +184,6 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
 export default app;
 
-// ─── Start server ─────────────────────────────────────────────────────────────
 const isMain = import.meta.url === `file://${process.argv[1]}`;
 if (isMain && process.env.VERCEL !== '1') {
   initializePromise

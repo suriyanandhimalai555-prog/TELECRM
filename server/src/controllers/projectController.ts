@@ -4,21 +4,34 @@ import { AuthRequest } from '../middleware/auth';
 
 export const getProjects = async (req: AuthRequest, res: Response) => {
   const { search } = req.query;
-
   try {
+    let whereClauses: string[] = [];
+    let queryParams: any[] = [];
+
+    // ── NEW: company isolation ────────────────────────────────────────────
+    if (req.user?.role !== 'master_admin') {
+      queryParams.push(req.user?.company_id);
+      whereClauses.push(`p.company_id = $${queryParams.length}`);
+    } else if (req.query.company_id) {
+      queryParams.push(parseInt(req.query.company_id as string));
+      whereClauses.push(`p.company_id = $${queryParams.length}`);
+    }
+
+    if (search) {
+      queryParams.push(`%${search}%`);
+      whereClauses.push(`(p.name ILIKE $${queryParams.length} OR p.description ILIKE $${queryParams.length})`);
+    }
+
     let query = `
       SELECT p.*, 
         (SELECT COUNT(*) FROM leads WHERE project_id = p.id) as lead_count,
         (SELECT COUNT(*) FROM tasks WHERE project_id = p.id) as task_count
       FROM projects p
     `;
-    
-    let queryParams: any[] = [];
-    if (search) {
-      query += ` WHERE p.name ILIKE $1 OR p.description ILIKE $1`;
-      queryParams.push(`%${search}%`);
-    }
 
+    if (whereClauses.length > 0) {
+      query += ` WHERE ${whereClauses.join(' AND ')}`;
+    }
     query += ` ORDER BY p.name ASC`;
 
     const result = await db.query(query, queryParams);
@@ -35,14 +48,23 @@ export const getProjects = async (req: AuthRequest, res: Response) => {
 
 export const createProject = async (req: AuthRequest, res: Response) => {
   const { name, description, status } = req.body;
-  if (!req.user || (req.user.role !== 'ADMIN' && req.user.role !== 'MANAGER')) {
+  if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
+
+  // ── NEW: updated role check to include new roles ──────────────────────
+  const allowed = ['master_admin', 'company_admin', 'ADMIN', 'MANAGER'];
+  if (!allowed.includes(req.user.role)) {
     return res.status(403).json({ message: 'Forbidden' });
   }
 
+  // ── NEW: company_id from token ────────────────────────────────────────
+  const company_id = req.user.role === 'master_admin'
+                     ? (req.body.company_id || null)
+                     : req.user.company_id;
+
   try {
     const result = await db.query(
-      'INSERT INTO projects (name, description, status) VALUES ($1, $2, $3) RETURNING id',
-      [name, description, status || 'ACTIVE']
+      'INSERT INTO projects (name, description, status, company_id) VALUES ($1, $2, $3, $4) RETURNING id',
+      [name, description, status || 'ACTIVE', company_id]
     );
     const newProject = await db.query('SELECT * FROM projects WHERE id = $1', [result.rows[0].id]);
     res.status(201).json(newProject.rows[0]);
@@ -54,7 +76,11 @@ export const createProject = async (req: AuthRequest, res: Response) => {
 export const updateProject = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { name, description, status } = req.body;
-  if (!req.user || (req.user.role !== 'ADMIN' && req.user.role !== 'MANAGER')) {
+  if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
+
+  // ── NEW: updated role check ───────────────────────────────────────────
+  const allowed = ['master_admin', 'company_admin', 'ADMIN', 'MANAGER'];
+  if (!allowed.includes(req.user.role)) {
     return res.status(403).json({ message: 'Forbidden' });
   }
 
@@ -72,17 +98,19 @@ export const updateProject = async (req: AuthRequest, res: Response) => {
 
 export const deleteProject = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
-  if (!req.user || req.user.role !== 'ADMIN') {
+  if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
+
+  // ── NEW: updated role check ───────────────────────────────────────────
+  const allowed = ['master_admin', 'company_admin', 'ADMIN'];
+  if (!allowed.includes(req.user.role)) {
     return res.status(403).json({ message: 'Forbidden' });
   }
 
   try {
-    // Check if project is in use
     const leadsInUse = await db.query('SELECT id FROM leads WHERE project_id = $1 LIMIT 1', [id]);
     if (leadsInUse.rows.length > 0) {
       return res.status(400).json({ message: 'Cannot delete project that is currently assigned to leads' });
     }
-
     await db.query('DELETE FROM projects WHERE id = $1', [id]);
     res.json({ message: 'Project deleted successfully' });
   } catch (error) {

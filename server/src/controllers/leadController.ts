@@ -18,22 +18,30 @@ export const getLeads = async (req: AuthRequest, res: Response) => {
     let whereClauses: string[] = [];
     let queryParams: any[] = [];
 
+    // ── NEW: company isolation ────────────────────────────────────────────
+    if (req.user.role !== 'master_admin') {
+      queryParams.push(req.user.company_id);
+      whereClauses.push(`l.company_id = $${queryParams.length}`);
+    } else if (req.query.company_id) {
+      queryParams.push(parseInt(req.query.company_id as string));
+      whereClauses.push(`l.company_id = $${queryParams.length}`);
+    }
+
+    // ── Role-based visibility (within the company) ────────────────────────
     if (req.user.role === 'MANAGER') {
-      // ✅ FIX: MANAGER sees own leads + team leads + ALL WhatsApp auto-created leads
       whereClauses.push(`(
-        l.owner_id = $1 
-        OR (u.reporting_to = $2)
+        l.owner_id = $${queryParams.length + 1}
+        OR (u.reporting_to = $${queryParams.length + 2})
         OR l.source = 'WHATSAPP'
       )`);
       queryParams.push(req.user.id, req.user.id);
-    } else if (req.user.role === 'EMPLOYEE') {
+    } else if (req.user.role === 'employee') {
       whereClauses.push(`(
-        l.owner_id = $1 
-        OR l.project_id IN (SELECT project_id FROM user_projects WHERE user_id = $2)
+        l.owner_id = $${queryParams.length + 1}
+        OR l.project_id IN (SELECT project_id FROM user_projects WHERE user_id = $${queryParams.length + 2})
       )`);
       queryParams.push(req.user.id, req.user.id);
     }
-    // ADMIN sees everything — no WHERE clause
 
     if (search) {
       const paramIndex = queryParams.length + 1;
@@ -67,16 +75,20 @@ export const createLead = async (req: AuthRequest, res: Response) => {
   if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
 
   try {
-    const finalOwnerId     = owner_id || req.user.id;
-    const finalRevenue     = Number(revenue) || 0;
+    const finalOwnerId      = owner_id || req.user.id;
+    const finalRevenue      = Number(revenue) || 0;
     const finalNextFollowup = next_followup ? next_followup : null;
-    const finalProjectId   = project_id || null;
+    const finalProjectId    = project_id || null;
+    // ── NEW: company_id from token ────────────────────────────────────────
+    const company_id        = req.user.role === 'master_admin'
+                              ? (req.body.company_id || null)
+                              : req.user.company_id;
 
     const result = await db.query(`
-      INSERT INTO leads (owner_id, contact_name, mobile, whatsapp, email, source, stage, revenue, next_followup, project_id, company, tags)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      INSERT INTO leads (owner_id, contact_name, mobile, whatsapp, email, source, stage, revenue, next_followup, project_id, company, tags, company_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING id
-    `, [finalOwnerId, contact_name, mobile, whatsapp, email, source, stage, finalRevenue, finalNextFollowup, finalProjectId, company || '', tags || '']);
+    `, [finalOwnerId, contact_name, mobile, whatsapp, email, source, stage, finalRevenue, finalNextFollowup, finalProjectId, company || '', tags || '', company_id]);
 
     const leadId = result.rows[0].id;
 
@@ -167,6 +179,11 @@ export const importLeads = async (req: AuthRequest, res: Response) => {
   const { leads } = req.body;
   if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
 
+  // ── NEW: company_id from token ──────────────────────────────────────────
+  const company_id = req.user.role === 'master_admin'
+                     ? (req.body.company_id || null)
+                     : req.user.company_id;
+
   const client = await db.connect();
   try {
     const usersRes    = await client.query('SELECT id, name FROM users');
@@ -215,9 +232,9 @@ export const importLeads = async (req: AuthRequest, res: Response) => {
       const tags         = (findVal(['Tags', 'Labels', 'tags']) || '').toString();
 
       await client.query(`
-        INSERT INTO leads (owner_id, contact_name, mobile, whatsapp, email, source, stage, revenue, next_followup, project_id, company, tags)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-      `, [ownerId, name, mobile, whatsapp, email, source, stage, revenue, nextFollowup, projectId, company, tags]);
+        INSERT INTO leads (owner_id, contact_name, mobile, whatsapp, email, source, stage, revenue, next_followup, project_id, company, tags, company_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      `, [ownerId, name, mobile, whatsapp, email, source, stage, revenue, nextFollowup, projectId, company, tags, company_id]);
     }
 
     await client.query('COMMIT');
@@ -235,33 +252,40 @@ export const exportLeads = async (req: AuthRequest, res: Response) => {
   if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
 
   try {
-    // ✅ FIX: LEFT JOIN so WhatsApp auto-created leads always appear
-    const query = `
+    let baseQuery = `
       SELECT l.*, u.name as owner_name, p.name as project_name
       FROM leads l 
       LEFT JOIN users u ON l.owner_id = u.id
       LEFT JOIN projects p ON l.project_id = p.id
     `;
 
-    let leadsResult;
-    if (req.user.role === 'ADMIN') {
-      leadsResult = await db.query(`${query} ORDER BY l.created_at DESC`);
-    } else if (req.user.role === 'MANAGER') {
-      leadsResult = await db.query(`
-        ${query}
-        WHERE l.owner_id = $1 OR (u.reporting_to = $2) OR l.source = 'WHATSAPP'
-        ORDER BY l.created_at DESC
-      `, [req.user.id, req.user.id]);
-    } else {
-      leadsResult = await db.query(`
-        ${query}
-        WHERE l.owner_id = $1 
-          OR l.project_id IN (SELECT project_id FROM user_projects WHERE user_id = $2)
-          OR l.source = 'WHATSAPP'
-        ORDER BY l.created_at DESC
-      `, [req.user.id, req.user.id]);
+    let whereClauses: string[] = [];
+    let queryParams: any[] = [];
+
+    // ── NEW: company isolation ────────────────────────────────────────────
+    if (req.user.role !== 'master_admin') {
+      queryParams.push(req.user.company_id);
+      whereClauses.push(`l.company_id = $${queryParams.length}`);
+    } else if (req.query.company_id) {
+      queryParams.push(parseInt(req.query.company_id as string));
+      whereClauses.push(`l.company_id = $${queryParams.length}`);
     }
 
+    if (req.user.role === 'MANAGER') {
+      whereClauses.push(`(l.owner_id = $${queryParams.length + 1} OR (u.reporting_to = $${queryParams.length + 2}) OR l.source = 'WHATSAPP')`);
+      queryParams.push(req.user.id, req.user.id);
+    } else if (req.user.role === 'employee') {
+      whereClauses.push(`(l.owner_id = $${queryParams.length + 1} OR l.project_id IN (SELECT project_id FROM user_projects WHERE user_id = $${queryParams.length + 2}) OR l.source = 'WHATSAPP')`);
+      queryParams.push(req.user.id, req.user.id);
+    }
+
+    if (whereClauses.length > 0) {
+      baseQuery += ` WHERE ${whereClauses.join(' AND ')}`;
+    }
+
+    baseQuery += ` ORDER BY l.created_at DESC`;
+
+    const leadsResult = await db.query(baseQuery, queryParams);
     res.json(leadsResult.rows);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });

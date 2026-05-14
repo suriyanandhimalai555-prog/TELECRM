@@ -16,19 +16,27 @@ export const getTasks = async (req: AuthRequest, res: Response) => {
       LEFT JOIN projects p ON t.project_id = p.id
     `;
     
-    let whereClauses = [];
+    let whereClauses: string[] = [];
     let queryParams: any[] = [];
+
+    // ── NEW: company isolation ────────────────────────────────────────────
+    if (req.user.role !== 'master_admin') {
+      queryParams.push(req.user.company_id);
+      whereClauses.push(`t.company_id = $${queryParams.length}`);
+    } else if (req.query.company_id) {
+      queryParams.push(parseInt(req.query.company_id as string));
+      whereClauses.push(`t.company_id = $${queryParams.length}`);
+    }
 
     // Role-based filtering
     if (req.user.role === 'MANAGER') {
-      whereClauses.push(`(t.user_id = $1 OR u.reporting_to = $2)`);
+      whereClauses.push(`(t.user_id = $${queryParams.length + 1} OR u.reporting_to = $${queryParams.length + 2})`);
       queryParams.push(req.user.id, req.user.id);
-    } else if (req.user.role === 'EMPLOYEE') {
-      whereClauses.push(`(t.user_id = $1 OR t.project_id IN (SELECT project_id FROM user_projects WHERE user_id = $2))`);
+    } else if (req.user.role === 'employee') {
+      whereClauses.push(`(t.user_id = $${queryParams.length + 1} OR t.project_id IN (SELECT project_id FROM user_projects WHERE user_id = $${queryParams.length + 2}))`);
       queryParams.push(req.user.id, req.user.id);
     }
 
-    // Search filtering
     if (search) {
       const paramIndex = queryParams.length + 1;
       const searchPattern = `%${search}%`;
@@ -60,12 +68,17 @@ export const createTask = async (req: AuthRequest, res: Response) => {
   const { user_id, lead_id, type, due_date, notes, project_id } = req.body;
   if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
 
+  // ── NEW: company_id from token ──────────────────────────────────────────
+  const company_id = req.user.role === 'master_admin'
+                     ? (req.body.company_id || null)
+                     : req.user.company_id;
+
   try {
     const result = await db.query(`
-      INSERT INTO tasks (user_id, lead_id, type, status, due_date, notes, project_id)
-      VALUES ($1, $2, $3, 'OPEN', $4, $5, $6)
+      INSERT INTO tasks (user_id, lead_id, type, status, due_date, notes, project_id, company_id)
+      VALUES ($1, $2, $3, 'OPEN', $4, $5, $6, $7)
       RETURNING id
-    `, [user_id || req.user.id, lead_id, type, due_date, notes, project_id || null]);
+    `, [user_id || req.user.id, lead_id, type, due_date, notes, project_id || null, company_id]);
 
     const newTaskResult = await db.query('SELECT * FROM tasks WHERE id = $1', [result.rows[0].id]);
     res.status(201).json(newTaskResult.rows[0]);
@@ -105,24 +118,30 @@ export const deleteTask = async (req: AuthRequest, res: Response) => {
 export const generateDailyTasks = async (req: AuthRequest, res: Response) => {
   if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
 
+  // ── NEW: company_id from token ──────────────────────────────────────────
+  const company_id = req.user.role === 'master_admin'
+                     ? (req.body.company_id || null)
+                     : req.user.company_id;
+
   const client = await db.connect();
   try {
     await client.query('BEGIN');
-    // Get all active leads that need follow-up
-    const leadsResult = await client.query(`
-      SELECT id, owner_id FROM leads 
-      WHERE stage NOT IN ('RECENTLY_WON', 'LOST')
-    `);
+
+    // ── NEW: only generate tasks for leads in this company ────────────────
+    const leadsQuery = company_id
+      ? `SELECT id, owner_id FROM leads WHERE stage NOT IN ('RECENTLY_WON', 'LOST') AND company_id = $1`
+      : `SELECT id, owner_id FROM leads WHERE stage NOT IN ('RECENTLY_WON', 'LOST')`;
+    const leadsResult = await client.query(leadsQuery, company_id ? [company_id] : []);
     const leads = leadsResult.rows;
 
     const today = new Date();
-    today.setHours(9, 0, 0, 0); // Set to 9 AM today
+    today.setHours(9, 0, 0, 0);
 
     for (const lead of leads) {
       await client.query(`
-        INSERT INTO tasks (user_id, lead_id, type, status, due_date, notes)
-        VALUES ($1, $2, 'FOLLOW_UP', 'OPEN', $3, 'Daily automated follow-up task')
-      `, [lead.owner_id, lead.id, today.toISOString()]);
+        INSERT INTO tasks (user_id, lead_id, type, status, due_date, notes, company_id)
+        VALUES ($1, $2, 'FOLLOW_UP', 'OPEN', $3, 'Daily automated follow-up task', $4)
+      `, [lead.owner_id, lead.id, today.toISOString(), company_id]);
     }
 
     await client.query('COMMIT');

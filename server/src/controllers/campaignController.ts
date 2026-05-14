@@ -3,8 +3,22 @@ import db from '../config/database';
 import { AuthRequest } from '../middleware/auth';
 
 export const getCampaigns = async (req: AuthRequest, res: Response) => {
+  if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
   try {
-    const campaignsResult = await db.query('SELECT * FROM campaigns ORDER BY created_at DESC');
+    let query = 'SELECT * FROM campaigns';
+    let queryParams: any[] = [];
+
+    // ── NEW: company isolation ────────────────────────────────────────────
+    if (req.user.role !== 'master_admin') {
+      queryParams.push(req.user.company_id);
+      query += ` WHERE company_id = $1`;
+    } else if (req.query.company_id) {
+      queryParams.push(parseInt(req.query.company_id as string));
+      query += ` WHERE company_id = $1`;
+    }
+
+    query += ' ORDER BY created_at DESC';
+    const campaignsResult = await db.query(query, queryParams);
     res.json(campaignsResult.rows);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -13,12 +27,19 @@ export const getCampaigns = async (req: AuthRequest, res: Response) => {
 
 export const createCampaign = async (req: AuthRequest, res: Response) => {
   const { name, type, phone_number } = req.body;
+  if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
+
+  // ── NEW: company_id from token ────────────────────────────────────────
+  const company_id = req.user.role === 'master_admin'
+                     ? (req.body.company_id || null)
+                     : req.user.company_id;
+
   try {
     const result = await db.query(`
-      INSERT INTO campaigns (name, type, phone_number)
-      VALUES ($1, $2, $3)
+      INSERT INTO campaigns (name, type, phone_number, company_id)
+      VALUES ($1, $2, $3, $4)
       RETURNING id
-    `, [name, type, phone_number]);
+    `, [name, type, phone_number, company_id]);
 
     const newCampaignResult = await db.query('SELECT * FROM campaigns WHERE id = $1', [result.rows[0].id]);
     res.status(201).json(newCampaignResult.rows[0]);
@@ -30,6 +51,7 @@ export const createCampaign = async (req: AuthRequest, res: Response) => {
 export const updateCampaign = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { name, type, phone_number, status } = req.body;
+  if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
   try {
     await db.query(`
       UPDATE campaigns 
@@ -46,6 +68,7 @@ export const updateCampaign = async (req: AuthRequest, res: Response) => {
 
 export const deleteCampaign = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
+  if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
   try {
     await db.query('DELETE FROM campaigns WHERE id = $1', [id]);
     res.json({ message: 'Campaign deleted successfully' });

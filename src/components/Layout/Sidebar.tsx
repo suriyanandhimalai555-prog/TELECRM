@@ -1,9 +1,9 @@
+import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { 
   LayoutDashboard, 
   Users, 
-  Phone, 
   CheckSquare, 
   StickyNote, 
   MessageSquare, 
@@ -13,8 +13,13 @@ import {
   ChevronLeft,
   ChevronRight,
   Briefcase,
+  Building2,
+  UserCog,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { useAuthStore } from '../../store/authStore';
+import { apiGet } from '../../lib/api';
+import { Company } from '../../types/auth';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -29,20 +34,29 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const { user } = useAuth();
+  const { viewingCompanyId, setViewingCompany } = useAuthStore();
+  const [companies, setCompanies] = useState<Company[]>([]);
   const location = useLocation();
 
+  useEffect(() => {
+    if (user?.role === 'master_admin') {
+      apiGet<Company[]>('/api/companies').then(setCompanies).catch(() => {});
+    }
+  }, [user]);
+
   const navItems = [
-    { name: 'Dashboard',    path: '/',           icon: LayoutDashboard, roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
-    { name: 'Leads',        path: '/leads',       icon: Users,           roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
-    { name: 'Call History', path: '/calls',       icon: Phone,           roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
-    { name: 'Tasks',        path: '/tasks',       icon: CheckSquare,     roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
-    { name: 'Projects',     path: '/projects',    icon: Briefcase,       roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
-    { name: 'Notes',        path: '/notes',       icon: StickyNote,      roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
-    { name: 'WhatsApp',     path: '/whatsapp',    icon: MessageSquare,   roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
-    { name: 'WhatsApp 2',   path: '/whatsapp2',   icon: MessageSquare,   roles: ['ADMIN', 'MANAGER'] },
-    { name: 'Campaigns',    path: '/campaigns',   icon: Target,          roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
-    { name: 'Reports',      path: '/reports',     icon: BarChart3,       roles: ['ADMIN', 'MANAGER'] },
-    { name: 'Settings',     path: '/settings',    icon: Settings,        roles: ['ADMIN', 'MANAGER', 'EMPLOYEE'] },
+    { name: 'Dashboard',  path: '/',          icon: LayoutDashboard, roles: ['master_admin','company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
+    { name: 'Companies',  path: '/companies', icon: Building2,       roles: ['master_admin'] },
+    { name: 'Users',      path: '/users',     icon: UserCog,         roles: ['master_admin','company_admin'] },
+    { name: 'Leads',      path: '/leads',     icon: Users,           roles: ['master_admin','company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
+    { name: 'Tasks',      path: '/tasks',     icon: CheckSquare,     roles: ['master_admin','company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
+    { name: 'Projects',   path: '/projects',  icon: Briefcase,       roles: ['master_admin','company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
+    { name: 'Notes',      path: '/notes',     icon: StickyNote,      roles: ['master_admin','company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
+    { name: 'WhatsApp',   path: '/whatsapp',  icon: MessageSquare,   roles: ['master_admin','company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
+    { name: 'WhatsApp 2', path: '/whatsapp2', icon: MessageSquare,   roles: ['master_admin','company_admin','ADMIN','MANAGER'] },
+    { name: 'Campaigns',  path: '/campaigns', icon: Target,          roles: ['master_admin','company_admin','ADMIN','MANAGER'] },
+    { name: 'Reports',    path: '/reports',   icon: BarChart3,       roles: ['master_admin','company_admin','ADMIN','MANAGER'] },
+    { name: 'Settings',   path: '/settings',  icon: Settings,        roles: ['master_admin','company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
   ];
 
   const filteredNavItems = navItems.filter(item => user && item.roles.includes(user.role));
@@ -55,11 +69,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     >
       <div className="h-16 flex items-center justify-between px-6 border-b border-gray-100">
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex items-center"
-          >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center">
             <div className="flex items-center mr-2">
               <img src="/logo.png" alt="AVG CRM" className="w-14 h-14 object-contain" />
             </div>
@@ -72,18 +82,33 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={() => setIsOpen(!isOpen)}
-          className={cn(
-            "p-1.5 rounded-lg bg-gray-50 text-gray-400 hover:text-aura-red transition-all",
-            !isOpen && "mx-auto"
-          )}
+          className={cn("p-1.5 rounded-lg bg-gray-50 text-gray-400 hover:text-aura-red transition-all", !isOpen && "mx-auto")}
         >
           {isOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
         </motion.button>
       </div>
 
+      {/* ── Company switcher (master_admin only) ── */}
+      {user?.role === 'master_admin' && isOpen && (
+        <div className="px-3 pt-3 pb-1">
+          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 px-1">Viewing Company</p>
+          <select
+            value={viewingCompanyId ?? ''}
+            onChange={e => setViewingCompany(e.target.value ? parseInt(e.target.value) : null)}
+            className="w-full text-[10px] font-bold px-3 py-2 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 focus:outline-none focus:border-blue-400"
+          >
+            <option value=''>— All Companies —</option>
+            {companies.map(c => (
+              <option key={c.id} value={c.id}>{c.company_name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto no-scrollbar">
         {filteredNavItems.map((item) => {
-          const isWhatsAppEmployee = item.path === '/whatsapp' && user?.role === 'EMPLOYEE';
+          const isWA2 = item.path === '/whatsapp2';
+          const isWhatsAppEmployee = item.path === '/whatsapp' && (user?.role === 'EMPLOYEE' || user?.role === 'employee');
 
           if (isWhatsAppEmployee) {
             return (
@@ -95,16 +120,10 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                 <div className={cn("min-w-[20px] transition-transform group-hover:scale-110", isOpen ? "mr-3" : "mx-auto")}>
                   <item.icon size={18} />
                 </div>
-                {isOpen && (
-                  <span className="font-black uppercase tracking-widest text-[9px]">
-                    {item.name}
-                  </span>
-                )}
+                {isOpen && <span className="font-black uppercase tracking-widest text-[9px]">{item.name}</span>}
               </button>
             );
           }
-
-          const isWA2 = item.path === '/whatsapp2';
 
           return (
             <NavLink
@@ -113,35 +132,19 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
               className={({ isActive }) => cn(
                 "flex items-center px-4 py-2.5 rounded-xl transition-all group relative overflow-hidden",
                 isActive
-                  ? isWA2
-                    ? "bg-green-50 text-green-600 shadow-sm font-bold"
-                    : "bg-blue-50 text-blue-600 shadow-sm font-bold"
-                  : isWA2
-                    ? "text-gray-500 hover:bg-green-50 hover:text-green-600"
-                    : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                  ? isWA2 ? "bg-green-50 text-green-600 shadow-sm font-bold" : "bg-blue-50 text-blue-600 shadow-sm font-bold"
+                  : isWA2 ? "text-gray-500 hover:bg-green-50 hover:text-green-600" : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
               )}
             >
-              <div className={cn(
-                "min-w-[20px] transition-transform group-hover:scale-110 relative",
-                isOpen ? "mr-3" : "mx-auto"
-              )}>
+              <div className={cn("min-w-[20px] transition-transform group-hover:scale-110 relative", isOpen ? "mr-3" : "mx-auto")}>
                 <item.icon size={18} />
-                {isWA2 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white" />
-                )}
+                {isWA2 && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white" />}
               </div>
-              {isOpen && (
-                <span className="font-black uppercase tracking-widest text-[9px]">
-                  {item.name}
-                </span>
-              )}
+              {isOpen && <span className="font-black uppercase tracking-widest text-[9px]">{item.name}</span>}
               {location.pathname === item.path && (
                 <motion.div
                   layoutId={isWA2 ? "sidebar-active-wa2" : "sidebar-active"}
-                  className={cn(
-                    "absolute right-0 top-1/4 bottom-1/4 w-1 rounded-full shadow-sm",
-                    isWA2 ? "bg-green-500" : "bg-[#3b9eff]"
-                  )}
+                  className={cn("absolute right-0 top-1/4 bottom-1/4 w-1 rounded-full shadow-sm", isWA2 ? "bg-green-500" : "bg-[#3b9eff]")}
                 />
               )}
             </NavLink>
@@ -150,10 +153,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       </nav>
 
       <div className="p-4 border-t border-gray-100">
-        <div className={cn(
-          "flex items-center p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors",
-          !isOpen && "justify-center"
-        )}>
+        <div className={cn("flex items-center p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors", !isOpen && "justify-center")}>
           <div className="w-9 h-9 rounded-lg bg-aura-red/5 text-aura-red font-black text-sm border border-aura-red/10 flex items-center justify-center">
             {user?.name?.charAt(0)}
           </div>

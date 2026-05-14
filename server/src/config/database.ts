@@ -36,6 +36,30 @@ pool.on('error', (err) => {
 });
 
 export const initDb = async () => {
+
+  // ── Multi-tenant: companies table ─────────────────────────────────────────
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS companies (
+      id           SERIAL PRIMARY KEY,
+      company_name VARCHAR(255) NOT NULL,
+      created_at   TIMESTAMP DEFAULT NOW()
+    )
+  `);
+
+  // ── Multi-tenant: whatsapp_accounts per company ───────────────────────────
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS whatsapp_accounts (
+      id              SERIAL PRIMARY KEY,
+      company_id      INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      label           VARCHAR(100) NOT NULL,
+      phone_number    VARCHAR(50),
+      phone_number_id VARCHAR(100),
+      access_token    TEXT,
+      status          VARCHAR(20) DEFAULT 'inactive',
+      created_at      TIMESTAMP DEFAULT NOW()
+    )
+  `);
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
@@ -123,12 +147,6 @@ export const initDb = async () => {
     )
   `);
 
-  // ✅ Add missing columns to users table
-  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp_token TEXT`);
-  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp_phone_id VARCHAR(100)`);
-  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp_waba_id VARCHAR(100)`);
-  // ✅ Drop and recreate whatsapp_messages with correct schema
-  
   await pool.query(`
     CREATE TABLE IF NOT EXISTS whatsapp_messages (
       id SERIAL PRIMARY KEY,
@@ -145,10 +163,13 @@ export const initDb = async () => {
     )
   `);
 
-
-  // Add missing columns
+  // ── Existing column additions (unchanged) ─────────────────────────────────
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp_token TEXT`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp_phone_id VARCHAR(100)`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp_waba_id VARCHAR(100)`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_projects INTEGER[] DEFAULT '{}'`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reporting_to INTEGER`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50)`);
   await pool.query(`ALTER TABLE leads ADD COLUMN IF NOT EXISTS contact_name VARCHAR(255)`);
   await pool.query(`ALTER TABLE leads ADD COLUMN IF NOT EXISTS mobile VARCHAR(50)`);
   await pool.query(`ALTER TABLE leads ADD COLUMN IF NOT EXISTS whatsapp VARCHAR(50)`);
@@ -158,8 +179,16 @@ export const initDb = async () => {
   await pool.query(`ALTER TABLE leads ADD COLUMN IF NOT EXISTS revenue NUMERIC DEFAULT 0`);
   await pool.query(`ALTER TABLE leads ADD COLUMN IF NOT EXISTS tags TEXT[]`);
   await pool.query(`ALTER TABLE leads ADD COLUMN IF NOT EXISTS reporting_to INTEGER`);
-  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS assigned_projects INTEGER[] DEFAULT '{}'`);
-  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50)`);
+
+  // ── NEW: Add company_id to all tables ────────────────────────────────────
+  await pool.query(`ALTER TABLE users     ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(id) ON DELETE SET NULL`);
+  await pool.query(`ALTER TABLE users     ALTER COLUMN role TYPE VARCHAR(30)`);
+  await pool.query(`ALTER TABLE leads     ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE`);
+  await pool.query(`ALTER TABLE tasks     ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE`);
+  await pool.query(`ALTER TABLE projects  ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE`);
+  await pool.query(`ALTER TABLE notes     ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE`);
+  await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE`);
+
   console.log('✅ DB initialized successfully');
 };
 

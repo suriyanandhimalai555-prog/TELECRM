@@ -13,7 +13,7 @@ export const register = async (req: Request, res: Response) => {
   try {
     const userCountResult = await db.query('SELECT COUNT(*) as count FROM users');
     const userCount = parseInt(userCountResult.rows[0].count);
-    const finalRole = userCount === 0 ? 'ADMIN' : (role || 'EMPLOYEE');
+    const finalRole = userCount === 0 ? 'master_admin' : (role || 'employee');
 
     const salt = bcrypt.genSaltSync(10);
     const hashedPassword = bcrypt.hashSync(password, salt);
@@ -23,14 +23,31 @@ export const register = async (req: Request, res: Response) => {
       [email, hashedPassword, name, finalRole, reporting_to || null]
     );
 
-    const userResult = await db.query('SELECT id, email, name, role FROM users WHERE id = $1', [result.rows[0].id]);
+    const userResult = await db.query(
+      `SELECT u.id, u.email, u.name, u.role, u.company_id, c.company_name
+       FROM users u
+       LEFT JOIN companies c ON u.company_id = c.id
+       WHERE u.id = $1`,
+      [result.rows[0].id]
+    );
     const user = userResult.rows[0];
 
-    const token = jwt.sign(user, JWT_SECRET, { expiresIn: JWT_EXPIRE as any });
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        company_id: user.company_id,
+        company_name: user.company_name
+      },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRE as any }
+    );
 
     res.status(201).json({ token, user });
   } catch (error: any) {
-    if (error.code === '23505') { // PostgreSQL unique violation
+    if (error.code === '23505') {
       return res.status(400).json({ message: 'Email already exists' });
     }
     res.status(500).json({ message: 'Server error' });
@@ -41,7 +58,14 @@ export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   try {
-    const userResult = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    // ← UPDATED: now joins companies to get company_name
+    const userResult = await db.query(
+      `SELECT u.*, c.company_name
+       FROM users u
+       LEFT JOIN companies c ON u.company_id = c.id
+       WHERE u.email = $1`,
+      [email]
+    );
     const user = userResult.rows[0];
 
     if (!user || !bcrypt.compareSync(password, user.password)) {
@@ -49,7 +73,20 @@ export const login = async (req: Request, res: Response) => {
     }
 
     const { password: _, ...userWithoutPassword } = user;
-    const token = jwt.sign(userWithoutPassword, JWT_SECRET, { expiresIn: JWT_EXPIRE as any });
+
+    // ← UPDATED: company_id and company_name now included in token
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        company_id: user.company_id,
+        company_name: user.company_name
+      },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRE as any }
+    );
 
     res.json({ token, user: userWithoutPassword });
   } catch (error: any) {
@@ -65,18 +102,27 @@ export const login = async (req: Request, res: Response) => {
       detailedError = 'The server could not connect to your PostgreSQL database. Check your credentials and network settings.';
     }
 
-    res.status(500).json({ 
-      message: errorMessage, 
-      error: detailedError 
+    res.status(500).json({
+      message: errorMessage,
+      error: detailedError
     });
   }
 };
 
 export const me = async (req: AuthRequest, res: Response) => {
   if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
-  
+
   try {
-    const userResult = await db.query('SELECT id, email, name, role, reporting_to, client_key, gemini_key, front_key, backend_key FROM users WHERE id = $1', [req.user.id]);
+    // ← UPDATED: now returns company_id and company_name too
+    const userResult = await db.query(
+      `SELECT u.id, u.email, u.name, u.role, u.reporting_to,
+              u.client_key, u.gemini_key, u.front_key, u.backend_key,
+              u.company_id, c.company_name
+       FROM users u
+       LEFT JOIN companies c ON u.company_id = c.id
+       WHERE u.id = $1`,
+      [req.user.id]
+    );
     res.json(userResult.rows[0]);
   } catch (error) {
     console.error('Auth Me Error:', error);
