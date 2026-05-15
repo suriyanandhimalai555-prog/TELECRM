@@ -42,3 +42,21 @@ router.delete('/:id', authenticate, requireAdmin, async (req: AuthRequest, res) 
   res.json({ message: 'Deleted' });
 });
 export default router;
+
+router.post('/:id/update', authenticate, requireAdmin, async (req: AuthRequest, res) => {
+  const { name, email, phone, role, company_id, password } = req.body;
+  const updates: any[] = [];
+  const values: any[] = [];
+  let i = 1;
+  if (name)       { updates.push(`name=$${i++}`);       values.push(name); }
+  if (email)      { updates.push(`email=$${i++}`);      values.push(email); }
+  if (phone)      { updates.push(`phone=$${i++}`);      values.push(phone); }
+  if (role)       { updates.push(`role=$${i++}`);       values.push(role); }
+  if (company_id) { updates.push(`company_id=$${i++}`); values.push(company_id); }
+  if (password)   { const hash = bcrypt.hashSync(password, 10); updates.push(`password=$${i++}`); values.push(hash); }
+  if (updates.length === 0) return res.status(400).json({ message: 'Nothing to update' });
+  values.push(req.params.id);
+  await db.query(`UPDATE users SET ${updates.join(',')} WHERE id=$${i}`, values);
+  const r = await db.query('SELECT u.*, c.company_name FROM users u LEFT JOIN companies c ON u.company_id=c.id WHERE u.id=$1', [req.params.id]);
+  res.json({ ...r.rows[0], password: undefined });
+});
