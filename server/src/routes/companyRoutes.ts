@@ -41,3 +41,9 @@ router.delete('/:id/whatsapp/:waId', authenticate, requireAdmin, async (req, res
   res.json({ message: 'Deleted' });
 });
 export default router;
+
+router.post('/:id/rename', authenticate, requireMasterAdmin, async (req, res) => {
+  const { company_name } = req.body;
+  const r = await db.query('UPDATE companies SET company_name = $1 WHERE id = $2 RETURNING *', [company_name, req.params.id]);
+  res.json(r.rows[0]);
+});
