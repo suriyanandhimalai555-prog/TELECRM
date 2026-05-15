@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuthStore } from '../store/authStore';
+import { useAuth } from '../hooks/useAuth';
 import { apiGet, apiPost, apiDelete } from '../lib/api';
 import { Company } from '../types/auth';
 import { Users, Plus, Trash2, X, Check, Phone, Mail, Building2 } from 'lucide-react';
@@ -9,7 +9,7 @@ const emptyForm = { email: '', password: '', name: '', role: 'employee', company
 const roleColors: Record<string, string> = { master_admin: 'bg-red-100 text-red-700', company_admin: 'bg-purple-100 text-purple-700', ADMIN: 'bg-blue-100 text-blue-700', MANAGER: 'bg-yellow-100 text-yellow-700', EMPLOYEE: 'bg-green-100 text-green-700', employee: 'bg-green-100 text-green-700', manager: 'bg-yellow-100 text-yellow-700' };
 
 export default function UsersPage() {
-  const { user } = useAuthStore();
+  const { user } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [showForm, setShowForm] = useState(false);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuthStore } from '../store/authStore';
+import { useAuth } from '../hooks/useAuth';
 import { apiGet, apiPost, apiDelete } from '../lib/api';
 import { Company, WhatsAppAccount } from '../types/auth';
 import { Building2, Plus, Trash2, ChevronDown, ChevronUp, MessageSquare, UserCog, X, Check } from 'lucide-react';
@@ -9,7 +9,7 @@ interface CompanyAdmin {
 }
 
 export default function CompaniesPage() {
-  const { user } = useAuthStore();
+  const { user } = useAuth();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [expanded, setExpanded] = useState<number | null>(null);
   const [waAccounts, setWaAccounts] = useState<Record<number, WhatsAppAccount[]>>({});

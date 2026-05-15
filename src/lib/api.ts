@@ -1,6 +1,6 @@
 import { useAuthStore } from '../store/authStore';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://telecrm-copy-production.up.railway.app/api';
+const BASE = import.meta.env.VITE_API_URL || 'https://telecrm-copy-production.up.railway.app/api';
 
 const buildRequest = (path: string) => {
   const { token, user, viewingCompanyId } = useAuthStore.getState();
@@ -8,8 +8,8 @@ const buildRequest = (path: string) => {
   if (user?.role === 'master_admin' && viewingCompanyId)
     params.set('company_id', String(viewingCompanyId));
   const qs = params.toString();
-  const fullPath = path.startsWith('http') ? path : `${BASE_URL}${path.replace('/api', '')}`;
-  const url = qs ? `${fullPath}${fullPath.includes('?') ? '&' : '?'}${qs}` : fullPath;
+  const cleanPath = path.startsWith('/api') ? path.slice(4) : path;
+  const url = qs ? `${BASE}${cleanPath}?${qs}` : `${BASE}${cleanPath}`;
   return { url, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } };
 };
 
