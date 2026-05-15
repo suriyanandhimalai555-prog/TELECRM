@@ -16,6 +16,8 @@ const COLORS = ['#2a85cc', '#7ec8f7', '#93C5FD', '#BFDBFE', '#f59e0b'];
 export default function Reports() {
   const { user } = useAuth();
   const [dateRange, setDateRange] = useState('all');
+  const [companies, setCompanies] = useState<any[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState('');
   const [reportType, setReportType] = useState('calls');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,15 +28,21 @@ export default function Reports() {
   const [teamData, setTeamData] = useState<any[]>([]);
   const [whatsappSummary, setWhatsappSummary] = useState<any[]>([]);
 
+  useEffect(() => {
+    if (user?.role === 'master_admin') {
+      api.get('/companies').then(r => setCompanies(r.data)).catch(() => {});
+    }
+  }, [user]);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const [statsRes, summaryRes, conversionRes, projectRes, waSummaryRes] = await Promise.all([
-        api.get('/reports/stats').catch(() => ({ data: null })),
-        api.get('/reports/call-summary').catch(() => ({ data: [] })),
-        api.get('/reports/lead-conversion').catch(() => ({ data: [] })),
-        api.get('/reports/project-stats').catch(() => ({ data: [] })),
+        api.get('/reports/stats', { params: selectedCompany ? { company_id: selectedCompany } : {} }).catch(() => ({ data: null })),
+        api.get('/reports/call-summary', { params: selectedCompany ? { company_id: selectedCompany } : {} }).catch(() => ({ data: [] })),
+        api.get('/reports/lead-conversion', { params: selectedCompany ? { company_id: selectedCompany } : {} }).catch(() => ({ data: [] })),
+        api.get('/reports/project-stats', { params: selectedCompany ? { company_id: selectedCompany } : {} }).catch(() => ({ data: [] })),
         api.get('/reports/whatsapp-summary').catch(() => ({ data: [] })),
       ]);
 
@@ -54,7 +62,7 @@ export default function Reports() {
     } finally {
       setLoading(false);
     }
-  }, [dateRange, user?.role]);
+  }, [dateRange, user?.role, selectedCompany]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -203,6 +211,15 @@ export default function Reports() {
             </button>
           ))}
         </div>
+        {user?.role === 'master_admin' && companies.length > 0 && (
+          <div className="flex items-center space-x-2 px-3 py-1.5 bg-purple-50 rounded-lg border border-purple-200">
+            <select value={selectedCompany} onChange={(e) => setSelectedCompany(e.target.value)}
+              className="bg-transparent border-none focus:ring-0 text-[10px] font-black text-purple-700 uppercase tracking-widest cursor-pointer">
+              <option value="">All Companies</option>
+              {companies.map((c: any) => <option key={c.id} value={c.id}>{c.company_name}</option>)}
+            </select>
+          </div>
+        )}
         <div className="flex items-center space-x-2 ml-auto px-3 py-1.5 bg-gray-100 rounded-lg border border-gray-200">
           <Calendar size={16} className="text-blue-600" />
           <select value={dateRange} onChange={(e) => setDateRange(e.target.value)}
