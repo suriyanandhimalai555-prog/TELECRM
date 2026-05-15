@@ -553,7 +553,7 @@ export default function Leads() {
                     checked={selectedLeadIds.length === filteredLeads.length && filteredLeads.length > 0}
                     onChange={toggleAllSelection} className="accent-aura-red" />
                 </th>
-                {['Owner', 'Contact', 'Mobile', 'Project', 'Stage', 'Revenue', 'Next Followup', 'Actions'].map((h) => (
+                {['Owner', ...(user?.role === 'master_admin' ? ['Company'] : []), 'Contact', 'Mobile', 'Project', 'Stage', 'Revenue', 'Next Followup', 'Actions'].map((h) => (
                   <th key={h} className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">{h}</th>
                 ))}
               </tr>
@@ -576,6 +576,11 @@ export default function Leads() {
                     <td className="px-6 py-4 text-[9px] font-black text-blue-600 uppercase">
                       {lead.owner_name || users.find(u => u.id === lead.owner_id)?.name || 'Admin'}
                     </td>
+                    {user?.role === 'master_admin' && (
+                      <td className="px-6 py-4 text-[9px] font-black text-purple-600 uppercase">
+                        {(lead as any).company_name || '—'}
+                      </td>
+                    )}
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="text-xs font-black text-gray-900 lowercase tracking-tight"># {lead.contact_name}</span>

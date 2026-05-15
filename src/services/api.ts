@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useAuthStore } from '../store/authStore';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://telecrm-copy-production.up.railway.app/api';
 
@@ -11,6 +12,13 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // Auto-inject company_id for master_admin viewing a specific company
+  const { user, viewingCompanyId } = useAuthStore.getState();
+  if (user?.role === 'master_admin' && viewingCompanyId) {
+    config.params = { ...config.params, company_id: viewingCompanyId };
+  }
+
   return config;
 });
 
