@@ -80,6 +80,10 @@ function previewMessage(text: string): string {
   if (text.startsWith('[audio:')) return '🎵 Voice message';
   if (text.startsWith('[video:')) return '🎥 Video';
   if (text.startsWith('[sticker:')) return '😊 Sticker';
+  if (text.startsWith('[reaction:')) {
+    const emoji = text.split(':')[1];
+    return `Reacted ${emoji}`;
+  }
   if (text.startsWith('[location:')) return '📍 Location';
   return text;
 }
