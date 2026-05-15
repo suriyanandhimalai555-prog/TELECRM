@@ -583,7 +583,7 @@ export default function Leads() {
                     )}
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
-                        <span className="text-xs font-black text-gray-900 lowercase tracking-tight"># {lead.contact_name}</span>
+                        <span className="text-xs font-black text-gray-900 lowercase tracking-tight">{lead.contact_name}</span>
                         <span className="text-[9px] font-bold text-gray-400 truncate max-w-[150px]">{lead.email || 'No Email'}</span>
                       </div>
                     </td>
