@@ -3,8 +3,6 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 import { SearchProvider } from './context/SearchContext';
 import { NotificationProvider } from './context/NotificationContext';
 import Layout from './components/Layout/Layout';
-
-// Views
 import Login from './views/auth/Login';
 import Register from './views/auth/Register';
 import Dashboard from './views/dashboard/Dashboard';
@@ -33,6 +31,14 @@ const RequireRole: React.FC<{ roles: string[]; children: React.ReactNode }> = ({
   return <>{children}</>;
 };
 
+// Block master_admin from accessing a route
+const BlockMasterAdmin: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  if (user?.role === 'master_admin') return <Navigate to="/" />;
+  return <>{children}</>;
+};
+
 export default function App() {
   return (
     <AuthProvider>
@@ -45,24 +51,24 @@ export default function App() {
               <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
                 <Route index element={<Dashboard />} />
                 <Route path="leads" element={<Leads />} />
-                <Route path="tasks" element={<Tasks />} />
-                <Route path="notes" element={<Notes />} />
-                
-                
-                <Route path="campaigns" element={<Campaigns />} />
-                <Route path="projects" element={<Projects />} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="settings" element={<Settings />} />
+
+                {/* master_admin only */}
                 <Route path="companies" element={
-                  <RequireRole roles={['master_admin']}>
-                    <CompaniesPage />
-                  </RequireRole>
+                  <RequireRole roles={['master_admin']}><CompaniesPage /></RequireRole>
                 } />
                 <Route path="users" element={
-                  <RequireRole roles={['master_admin', 'company_admin']}>
-                    <UsersPage />
-                  </RequireRole>
+                  <RequireRole roles={['master_admin','company_admin']}><UsersPage /></RequireRole>
                 } />
+
+                {/* blocked for master_admin */}
+                <Route path="tasks" element={<BlockMasterAdmin><Tasks /></BlockMasterAdmin>} />
+                <Route path="notes" element={<BlockMasterAdmin><Notes /></BlockMasterAdmin>} />
+                <Route path="projects" element={<BlockMasterAdmin><Projects /></BlockMasterAdmin>} />
+                <Route path="campaigns" element={<BlockMasterAdmin><Campaigns /></BlockMasterAdmin>} />
+                <Route path="whatsapp" element={<BlockMasterAdmin><WhatsAppInbox accountIndex={0} /></BlockMasterAdmin>} />
+                <Route path="whatsapp2" element={<BlockMasterAdmin><WhatsAppInbox accountIndex={1} /></BlockMasterAdmin>} />
               </Route>
             </Routes>
           </Router>
