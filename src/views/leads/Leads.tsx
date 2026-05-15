@@ -578,7 +578,7 @@ export default function Leads() {
                     </td>
                     {user?.role === 'master_admin' && (
                       <td className="px-6 py-4 text-[9px] font-black text-purple-600 uppercase">
-                        {(lead as any).company_name || '—'}
+                        {(lead as any).tenant_company || '—'}
                       </td>
                     )}
                     <td className="px-6 py-4">

@@ -9,10 +9,11 @@ export const getLeads = async (req: AuthRequest, res: Response) => {
 
   try {
     let baseQuery = `
-      SELECT l.*, u.name as owner_name, p.name as project_name
+      SELECT l.*, u.name as owner_name, p.name as project_name, c.company_name as tenant_company
       FROM leads l 
       LEFT JOIN users u ON l.owner_id = u.id
       LEFT JOIN projects p ON l.project_id = p.id
+      LEFT JOIN companies c ON l.company_id = c.id
     `;
     
     let whereClauses: string[] = [];
@@ -253,10 +254,11 @@ export const exportLeads = async (req: AuthRequest, res: Response) => {
 
   try {
     let baseQuery = `
-      SELECT l.*, u.name as owner_name, p.name as project_name
+      SELECT l.*, u.name as owner_name, p.name as project_name, c.company_name as tenant_company
       FROM leads l 
       LEFT JOIN users u ON l.owner_id = u.id
       LEFT JOIN projects p ON l.project_id = p.id
+      LEFT JOIN companies c ON l.company_id = c.id
     `;
 
     let whereClauses: string[] = [];
