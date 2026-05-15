@@ -553,7 +553,7 @@ export default function Leads() {
                     checked={selectedLeadIds.length === filteredLeads.length && filteredLeads.length > 0}
                     onChange={toggleAllSelection} className="accent-aura-red" />
                 </th>
-                {['Owner', ...(user?.role === 'master_admin' ? ['Company'] : []), 'Contact', 'Mobile', 'Project', 'Stage', 'Revenue', 'Next Followup', 'Actions'].map((h) => (
+                {['Owner', ...(user?.role === 'master_admin' ? ['Company'] : []), 'Contact', 'Mobile', 'Project', 'Stage', 'Next Followup', 'Actions'].map((h) => (
                   <th key={h} className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">{h}</th>
                 ))}
               </tr>
@@ -610,7 +610,7 @@ export default function Leads() {
                         {lead.stage}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-xs font-black text-gray-900">₹{lead.revenue.toLocaleString()} / {lead.revenue.toLocaleString()}</td>
+                    
                     <td className="px-6 py-4 text-[9px] font-bold text-gray-500 uppercase">
                       {lead.next_followup ? new Date(lead.next_followup).toLocaleDateString() : 'Not set'}
                     </td>
