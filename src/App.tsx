@@ -50,7 +50,7 @@ export default function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
                 <Route index element={<Dashboard />} />
-                <Route path="leads" element={<Leads />} />
+                <Route path="leads" element={<BlockMasterAdmin><Leads /></BlockMasterAdmin>} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="settings" element={<Settings />} />
 

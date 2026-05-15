@@ -30,7 +30,6 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     { name: 'Dashboard',  path: '/',          icon: LayoutDashboard },
     { name: 'Companies',  path: '/companies', icon: Building2 },
     { name: 'Users',      path: '/users',     icon: UserCog },
-    { name: 'Leads',      path: '/leads',     icon: Users },
     { name: 'Reports',    path: '/reports',   icon: BarChart3 },
     { name: 'Settings',   path: '/settings',  icon: Settings },
   ];
