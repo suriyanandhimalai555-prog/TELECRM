@@ -1,9 +1,10 @@
+import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   LayoutDashboard, Users, CheckSquare, StickyNote, MessageSquare, 
   Target, BarChart3, Settings, ChevronLeft, ChevronRight,
-  Briefcase, Building2, UserCog,
+  Briefcase, Building2, UserCog, ChevronDown,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { clsx, type ClassValue } from 'clsx';
@@ -21,8 +22,10 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const { user } = useAuth();
   const location = useLocation();
+  const [waExpanded, setWaExpanded] = useState(
+    location.pathname === '/whatsapp' || location.pathname === '/whatsapp2'
+  );
 
-  // ── MASTER ADMIN: only these pages, NO WhatsApp, NO company switcher
   const masterAdminNav = [
     { name: 'Dashboard',  path: '/',          icon: LayoutDashboard },
     { name: 'Companies',  path: '/companies', icon: Building2 },
@@ -32,7 +35,6 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     { name: 'Settings',   path: '/settings',  icon: Settings },
   ];
 
-  // ── COMPANY USERS: full access to their company data
   const companyNav = [
     { name: 'Dashboard',  path: '/',          icon: LayoutDashboard, roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
     { name: 'Users',      path: '/users',     icon: UserCog,         roles: ['company_admin'] },
@@ -40,17 +42,20 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     { name: 'Tasks',      path: '/tasks',     icon: CheckSquare,     roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
     { name: 'Projects',   path: '/projects',  icon: Briefcase,       roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
     { name: 'Notes',      path: '/notes',     icon: StickyNote,      roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
-    { name: 'WhatsApp',   path: '/whatsapp',  icon: MessageSquare,   roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
-    { name: 'WhatsApp 2', path: '/whatsapp2', icon: MessageSquare,   roles: ['company_admin','ADMIN','MANAGER'] },
+    { name: 'WhatsApp',   path: '/whatsapp',  icon: MessageSquare,   roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'], isWA: true },
     { name: 'Campaigns',  path: '/campaigns', icon: Target,          roles: ['company_admin','ADMIN','MANAGER'] },
     { name: 'Reports',    path: '/reports',   icon: BarChart3,       roles: ['company_admin','ADMIN','MANAGER'] },
     { name: 'Settings',   path: '/settings',  icon: Settings,        roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
   ];
 
   const isMasterAdmin = user?.role === 'master_admin';
+  const isEmployee = user?.role === 'EMPLOYEE' || user?.role === 'employee';
+  const hasWA2 = ['company_admin','ADMIN','MANAGER'].includes(user?.role || '');
   const navItems = isMasterAdmin
     ? masterAdminNav
     : companyNav.filter(item => user && item.roles.includes(user.role));
+
+  const isWAActive = location.pathname === '/whatsapp' || location.pathname === '/whatsapp2';
 
   return (
     <motion.aside
@@ -78,7 +83,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         </motion.button>
       </div>
 
-      {/* Master Admin badge — NO company switcher */}
+      {/* Master Admin badge */}
       {isMasterAdmin && isOpen && (
         <div className="px-4 py-2 border-b border-gray-100">
           <span className="text-[9px] font-black uppercase tracking-widest px-2 py-1 bg-red-50 text-red-600 rounded-lg">
@@ -90,22 +95,89 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       {/* Nav */}
       <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto no-scrollbar">
         {navItems.map((item) => {
-          const isWA2 = item.path === '/whatsapp2';
-          const isEmployee = user?.role === 'EMPLOYEE' || user?.role === 'employee';
-          const isWAEmployee = item.path === '/whatsapp' && isEmployee;
-
-          if (isWAEmployee) {
+          if ((item as any).isWA) {
+            // WhatsApp with dropdown
             return (
-              <button
-                key={item.path}
-                onClick={() => window.open('https://web.whatsapp.com', '_blank')}
-                className="w-full flex items-center px-4 py-2.5 rounded-xl transition-all group text-gray-500 hover:bg-blue-50 hover:text-blue-600"
-              >
-                <div className={cn("min-w-[20px] transition-transform group-hover:scale-110", isOpen ? "mr-3" : "mx-auto")}>
-                  <item.icon size={18} />
-                </div>
-                {isOpen && <span className="font-black uppercase tracking-widest text-[9px]">{item.name}</span>}
-              </button>
+              <div key="whatsapp-group">
+                {isEmployee ? (
+                  <button
+                    onClick={() => window.open('https://web.whatsapp.com', '_blank')}
+                    className="w-full flex items-center px-4 py-2.5 rounded-xl transition-all group text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                  >
+                    <div className={cn("min-w-[20px]", isOpen ? "mr-3" : "mx-auto")}>
+                      <MessageSquare size={18} />
+                    </div>
+                    {isOpen && <span className="font-black uppercase tracking-widest text-[9px]">WhatsApp</span>}
+                  </button>
+                ) : hasWA2 ? (
+                  <>
+                    {/* Dropdown trigger */}
+                    <button
+                      onClick={() => setWaExpanded(!waExpanded)}
+                      className={cn(
+                        "w-full flex items-center px-4 py-2.5 rounded-xl transition-all group",
+                        isWAActive ? "bg-green-50 text-green-600 font-bold" : "text-gray-500 hover:bg-green-50 hover:text-green-600"
+                      )}
+                    >
+                      <div className={cn("min-w-[20px]", isOpen ? "mr-3" : "mx-auto")}>
+                        <MessageSquare size={18} />
+                      </div>
+                      {isOpen && (
+                        <>
+                          <span className="font-black uppercase tracking-widest text-[9px] flex-1 text-left">WhatsApp</span>
+                          <ChevronDown size={13} className={cn("transition-transform", waExpanded && "rotate-180")} />
+                        </>
+                      )}
+                    </button>
+
+                    {/* Dropdown items */}
+                    <AnimatePresence>
+                      {waExpanded && isOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="overflow-hidden ml-4"
+                        >
+                          <NavLink
+                            to="/whatsapp"
+                            className={({ isActive }) => cn(
+                              "flex items-center px-4 py-2 rounded-xl transition-all text-[9px] font-black uppercase tracking-widest mt-1",
+                              isActive ? "bg-green-100 text-green-700" : "text-gray-500 hover:bg-green-50 hover:text-green-600"
+                            )}
+                          >
+                            <span className="w-2 h-2 rounded-full bg-green-400 mr-2" />
+                            WA Account 1
+                          </NavLink>
+                          <NavLink
+                            to="/whatsapp2"
+                            className={({ isActive }) => cn(
+                              "flex items-center px-4 py-2 rounded-xl transition-all text-[9px] font-black uppercase tracking-widest mt-1",
+                              isActive ? "bg-green-100 text-green-700" : "text-gray-500 hover:bg-green-50 hover:text-green-600"
+                            )}
+                          >
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 mr-2" />
+                            WA Account 2
+                          </NavLink>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </>
+                ) : (
+                  <NavLink
+                    to="/whatsapp"
+                    className={({ isActive }) => cn(
+                      "flex items-center px-4 py-2.5 rounded-xl transition-all",
+                      isActive ? "bg-green-50 text-green-600 font-bold" : "text-gray-500 hover:bg-green-50 hover:text-green-600"
+                    )}
+                  >
+                    <div className={cn("min-w-[20px]", isOpen ? "mr-3" : "mx-auto")}>
+                      <MessageSquare size={18} />
+                    </div>
+                    {isOpen && <span className="font-black uppercase tracking-widest text-[9px]">WhatsApp</span>}
+                  </NavLink>
+                )}
+              </div>
             );
           }
 
@@ -116,19 +188,18 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
               className={({ isActive }) => cn(
                 "flex items-center px-4 py-2.5 rounded-xl transition-all group relative overflow-hidden",
                 isActive
-                  ? isWA2 ? "bg-green-50 text-green-600 shadow-sm font-bold" : "bg-blue-50 text-blue-600 shadow-sm font-bold"
-                  : isWA2 ? "text-gray-500 hover:bg-green-50 hover:text-green-600" : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                  ? "bg-blue-50 text-blue-600 shadow-sm font-bold"
+                  : "text-gray-500 hover:bg-blue-50 hover:text-blue-600"
               )}
             >
               <div className={cn("min-w-[20px] transition-transform group-hover:scale-110 relative", isOpen ? "mr-3" : "mx-auto")}>
                 <item.icon size={18} />
-                {isWA2 && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white" />}
               </div>
               {isOpen && <span className="font-black uppercase tracking-widest text-[9px]">{item.name}</span>}
               {location.pathname === item.path && (
                 <motion.div
-                  layoutId={isWA2 ? "sidebar-active-wa2" : "sidebar-active"}
-                  className={cn("absolute right-0 top-1/4 bottom-1/4 w-1 rounded-full shadow-sm", isWA2 ? "bg-green-500" : "bg-[#3b9eff]")}
+                  layoutId="sidebar-active"
+                  className="absolute right-0 top-1/4 bottom-1/4 w-1 rounded-full bg-[#3b9eff] shadow-sm"
                 />
               )}
             </NavLink>
