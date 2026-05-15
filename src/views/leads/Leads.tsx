@@ -610,7 +610,7 @@ export default function Leads() {
                         {lead.stage}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-xs font-black text-gray-900">₹${lead.revenue.toLocaleString()} / $${lead.revenue.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-xs font-black text-gray-900">₹{lead.revenue.toLocaleString()} / {lead.revenue.toLocaleString()}</td>
                     <td className="px-6 py-4 text-[9px] font-bold text-gray-500 uppercase">
                       {lead.next_followup ? new Date(lead.next_followup).toLocaleDateString() : 'Not set'}
                     </td>

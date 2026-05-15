@@ -20,12 +20,12 @@ export const getLeads = async (req: AuthRequest, res: Response) => {
     let queryParams: any[] = [];
 
     // ── NEW: company isolation ────────────────────────────────────────────
-    if (req.user.role !== 'master_admin') {
-      queryParams.push(req.user.company_id);
-      whereClauses.push(`l.company_id = $${queryParams.length}`);
-    } else if (req.query.company_id) {
+    if (req.user.role === 'master_admin' && req.query.company_id) {
       queryParams.push(parseInt(req.query.company_id as string));
-      whereClauses.push(`l.company_id = $${queryParams.length}`);
+      whereClauses.push(`l.company_id = ${queryParams.length}`);
+    } else if (req.user.company_id) {
+      queryParams.push(req.user.company_id);
+      whereClauses.push(`l.company_id = ${queryParams.length}`);
     }
 
     // ── Role-based visibility (within the company) ────────────────────────
