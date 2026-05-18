@@ -553,26 +553,32 @@ export const handleWebhook = async (req: Request, res: Response) => {
             case 'location':
               text = `[location:${msg.location?.latitude},${msg.location?.longitude}:${msg.location?.name || ''}]`;
               break;
-            default:
-              switch (msg.type) {
-                case 'reaction':
-                  text = `[reaction:${msg.reaction?.emoji || '👍'}:${msg.reaction?.message_id || ''}]`;
-                  break;
-                case 'interactive':
-                  text = msg.interactive?.button_reply?.title || msg.interactive?.list_reply?.title || '[Interactive message]';
-                  break;
-                case 'location':
-                  text = `📍 Location: ${msg.location?.name || ''} (${msg.location?.latitude},${msg.location?.longitude})`;
-                  break;
-                case 'contacts':
-                  text = `👤 Contact shared`;
-                  break;
-                case 'order':
-                  text = `🛒 Order received`;
-                  break;
-                default:
-                  text = `[${msg.type} message]`;
+            case 'reaction':
+              text = `[reaction:${msg.reaction?.emoji || '👍'}:${msg.reaction?.message_id || ''}]`;
+              break;
+            case 'interactive':
+              text = msg.interactive?.button_reply?.title || msg.interactive?.list_reply?.title || '[Interactive message]';
+              break;
+            case 'contacts':
+              text = `👤 Contact shared`;
+              break;
+            case 'order':
+              text = `🛒 Order received`;
+              break;
+            case 'system':
+              if (msg.system?.type?.includes('call')) {
+                const callType = msg.system.type.includes('missed') ? 'missed' : 'connected';
+                const duration = msg.system.duration || 0;
+                text = `[call:${callType}:${duration}]`;
+              } else {
+                text = `[system:${msg.system?.type || 'unknown'}]`;
               }
+              break;
+            case 'button':
+              text = msg.button?.text || '[Button reply]';
+              break;
+            default:
+              text = `[${msg.type} message]`;
           }
 
           console.log(`[WA] 📩 INBOUND from ${from} (${name}): type=${msg.type} → phoneId=${receivingPhoneId}`);
