@@ -44,7 +44,10 @@ type ParsedMessage =
   | { type: 'audio'; mediaId: string }
   | { type: 'video'; mediaId: string }
   | { type: 'sticker'; mediaId: string }
-  | { type: 'location'; lat: string; lng: string; name: string };
+  | { type: 'location'; lat: string; lng: string; name: string }
+  | { type: 'call'; callType: string; duration: string }
+  | { type: 'reaction'; emoji: string }
+  | { type: 'poll'; question: string; options: string[] };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function parseMessage(text: string): ParsedMessage {
@@ -65,6 +68,21 @@ function parseMessage(text: string): ParsedMessage {
     const [lat, lng] = coords.split(',');
     return { type: 'location', lat: lat || '', lng: lng || '', name: locName };
   }
+  if (text.startsWith('[call:')) {
+    const inner = text.slice(6, -1); // e.g. "missed:0" or "connected:120"
+    const parts = inner.split(':');
+    return { type: 'call', callType: parts[0] || 'unknown', duration: parts[1] || '0' };
+  }
+  if (text.startsWith('[reaction:')) {
+    const inner = text.slice(10, -1); // e.g. "👍:msgid123"
+    const emoji = inner.split(':')[0];
+    return { type: 'reaction', emoji };
+  }
+  if (text.startsWith('[poll:')) {
+    const inner = text.slice(6, -1); // e.g. "Question|Option1|Option2"
+    const [question, ...options] = inner.split('|');
+    return { type: 'poll', question: question || '', options };
+  }
   return { type: 'text', text };
 }
 
@@ -75,7 +93,16 @@ function previewMessage(text: string): string {
   if (text.startsWith('[audio:')) return '🎵 Voice message';
   if (text.startsWith('[video:')) return '🎥 Video';
   if (text.startsWith('[sticker:')) return '😊 Sticker';
+  if (text.startsWith('[reaction:')) {
+    const emoji = text.slice(10, -1).split(':')[0];
+    return `Reacted ${emoji}`;
+  }
   if (text.startsWith('[location:')) return '📍 Location';
+  if (text.startsWith('[call:')) {
+    const inner = text.slice(6, -1);
+    return inner.startsWith('missed') ? '📵 Missed Call' : '📞 Call';
+  }
+  if (text.startsWith('[poll:')) return '📊 Poll';
   return text;
 }
 
@@ -168,7 +195,7 @@ function MessageContent({ parsed, isOut, onMediaClick }: {
   onMediaClick: (url: string, type: string, filename?: string) => void;
 }) {
   const [imgError, setImgError] = useState(false);
-  const tc = isOut ? 'text-white' : 'text-gray-800';
+  const tc = isOut ? 'text-gray-900' : 'text-gray-800';
 
   switch (parsed.type) {
     case 'image':
@@ -194,15 +221,15 @@ function MessageContent({ parsed, isOut, onMediaClick }: {
             isOut ? "bg-white/10 border-white/20 hover:bg-white/20" : "bg-gray-50 border-gray-200 hover:bg-gray-100")}>
           <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
             isOut ? "bg-white/20" : "bg-blue-50")}>
-            <FileText size={18} className={isOut ? "text-white" : "text-blue-600"} />
+            <FileText size={18} className={isOut ? "text-gray-700" : "text-blue-600"} />
           </div>
           <div className="min-w-0 flex-1">
             <div className={cn("text-xs font-bold truncate", tc)}>{parsed.filename}</div>
-            <div className={cn("text-[10px]", isOut ? "text-white/60" : "text-gray-400")}>
+            <div className={cn("text-[10px]", isOut ? "text-gray-500" : "text-gray-400")}>
               {parsed.mimeType.split('/')[1]?.toUpperCase() || 'FILE'} · Tap to open
             </div>
           </div>
-          <Download size={14} className={isOut ? "text-white/70" : "text-gray-400"} />
+          <Download size={14} className={isOut ? "text-gray-500" : "text-gray-400"} />
         </div>
       );
 
@@ -239,15 +266,73 @@ function MessageContent({ parsed, isOut, onMediaClick }: {
             isOut ? "bg-white/10 border-white/20 hover:bg-white/20" : "bg-gray-50 border-gray-200 hover:bg-gray-100")}>
           <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0",
             isOut ? "bg-white/20" : "bg-blue-50")}>
-            <MapPin size={18} className={isOut ? "text-white" : "text-blue-600"} />
+            <MapPin size={18} className={isOut ? "text-gray-700" : "text-blue-600"} />
           </div>
           <div className="min-w-0">
             <div className={cn("text-xs font-bold", tc)}>{parsed.name || 'Location'}</div>
-            <div className={cn("text-[10px]", isOut ? "text-white/60" : "text-gray-400")}>Open in Maps</div>
+            <div className={cn("text-[10px]", isOut ? "text-gray-500" : "text-gray-400")}>Open in Maps</div>
           </div>
         </a>
       );
     }
+
+    case 'call': {
+      const isMissed = parsed.callType === 'missed';
+      const durationSec = Number(parsed.duration || 0);
+      return (
+        <div className={cn(
+          "flex items-center gap-3 p-2.5 rounded-xl border min-w-[160px]",
+          isMissed ? "bg-red-50 border-red-100" : "bg-green-50 border-green-100"
+        )}>
+          <div className={cn(
+            "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
+            isMissed ? "bg-red-100" : "bg-green-100"
+          )}>
+            <Phone size={15} className={isMissed ? "text-red-500" : "text-green-600"} />
+          </div>
+          <div>
+            <p className={cn("text-xs font-black", isMissed ? "text-red-600" : "text-green-700")}>
+              {isMissed ? 'Missed Call' : 'Voice Call'}
+            </p>
+            {durationSec > 0 && (
+              <p className="text-[10px] text-gray-400">
+                {Math.floor(durationSec / 60)}m {durationSec % 60}s
+              </p>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    case 'reaction':
+      return (
+        <div className="flex items-center gap-2">
+          <span className="text-2xl leading-none">{parsed.emoji}</span>
+          <span className={cn("text-[10px] font-bold", isOut ? "text-gray-500" : "text-gray-400")}>Reaction</span>
+        </div>
+      );
+
+    case 'poll':
+      return (
+        <div className={cn(
+          "rounded-xl p-3 border min-w-[180px]",
+          isOut ? "bg-white/10 border-white/20" : "bg-gray-50 border-gray-200"
+        )}>
+          <p className={cn("text-xs font-black mb-2 flex items-center gap-1.5", tc)}>
+            📊 {parsed.question}
+          </p>
+          <div className="space-y-1">
+            {(parsed.options || []).map((opt, i) => (
+              <div key={i} className={cn(
+                "text-[11px] px-2.5 py-1.5 rounded-lg border",
+                isOut ? "border-gray-300 text-gray-700 bg-white" : "border-gray-200 text-gray-600 bg-white"
+              )}>
+                {opt}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
 
     default:
       return (
@@ -382,7 +467,6 @@ export default function WhatsAppInbox() {
   const [sending, setSending] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // UI toggles
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showContactInfo, setShowContactInfo] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -394,7 +478,6 @@ export default function WhatsAppInbox() {
   const [activeFilter, setActiveFilter] = useState<'all' | 'unread'>('all');
   const [pinnedChats, setPinnedChats] = useState<string[]>([]);
 
-  // Templates
   const [templates, setTemplates] = useState<WhatsAppTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<WhatsAppTemplate | null>(null);
   const [syncingTemplates, setSyncingTemplates] = useState(false);
@@ -404,7 +487,6 @@ export default function WhatsAppInbox() {
   const dotsRef = useRef<HTMLDivElement>(null);
   const chatMenuRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const h = (e: MouseEvent) => {
       if (emojiRef.current && !emojiRef.current.contains(e.target as Node)) setShowEmojiPicker(false);
@@ -427,9 +509,7 @@ export default function WhatsAppInbox() {
     try {
       const res = await api.get(`/whatsapp/conversations${searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : ''}`);
       setConversations(res.data.conversations || []);
-    } catch { } finally {
-      setLoading(false);
-    }
+    } catch { } finally { setLoading(false); }
   }, [searchTerm]);
 
   const fetchMessages = useCallback(async (phone: string) => {
@@ -439,7 +519,6 @@ export default function WhatsAppInbox() {
     } catch { }
   }, []);
 
-  // ── Auto-select contact from URL param (from Leads page click) ──
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const phone = params.get('phone');
@@ -448,7 +527,6 @@ export default function WhatsAppInbox() {
       if (match) {
         selectContact(match);
       } else {
-        // Contact not in list yet — create a placeholder so user can still message
         const placeholder: Conversation = {
           contact_number: phone.replace(/\D/g, ''),
           contact_name: phone,
@@ -563,7 +641,6 @@ export default function WhatsAppInbox() {
     if (!input.trim() || !selectedContact || sending) return;
     const text = input;
     setInput('');
-    // Optimistic update - show message instantly
     const tempId = `temp_${Date.now()}`;
     const tempMsg = {
       id: 0,
@@ -585,10 +662,8 @@ export default function WhatsAppInbox() {
         message: text,
         contactName: selectedContact.contact_name
       });
-      // Update temp message to sent
       setMessages(prev => prev.map(m => m.message_id === tempId ? { ...m, status: 'sent' } : m));
     } catch {
-      // Remove temp message on failure
       setMessages(prev => prev.filter(m => m.message_id !== tempId));
       setInput(text);
     } finally { setSending(false); }
@@ -649,7 +724,6 @@ export default function WhatsAppInbox() {
 
       {/* ── Sidebar ── */}
       <div className="w-80 lg:w-96 border-r border-gray-100 flex flex-col bg-gray-50/50 shrink-0">
-        {/* Header */}
         <div className="p-4 border-b border-gray-100 bg-white">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -661,7 +735,6 @@ export default function WhatsAppInbox() {
               )}
             </div>
             <div className="flex items-center gap-0.5">
-              {/* Filter */}
               <div className="relative" ref={filterRef}>
                 <button onClick={() => setShowFilterMenu(v => !v)}
                   className={cn("p-2 rounded-lg transition-colors text-sm",
@@ -692,7 +765,6 @@ export default function WhatsAppInbox() {
                   )}
                 </AnimatePresence>
               </div>
-              {/* 3-dots */}
               <div className="relative" ref={dotsRef}>
                 <button onClick={() => setShowDotsMenu(v => !v)}
                   className={cn("p-2 rounded-lg transition-colors",
@@ -730,14 +802,13 @@ export default function WhatsAppInbox() {
             {(['all', 'unread'] as const).map(f => (
               <button key={f} onClick={() => setActiveFilter(f)}
                 className={cn("px-2.5 py-1 rounded-full text-[10px] font-black uppercase transition-colors",
-                  activeFilter === f ? "text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200")}>
+                  activeFilter === f ? "bg-[#2a85cc] text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200")}>
                 {f === 'all' ? 'All' : `Unread${totalUnread > 0 ? ` (${totalUnread})` : ''}`}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Conversation list */}
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           {loading ? (
             <div className="flex flex-col items-center justify-center p-10 gap-3">
@@ -799,7 +870,6 @@ export default function WhatsAppInbox() {
       <div className="flex-1 flex min-w-0">
         {selectedContact ? (
           <div className="flex-1 flex flex-col min-w-0">
-            {/* Chat Header */}
             <div className="px-4 py-3 bg-white border-b border-gray-100 flex items-center justify-between shadow-sm z-10 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-[#2a85cc] flex items-center justify-center text-white font-black text-sm">
@@ -819,7 +889,6 @@ export default function WhatsAppInbox() {
                   className={cn("p-2 rounded-lg transition-colors", showContactInfo ? "bg-blue-50 text-[#2a85cc]" : "text-gray-400 hover:bg-gray-100")}>
                   <Info size={17} />
                 </button>
-                {/* Chat menu */}
                 <div className="relative" ref={chatMenuRef}>
                   <button onClick={() => setShowChatMenu(v => !v)}
                     className={cn("p-2 rounded-lg transition-colors", showChatMenu ? "bg-blue-50 text-[#2a85cc]" : "text-gray-400 hover:bg-gray-100")}>
@@ -853,7 +922,6 @@ export default function WhatsAppInbox() {
               </div>
             </div>
 
-            {/* Messages */}
             <div className="flex-1 overflow-y-auto p-5 space-y-3 custom-scrollbar bg-[#f0f2f5]">
               <AnimatePresence initial={false}>
                 {messages.map(m => {
@@ -869,7 +937,7 @@ export default function WhatsAppInbox() {
                         <MessageContent parsed={parsed} isOut={isOut}
                           onMediaClick={(url, type, filename) => setMediaPreview({ url, type, filename })} />
                         <div className="flex items-center justify-end mt-1 gap-1">
-                          <span className={cn("text-[10px]", isOut ? "text-blue-200" : "text-gray-400")}>
+                          <span className={cn("text-[10px]", isOut ? "text-gray-400" : "text-gray-400")}>
                             {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase()}
                           </span>
                           {isOut && <StatusIcon status={m.status} direction="outbound" />}
@@ -882,7 +950,6 @@ export default function WhatsAppInbox() {
               <div ref={chatEndRef} />
             </div>
 
-            {/* Input */}
             <div className="px-4 py-3 bg-white border-t border-gray-100 shrink-0">
               <div className="flex items-end gap-2">
                 <div className="flex items-center gap-1 shrink-0 pb-1.5">
@@ -932,7 +999,6 @@ export default function WhatsAppInbox() {
           </div>
         )}
 
-        {/* Contact Info Drawer */}
         <AnimatePresence>
           {showContactInfo && selectedContact && (
             <ContactInfoDrawer contact={selectedContact} messages={messages} onClose={() => setShowContactInfo(false)} />
@@ -1040,7 +1106,6 @@ export default function WhatsAppInbox() {
         )}
       </AnimatePresence>
 
-      {/* ── Delete Modal ── */}
       <AnimatePresence>
         {deleteModal && (
           <DeleteModal type={deleteModal}
@@ -1049,7 +1114,6 @@ export default function WhatsAppInbox() {
         )}
       </AnimatePresence>
 
-      {/* ── Media Preview ── */}
       <AnimatePresence>
         {mediaPreview && (
           <MediaPreviewModal url={mediaPreview.url} type={mediaPreview.type}

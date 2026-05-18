@@ -44,11 +44,14 @@ type ParsedMessage =
   | { type: 'audio'; mediaId: string }
   | { type: 'video'; mediaId: string }
   | { type: 'sticker'; mediaId: string }
-  | { type: 'location'; lat: string; lng: string; name: string };
+  | { type: 'location'; lat: string; lng: string; name: string }
+  | { type: 'call'; callType: string; duration: string }
+  | { type: 'reaction'; emoji: string }
+  | { type: 'poll'; question: string; options: string[] };
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 interface WhatsAppInboxProps {
-  accountIndex?: 0 | 1; // 0 = WA1 (default), 1 = WA2
+  accountIndex?: 0 | 1;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -70,6 +73,21 @@ function parseMessage(text: string): ParsedMessage {
     const [lat, lng] = coords.split(',');
     return { type: 'location', lat: lat || '', lng: lng || '', name: locName };
   }
+  if (text.startsWith('[call:')) {
+    const inner = text.slice(6, -1); // e.g. "missed:0" or "connected:120"
+    const parts = inner.split(':');
+    return { type: 'call', callType: parts[0] || 'unknown', duration: parts[1] || '0' };
+  }
+  if (text.startsWith('[reaction:')) {
+    const inner = text.slice(10, -1); // e.g. "👍:msgid123"
+    const emoji = inner.split(':')[0];
+    return { type: 'reaction', emoji };
+  }
+  if (text.startsWith('[poll:')) {
+    const inner = text.slice(6, -1); // e.g. "Question|Option1|Option2"
+    const [question, ...options] = inner.split('|');
+    return { type: 'poll', question: question || '', options };
+  }
   return { type: 'text', text };
 }
 
@@ -81,10 +99,15 @@ function previewMessage(text: string): string {
   if (text.startsWith('[video:')) return '🎥 Video';
   if (text.startsWith('[sticker:')) return '😊 Sticker';
   if (text.startsWith('[reaction:')) {
-    const emoji = text.split(':')[1];
+    const emoji = text.slice(10, -1).split(':')[0];
     return `Reacted ${emoji}`;
   }
   if (text.startsWith('[location:')) return '📍 Location';
+  if (text.startsWith('[call:')) {
+    const inner = text.slice(6, -1);
+    return inner.startsWith('missed') ? '📵 Missed Call' : '📞 Call';
+  }
+  if (text.startsWith('[poll:')) return '📊 Poll';
   return text;
 }
 
@@ -258,6 +281,64 @@ function MessageContent({ parsed, isOut, onMediaClick }: {
       );
     }
 
+    case 'call': {
+      const isMissed = parsed.callType === 'missed';
+      const durationSec = Number(parsed.duration || 0);
+      return (
+        <div className={cn(
+          "flex items-center gap-3 p-2.5 rounded-xl border min-w-[160px]",
+          isMissed ? "bg-red-50 border-red-100" : "bg-green-50 border-green-100"
+        )}>
+          <div className={cn(
+            "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
+            isMissed ? "bg-red-100" : "bg-green-100"
+          )}>
+            <Phone size={15} className={isMissed ? "text-red-500" : "text-green-600"} />
+          </div>
+          <div>
+            <p className={cn("text-xs font-black", isMissed ? "text-red-600" : "text-green-700")}>
+              {isMissed ? 'Missed Call' : 'Voice Call'}
+            </p>
+            {durationSec > 0 && (
+              <p className="text-[10px] text-gray-400">
+                {Math.floor(durationSec / 60)}m {durationSec % 60}s
+              </p>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    case 'reaction':
+      return (
+        <div className="flex items-center gap-2">
+          <span className="text-2xl leading-none">{parsed.emoji}</span>
+          <span className={cn("text-[10px] font-bold", isOut ? "text-white/70" : "text-gray-400")}>Reaction</span>
+        </div>
+      );
+
+    case 'poll':
+      return (
+        <div className={cn(
+          "rounded-xl p-3 border min-w-[180px]",
+          isOut ? "bg-white/10 border-white/20" : "bg-gray-50 border-gray-200"
+        )}>
+          <p className={cn("text-xs font-black mb-2 flex items-center gap-1.5", tc)}>
+            📊 {parsed.question}
+          </p>
+          <div className="space-y-1">
+            {(parsed.options || []).map((opt, i) => (
+              <div key={i} className={cn(
+                "text-[11px] px-2.5 py-1.5 rounded-lg border",
+                isOut ? "border-white/20 text-white/80" : "border-gray-200 text-gray-600 bg-white"
+              )}>
+                {opt}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
     default:
       return (
         <div className={cn("text-sm leading-relaxed whitespace-pre-wrap break-words", tc)}>
@@ -383,7 +464,6 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ── localStorage key per account so each WA number has its own pinned list ──
   const PINNED_KEY = `wa_pinned_chats_${accountIndex}`;
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -395,7 +475,6 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
   const [sending, setSending] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // UI toggles
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showContactInfo, setShowContactInfo] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -406,16 +485,10 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
   const [mediaPreview, setMediaPreview] = useState<{ url: string; type: string; filename?: string } | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'unread'>('all');
 
-  // ── Pinned chats — loaded from localStorage on mount, saved on every change ──
   const [pinnedChats, setPinnedChats] = useState<string[]>(() => {
-    try {
-      return JSON.parse(localStorage.getItem(PINNED_KEY) || '[]');
-    } catch {
-      return [];
-    }
+    try { return JSON.parse(localStorage.getItem(PINNED_KEY) || '[]'); } catch { return []; }
   });
 
-  // Templates
   const [templates, setTemplates] = useState<WhatsAppTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<WhatsAppTemplate | null>(null);
   const [syncingTemplates, setSyncingTemplates] = useState(false);
@@ -425,7 +498,6 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
   const dotsRef = useRef<HTMLDivElement>(null);
   const chatMenuRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const h = (e: MouseEvent) => {
       if (emojiRef.current && !emojiRef.current.contains(e.target as Node)) setShowEmojiPicker(false);
@@ -446,15 +518,12 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
 
   const fetchConversations = useCallback(async () => {
     try {
-      // Pass account param so backend can filter by the right phone number ID
       const params = new URLSearchParams();
       if (searchTerm) params.set('search', searchTerm);
       params.set('account', String(accountIndex));
       const res = await api.get(`/whatsapp/conversations?${params.toString()}`);
       setConversations(res.data.conversations || []);
-    } catch { } finally {
-      setLoading(false);
-    }
+    } catch { } finally { setLoading(false); }
   }, [searchTerm, accountIndex]);
 
   useEffect(() => {
@@ -571,7 +640,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
         to: selectedContact.contact_number,
         message: text,
         contactName: selectedContact.contact_name,
-        account: accountIndex, // tells backend which phone number ID to use
+        account: accountIndex,
       });
     } catch { } finally { setSending(false); }
   };
@@ -598,15 +667,10 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
     try { await api.delete(`/whatsapp/message/${msgId}`); } catch {}
   };
 
-  // ── Toggle pin: persist to localStorage immediately ───────────────────────
   const togglePin = (phone: string) => {
     setPinnedChats(prev => {
-      const next = prev.includes(phone)
-        ? prev.filter(p => p !== phone)
-        : [...prev, phone];
-      try {
-        localStorage.setItem(PINNED_KEY, JSON.stringify(next));
-      } catch {}
+      const next = prev.includes(phone) ? prev.filter(p => p !== phone) : [...prev, phone];
+      try { localStorage.setItem(PINNED_KEY, JSON.stringify(next)); } catch {}
       return next;
     });
   };
@@ -654,7 +718,6 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
   const [uploadingFile, setUploadingFile] = useState(false);
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; msgId: number | string } | null>(null);
 
-  // ── Account label shown in the header ────────────────────────────────────
   const accountLabel = accountIndex === 0 ? 'WhatsApp' : 'WhatsApp 2';
   const accountColor = accountIndex === 0 ? 'text-blue-600' : 'text-green-600';
 
@@ -672,7 +735,6 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
               )}
             </div>
             <div className="flex items-center gap-0.5">
-              {/* Quick switch between accounts */}
               <button
                 onClick={() => navigate(accountIndex === 0 ? '/whatsapp2' : '/whatsapp')}
                 className="px-2 py-1 rounded-lg text-[9px] font-black uppercase border border-gray-200 text-gray-500 hover:bg-gray-100 transition-colors mr-1"
@@ -769,7 +831,6 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
                       conv.last_direction === 'inbound' ? "bg-blue-500" : "bg-gray-400")}>
                       {conv.contact_name?.[0]?.toUpperCase() || conv.contact_number.slice(-1)}
                     </div>
-                    {/* ⭐ pinned indicator dot */}
                     {isPinned && (
                       <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-yellow-400 rounded-full border-2 border-white" />
                     )}
