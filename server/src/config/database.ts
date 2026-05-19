@@ -189,6 +189,11 @@ export const initDb = async () => {
   await pool.query(`ALTER TABLE notes     ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE`);
   await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE`);
 
+  // Fix legacy lowercase roles
+  await pool.query(`UPDATE users SET role = 'EMPLOYEE' WHERE role = 'employee'`);
+  await pool.query(`UPDATE users SET role = 'ADMIN' WHERE role = 'admin'`);
+  await pool.query(`UPDATE users SET role = 'MANAGER' WHERE role = 'manager'`);
+
   console.log('✅ DB initialized successfully');
 };
 
