@@ -95,9 +95,18 @@ export const initDb = async () => {
       id SERIAL PRIMARY KEY,
       lead_id INTEGER REFERENCES leads(id),
       user_id INTEGER REFERENCES users(id),
+      agent_id INTEGER REFERENCES users(id),
+      caller VARCHAR(255),
+      start_time TIMESTAMP,
+      end_time TIMESTAMP,
+      duration_seconds INTEGER,
       duration INTEGER,
-      notes TEXT,
+      type VARCHAR(50),
+      campaign_id INTEGER,
       status VARCHAR(50),
+      feedback TEXT,
+      notes TEXT,
+      outcome VARCHAR(255),
       created_at TIMESTAMP DEFAULT NOW()
     )
   `);
@@ -188,6 +197,19 @@ export const initDb = async () => {
   await pool.query(`ALTER TABLE projects  ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE`);
   await pool.query(`ALTER TABLE notes     ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE`);
   await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE`);
+
+  // Fix calls table missing columns
+  await pool.query(`ALTER TABLE calls ADD COLUMN IF NOT EXISTS agent_id INTEGER REFERENCES users(id)`);
+  await pool.query(`ALTER TABLE calls ADD COLUMN IF NOT EXISTS caller VARCHAR(255)`);
+  await pool.query(`ALTER TABLE calls ADD COLUMN IF NOT EXISTS start_time TIMESTAMP`);
+  await pool.query(`ALTER TABLE calls ADD COLUMN IF NOT EXISTS end_time TIMESTAMP`);
+  await pool.query(`ALTER TABLE calls ADD COLUMN IF NOT EXISTS duration_seconds INTEGER`);
+  await pool.query(`ALTER TABLE calls ADD COLUMN IF NOT EXISTS type VARCHAR(50)`);
+  await pool.query(`ALTER TABLE calls ADD COLUMN IF NOT EXISTS campaign_id INTEGER`);
+  await pool.query(`ALTER TABLE calls ADD COLUMN IF NOT EXISTS feedback TEXT`);
+  await pool.query(`ALTER TABLE calls ADD COLUMN IF NOT EXISTS outcome VARCHAR(255)`);
+  // Sync agent_id from user_id for existing records
+  await pool.query(`UPDATE calls SET agent_id = user_id WHERE agent_id IS NULL AND user_id IS NOT NULL`);
 
   // Fix legacy lowercase roles
   await pool.query(`UPDATE users SET role = 'EMPLOYEE' WHERE role = 'employee'`);
