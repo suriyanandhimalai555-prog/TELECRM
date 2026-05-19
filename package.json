@@ -8,7 +8,7 @@
     "build": "vite build",
     "vercel-build": "npm run build",
     "postinstall": "npm run build",
-    "start": "tsx server.ts",
+    "start": "npx tsx server.ts",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit"
   },
