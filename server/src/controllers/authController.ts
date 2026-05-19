@@ -13,7 +13,7 @@ export const register = async (req: Request, res: Response) => {
   try {
     const userCountResult = await db.query('SELECT COUNT(*) as count FROM users');
     const userCount = parseInt(userCountResult.rows[0].count);
-    const finalRole = userCount === 0 ? 'master_admin' : (role || 'employee');
+    const finalRole = userCount === 0 ? 'master_admin' : (role || 'EMPLOYEE');
 
     const salt = bcrypt.genSaltSync(10);
     const hashedPassword = bcrypt.hashSync(password, salt);
