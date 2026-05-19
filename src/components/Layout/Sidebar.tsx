@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   LayoutDashboard, Users, CheckSquare, StickyNote, MessageSquare, 
   Target, BarChart3, Settings, ChevronLeft, ChevronRight,
-  Briefcase, Building2, UserCog, ChevronDown,
+  Briefcase, Building2, UserCog, ChevronDown, Phone,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { clsx, type ClassValue } from 'clsx';
@@ -41,6 +41,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     { name: 'Tasks',      path: '/tasks',     icon: CheckSquare,     roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
     { name: 'Projects',   path: '/projects',  icon: Briefcase,       roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
     { name: 'Notes',      path: '/notes',     icon: StickyNote,      roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
+    { name: 'Calls',      path: '/calls',     icon: Phone,           roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
     { name: 'WhatsApp',   path: '/whatsapp',  icon: MessageSquare,   roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'], isWA: true },
     { name: 'Campaigns',  path: '/campaigns', icon: Target,          roles: ['company_admin','ADMIN','MANAGER'] },
     { name: 'Reports',    path: '/reports',   icon: BarChart3,       roles: ['company_admin','ADMIN','MANAGER'] },
