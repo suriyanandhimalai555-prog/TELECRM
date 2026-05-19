@@ -20,7 +20,7 @@ export const getCalls = async (req: AuthRequest, res: Response) => {
     let queryParams: any[] = [];
 
     // Admin sees all calls, others see only their own
-    if (req.user.role !== 'ADMIN') {
+    if (!['ADMIN', 'master_admin', 'company_admin'].includes(req.user.role)) {
       whereClauses.push(`c.agent_id = $${queryParams.length + 1}`);
       queryParams.push(req.user.id);
     }

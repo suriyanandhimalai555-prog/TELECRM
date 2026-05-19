@@ -36,7 +36,7 @@ export const getLeads = async (req: AuthRequest, res: Response) => {
         OR l.source = 'WHATSAPP'
       )`);
       queryParams.push(req.user.id, req.user.id);
-    } else if (req.user.role === 'employee') {
+    } else if (req.user.role === 'EMPLOYEE') {
       whereClauses.push(`(
         l.owner_id = $${queryParams.length + 1}
         OR l.project_id IN (SELECT project_id FROM user_projects WHERE user_id = $${queryParams.length + 2})
@@ -153,6 +153,13 @@ export const updateLead = async (req: AuthRequest, res: Response) => {
 
 export const deleteLead = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
+  if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
+
+  // Only ADMIN and MANAGER can delete leads
+  if (req.user.role === 'EMPLOYEE') {
+    return res.status(403).json({ message: 'Forbidden: Employees cannot delete leads' });
+  }
+
   try {
     await db.query('DELETE FROM leads WHERE id = $1', [id]);
     res.json({ message: 'Lead deleted successfully' });
@@ -276,7 +283,7 @@ export const exportLeads = async (req: AuthRequest, res: Response) => {
     if (req.user.role === 'MANAGER') {
       whereClauses.push(`(l.owner_id = $${queryParams.length + 1} OR (u.reporting_to = $${queryParams.length + 2}) OR l.source = 'WHATSAPP')`);
       queryParams.push(req.user.id, req.user.id);
-    } else if (req.user.role === 'employee') {
+    } else if (req.user.role === 'EMPLOYEE') {
       whereClauses.push(`(l.owner_id = $${queryParams.length + 1} OR l.project_id IN (SELECT project_id FROM user_projects WHERE user_id = $${queryParams.length + 2}) OR l.source = 'WHATSAPP')`);
       queryParams.push(req.user.id, req.user.id);
     }
