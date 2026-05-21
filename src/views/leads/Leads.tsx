@@ -625,7 +625,7 @@ export default function Leads() {
                         <motion.button whileHover={{ scale: 1.2 }}
                           onClick={async () => {
                             const res = await api.get('/calls', { params: { lead_id: lead.id } });
-                            setHistoryPopup({ lead, calls: res.data });
+                            setHistoryPopup({ lead, calls: Array.isArray(res.data) ? res.data : (res.data?.calls || res.data?.data || []) });
                           }}
                           title="Call History"
                           className="p-1.5 rounded-lg transition-colors text-blue-400 hover:bg-blue-50">
