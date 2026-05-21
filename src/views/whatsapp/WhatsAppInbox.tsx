@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Search, MessageSquare, MoreVertical, Send, Check, CheckCheck,
-  Filter, User, Smile, Paperclip, Layout, RefreshCw, X,
+  Filter, User, Smile, Paperclip, Layout, RefreshCw, X, Mic, MicOff,
   Eye, FileText, Download, Image as ImageIcon, Music, MapPin,
   ExternalLink, Phone, Clock, Trash2, Archive,
   ZoomIn, Play, SortDesc, Inbox, Info,
@@ -735,6 +735,43 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/ogg; codecs=opus' });
+        const file = new File([audioBlob], 'voice_message.ogg', { type: 'audio/ogg' });
+        if (!selectedContact) return;
+        setUploadingFile(true);
+        try {
+          const fd = new FormData();
+          fd.append('file', file);
+          fd.append('to', selectedContact.contact_number);
+          fd.append('contactName', selectedContact.contact_name || selectedContact.contact_number);
+          fd.append('account', String(accountIndex));
+          await api.post('/whatsapp/send-media', fd);
+          fetchMessages(selectedContact.contact_number);
+        } catch(err) { console.error('Voice upload failed', err); }
+        finally { setUploadingFile(false); }
+        stream.getTracks().forEach(t => t.stop());
+      };
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch(err) { alert('Microphone access denied'); }
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+  };
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; msgId: number | string } | null>(null);
 
   const accountLabel = accountIndex === 0 ? 'WhatsApp' : 'WhatsApp 2';
@@ -992,6 +1029,10 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
                   <button onClick={() => fileInputRef.current?.click()} disabled={uploadingFile}
                     className="p-2 rounded-lg text-gray-400 hover:text-blue-600 transition-colors">
                     <Paperclip size={19} />
+                  </button>
+                  <button onClick={isRecording ? stopRecording : startRecording}
+                    className={cn("p-2 rounded-lg transition-colors", isRecording ? "text-red-500 bg-red-50 animate-pulse" : "text-gray-400 hover:text-red-500")}>
+                    {isRecording ? <MicOff size={19} /> : <Mic size={19} />}
                   </button>
                 </div>
                 <div className="flex-1 bg-gray-100 rounded-2xl overflow-hidden">
