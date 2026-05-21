@@ -1005,9 +1005,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
                       {showEmojiPicker && <EmojiPicker onSelect={e => setInput(prev => prev + e)} onClose={() => setShowEmojiPicker(false)} />}
                     </AnimatePresence>
                   </div>
-                  <button onClick={() => setShowTemplateModal(true)} className="p-2 text-gray-400 hover:text-blue-600 rounded-lg transition-colors">
-                    <Layout size={19} />
-                  </button>
+
                   <input ref={fileInputRef} type="file" className="hidden"
                     accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.txt"
                     onChange={async (e) => {
