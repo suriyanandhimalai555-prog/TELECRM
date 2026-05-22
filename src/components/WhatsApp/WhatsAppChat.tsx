@@ -512,7 +512,8 @@ export default function WhatsAppInbox() {
   const fetchConversations = useCallback(async () => {
     try {
       const res = await api.get(`/whatsapp/conversations${searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : ''}`);
-      setConversations(res.data.conversations || []);
+      const deleted = JSON.parse(localStorage.getItem('deleted_convos') || '[]');
+      setConversations((res.data.conversations || []).filter((c: Conversation) => !deleted.includes(c.contact_number)));
     } catch { } finally { setLoading(false); }
   }, [searchTerm]);
 
@@ -681,9 +682,10 @@ export default function WhatsAppInbox() {
 
   const handleDeleteAction = async (type: 'delete' | 'archive' | 'clear') => {
     if (!selectedContact) return;
+    const phone = selectedContact.contact_number;
     if (type === 'clear') {
       try {
-        const msgs = await api.get('/whatsapp/history/' + selectedContact.contact_number);
+        const msgs = await api.get('/whatsapp/history/' + phone);
         for (const m of msgs.data.messages || []) {
           await api.delete('/whatsapp/message/' + m.id);
         }
@@ -691,13 +693,17 @@ export default function WhatsAppInbox() {
       setMessages([]);
     } else {
       try {
-        const msgs = await api.get('/whatsapp/history/' + selectedContact.contact_number);
+        const msgs = await api.get('/whatsapp/history/' + phone);
         for (const m of msgs.data.messages || []) {
           await api.delete('/whatsapp/message/' + m.id);
         }
       } catch {}
-      setConversations(prev => prev.filter(c => c.contact_number !== selectedContact.contact_number));
+      setConversations(prev => prev.filter(c => c.contact_number !== phone));
       setSelectedContact(null);
+      // Store deleted contacts in localStorage to prevent re-appearing
+      const deleted = JSON.parse(localStorage.getItem('deleted_convos') || '[]');
+      deleted.push(phone);
+      localStorage.setItem('deleted_convos', JSON.stringify(deleted));
     }
     setDeleteModal(null);
   };
