@@ -52,6 +52,8 @@ type ParsedMessage =
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function parseMessage(text: string): ParsedMessage {
   if (!text) return { type: 'text', text: '' };
+  if (text === '📎 Media message (type not recorded)') return { type: 'text', text: '📎 Media (not recorded)' };
+  if (text === '[unsupported message]') return { type: 'text', text: '⚠️ Unsupported message' };
   if (text.startsWith('[image:')) return { type: 'image', mediaId: text.slice(7, -1) };
   if (text.startsWith('[document:')) {
     const inner = text.slice(10, -1).split(':');
@@ -88,6 +90,8 @@ function parseMessage(text: string): ParsedMessage {
 
 function previewMessage(text: string): string {
   if (!text) return '';
+  if (text === '📎 Media message (type not recorded)') return '📎 Media';
+  if (text === '[unsupported message]') return '⚠️ Unsupported';
   if (text.startsWith('[image:')) return '📷 Image';
   if (text.startsWith('[document:')) return '📄 Document';
   if (text.startsWith('[audio:')) return '🎵 Voice message';
