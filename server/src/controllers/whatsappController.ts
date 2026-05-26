@@ -578,7 +578,8 @@ export const handleWebhook = async (req: Request, res: Response) => {
               text = msg.button?.text || '[Button reply]';
               break;
             default:
-              text = `[${msg.type} message]`;
+              console.log(`[WA] Skipping unsupported message type: ${msg.type}`);
+              continue;
           }
 
           console.log(`[WA] 📩 INBOUND from ${from} (${name}): type=${msg.type} → phoneId=${receivingPhoneId}`);

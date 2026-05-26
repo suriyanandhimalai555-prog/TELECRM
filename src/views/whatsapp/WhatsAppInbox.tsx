@@ -541,7 +541,10 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
       if (searchTerm) params.set('search', searchTerm);
       params.set('account', String(accountIndex));
       const res = await api.get(`/whatsapp/conversations?${params.toString()}`);
-      setConversations(res.data.conversations || []);
+      const deleted = JSON.parse(localStorage.getItem('deleted_convos') || '[]');
+      setConversations((res.data.conversations || []).filter(
+        (c: any) => !deleted.includes(c.contact_number.replace(/[^0-9]/g, ''))
+      ));
     } catch { } finally { setLoading(false); }
   }, [searchTerm, accountIndex]);
 
@@ -670,13 +673,25 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
     setSelectedContact(null);
   };
 
-  const handleDeleteAction = (type: 'delete' | 'archive' | 'clear') => {
+  const handleDeleteAction = async (type: 'delete' | 'archive' | 'clear') => {
     if (!selectedContact) return;
+    const phone = selectedContact.contact_number.replace(/[^0-9]/g, '');
     if (type === 'clear') {
+      try {
+        await api.delete(`/whatsapp/conversation/${phone}`);
+      } catch {}
       setMessages([]);
     } else {
+      try {
+        await api.delete(`/whatsapp/conversation/${phone}`);
+      } catch {}
       setConversations(prev => prev.filter(c => c.contact_number !== selectedContact.contact_number));
       setSelectedContact(null);
+      const deleted = JSON.parse(localStorage.getItem('deleted_convos') || '[]');
+      if (!deleted.includes(phone)) {
+        deleted.push(phone);
+        localStorage.setItem('deleted_convos', JSON.stringify(deleted));
+      }
     }
     setDeleteModal(null);
   };
