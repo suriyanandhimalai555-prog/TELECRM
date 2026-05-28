@@ -15,6 +15,9 @@ const transporter = nodemailer.createTransport({
 });
 
 async function sendWelcomeEmail(email: string, name: string, password: string, role: string) {
+  console.log('[EMAIL] Attempting to send to:', email);
+  console.log('[EMAIL] SMTP_EMAIL:', process.env.SMTP_EMAIL);
+  console.log('[EMAIL] SMTP_PASSWORD exists:', !!process.env.SMTP_PASSWORD);
   try {
     await transporter.sendMail({
       from: `"AVG CRM" <${process.env.SMTP_EMAIL}>`,
