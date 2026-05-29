@@ -51,7 +51,7 @@ type ParsedMessage =
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 interface WhatsAppInboxProps {
-  accountIndex?: 0 | 1;
+  accountIndex?: 0 | 1 | 2;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -789,8 +789,8 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
   };
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; msgId: number | string } | null>(null);
 
-  const accountLabel = accountIndex === 0 ? 'WhatsApp' : 'WhatsApp 2';
-  const accountColor = accountIndex === 0 ? 'text-blue-600' : 'text-green-600';
+  const accountLabel = accountIndex === 0 ? 'WhatsApp' : accountIndex === 1 ? 'WhatsApp 2' : 'WhatsApp 3';
+  const accountColor = accountIndex === 0 ? 'text-blue-600' : accountIndex === 1 ? 'text-green-600' : 'text-purple-600';
 
   return (
     <div className="flex h-[calc(100vh-140px)] bg-white rounded-[2rem] shadow-2xl border border-gray-100 overflow-hidden">
