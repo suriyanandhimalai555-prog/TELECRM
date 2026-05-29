@@ -159,6 +159,16 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                             <span className="w-2 h-2 rounded-full bg-emerald-400 mr-2" />
                             WA Account 2
                           </NavLink>
+                          <NavLink
+                            to="/whatsapp3"
+                            className={({ isActive }) => cn(
+                              "flex items-center px-4 py-2 rounded-xl transition-all text-[9px] font-black uppercase tracking-widest mt-1",
+                              isActive ? "bg-green-100 text-green-700" : "text-gray-500 hover:bg-green-50 hover:text-green-600"
+                            )}
+                          >
+                            <span className="w-2 h-2 rounded-full bg-blue-400 mr-2" />
+                            WA Account 3
+                          </NavLink>
                         </motion.div>
                       )}
                     </AnimatePresence>

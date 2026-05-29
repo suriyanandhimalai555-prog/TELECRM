@@ -7,13 +7,20 @@ const PHONE_NUMBER_ID   = process.env.WHATSAPP_PHONE_NUMBER_ID   || '10231631975
 const PHONE_NUMBER_ID_2 = process.env.WHATSAPP_PHONE_NUMBER_ID_2 || ''; // ← add to .env
 const VERIFY_TOKEN      = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || 'avgcrm_webhook_2024';
 const WHATSAPP_TOKEN    = process.env.WHATSAPP_ACCESS_TOKEN || '';
+const WHATSAPP_TOKEN_3  = process.env.WA_ACCESS_TOKEN_3 || '';
 const WABA_ID           = process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || '27198788186399333';
+const WABA_ID_3         = process.env.WHATSAPP_BUSINESS_ACCOUNT_ID_3 || '964486646396502';
+const PHONE_NUMBER_ID_3 = process.env.WHATSAPP_PHONE_NUMBER_ID_3 || '';
 
 // ─── Helper: pick phone ID by account index ───────────────────────────────────
 function getPhoneId(account?: string | number): string {
-  return String(account) === '1' && PHONE_NUMBER_ID_2
-    ? PHONE_NUMBER_ID_2
-    : PHONE_NUMBER_ID;
+  if (String(account) === '2' && PHONE_NUMBER_ID_3) return PHONE_NUMBER_ID_3;
+  if (String(account) === '1' && PHONE_NUMBER_ID_2) return PHONE_NUMBER_ID_2;
+  return PHONE_NUMBER_ID;
+}
+function getToken(account?: string | number): string {
+  if (String(account) === '2' && WHATSAPP_TOKEN_3) return WHATSAPP_TOKEN_3;
+  return WHATSAPP_TOKEN;
 }
 
 // ─── Helper: normalize phone to last 10 digits for matching ─────────────────

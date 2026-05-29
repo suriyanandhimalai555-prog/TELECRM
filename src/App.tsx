@@ -71,6 +71,7 @@ export default function App() {
                 <Route path="campaigns" element={<BlockMasterAdmin><Campaigns /></BlockMasterAdmin>} />
                 <Route path="whatsapp" element={<BlockMasterAdmin><WhatsAppInbox accountIndex={0} /></BlockMasterAdmin>} />
                 <Route path="whatsapp2" element={<BlockMasterAdmin><WhatsAppInbox accountIndex={1} /></BlockMasterAdmin>} />
+                <Route path="whatsapp3" element={<BlockMasterAdmin><WhatsAppInbox accountIndex={2} /></BlockMasterAdmin>} />
               </Route>
             </Routes>
           </Router>
