@@ -57,9 +57,9 @@ async function getUserWACredentials(userId: number, account?: string | number) {
   );
   const u = rows[0];
   return {
-    token:   u?.whatsapp_token    || WHATSAPP_TOKEN,
+    token:   getToken(account) || u?.whatsapp_token || WHATSAPP_TOKEN,
     phoneId: getPhoneId(account) || u?.whatsapp_phone_id || PHONE_NUMBER_ID,
-    wabaId:  u?.whatsapp_waba_id  || WABA_ID,
+    wabaId:  String(account) === '2' ? WABA_ID_3 : u?.whatsapp_waba_id || WABA_ID,
   };
 }
 
