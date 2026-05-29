@@ -372,13 +372,16 @@ export const sendMessage = async (req: Request, res: Response) => {
 
 export const getHistory = async (req: Request, res: Response) => {
   const phone = req.params.phone.replace(/[^0-9]/g, '');
+  const { account } = req.query;
+  const phoneId = getPhoneId(account as string);
   try {
     const { rows } = await db.query(
       `SELECT * FROM whatsapp_messages
-       WHERE from_number = $1 OR to_number = $1
+       WHERE (from_number = $1 OR to_number = $1)
+       AND (to_number = $2 OR from_number = $2)
        ORDER BY timestamp ASC
        LIMIT 200`,
-      [phone]
+      [phone, phoneId]
     );
     res.json({ messages: rows });
   } catch (err) {

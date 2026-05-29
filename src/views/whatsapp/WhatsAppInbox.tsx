@@ -558,7 +558,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
 
   const fetchMessages = useCallback(async (phone: string) => {
     try {
-      const res = await api.get(`/whatsapp/history/${phone}`);
+      const res = await api.get(`/whatsapp/history/${phone}?account=${accountIndex}`);
       setMessages(res.data.messages || []);
     } catch { }
   }, []);
