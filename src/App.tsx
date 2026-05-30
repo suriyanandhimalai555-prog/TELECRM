@@ -42,7 +42,7 @@ const RequireRole: React.FC<{ roles: string[]; children: React.ReactNode }> = ({
   const { user, loading } = useAuth();
   if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>;
   if (!user) return <Navigate to="/login" />;
-  if (!roles.includes(user.role)) return <Navigate to="/" />;
+  if (!roles.includes(user.role)) return <Navigate to="/app" />;
   return <>{children}</>;
 };
 
@@ -50,7 +50,7 @@ const RequireRole: React.FC<{ roles: string[]; children: React.ReactNode }> = ({
 const BlockMasterAdmin: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
   if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>;
-  if (user?.role === 'master_admin') return <Navigate to="/" />;
+  if (user?.role === 'master_admin') return <Navigate to="/app" />;
   return <>{children}</>;
 };
 
@@ -100,13 +100,7 @@ export default function App() {
                 <Route path="custom-fields" element={<RequireRole roles={['company_admin','ADMIN']}><CustomFields /></RequireRole>} />
                 <Route path="roles" element={<RequireRole roles={['company_admin','ADMIN']}><RolePermissions /></RequireRole>} />
                 <Route path="fieldforce" element={<BlockMasterAdmin><FieldForce /></BlockMasterAdmin>} />
-                <Route path="team" element={<RequireRole roles={['company_admin','ADMIN','MANAGER']}><TeamManagement /></RequireRole>} />
-                <Route path="attendance" element={<BlockMasterAdmin><Attendance /></BlockMasterAdmin>} />
-                <Route path="reminders" element={<BlockMasterAdmin><Reminders /></BlockMasterAdmin>} />
-                <Route path="lead-scoring" element={<BlockMasterAdmin><LeadScoring /></BlockMasterAdmin>} />
-                <Route path="custom-fields" element={<RequireRole roles={['company_admin','ADMIN']}><CustomFields /></RequireRole>} />
-                <Route path="roles" element={<RequireRole roles={['company_admin','ADMIN']}><RolePermissions /></RequireRole>} />
-                <Route path="fieldforce" element={<BlockMasterAdmin><FieldForce /></BlockMasterAdmin>} />
+
               </Route>
             </Routes>
           </Router>

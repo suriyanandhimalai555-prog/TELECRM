@@ -50,24 +50,24 @@ export default function Login() {
         });
         setPledgeLoading(false);
         setShowPledge(false);
-        navigate('/');
+        navigate('/app');
       }, async () => {
         // If location denied, still check in without location
         await api.post('/attendance/checkin', { lat: null, lng: null });
         setPledgeLoading(false);
         setShowPledge(false);
-        navigate('/');
+        navigate('/app');
       });
     } catch {
       setPledgeLoading(false);
       setShowPledge(false);
-      navigate('/');
+      navigate('/app');
     }
   };
 
   const handlePledgeSkip = () => {
     setShowPledge(false);
-    navigate('/');
+    navigate('/app');
   };
 
   return (
