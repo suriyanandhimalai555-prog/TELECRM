@@ -20,6 +20,7 @@ import companyRoutes from './server/src/routes/companyRoutes';
 import userRoutes from './server/src/routes/userRoutes';
 import integrationRoutes from './server/src/routes/integrationRoutes';
 import attendanceRoutes from './server/src/routes/attendanceRoutes';
+import reminderRoutes from './server/src/routes/reminderRoutes';
 
 dotenv.config();
 
@@ -150,6 +151,7 @@ app.use('/api/companies', companyRoutes);
 app.use('/api/users',     userRoutes);
 app.use('/api/integrations', integrationRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/reminders', reminderRoutes);
 // ← REMOVED: callRoutes
 
 (async () => {

@@ -22,6 +22,7 @@ import Notifications from './views/notifications/Notifications';
 import Workflow from './views/workflow/Workflow';
 import AdminPanel from './views/admin/AdminPanel';
 import Attendance from './views/attendance/Attendance';
+import Reminders from './views/reminders/Reminders';
 import TeamManagement from './views/team/TeamManagement';
 import FieldForce from './views/fieldforce/FieldForce';
 import TeamManagement from './views/team/TeamManagement';
@@ -91,9 +92,11 @@ export default function App() {
                 <Route path="admin" element={<RequireRole roles={['company_admin','ADMIN']}><AdminPanel /></RequireRole>} />
                 <Route path="team" element={<RequireRole roles={['company_admin','ADMIN','MANAGER']}><TeamManagement /></RequireRole>} />
                 <Route path="attendance" element={<BlockMasterAdmin><Attendance /></BlockMasterAdmin>} />
+                <Route path="reminders" element={<BlockMasterAdmin><Reminders /></BlockMasterAdmin>} />
                 <Route path="fieldforce" element={<BlockMasterAdmin><FieldForce /></BlockMasterAdmin>} />
                 <Route path="team" element={<RequireRole roles={['company_admin','ADMIN','MANAGER']}><TeamManagement /></RequireRole>} />
                 <Route path="attendance" element={<BlockMasterAdmin><Attendance /></BlockMasterAdmin>} />
+                <Route path="reminders" element={<BlockMasterAdmin><Reminders /></BlockMasterAdmin>} />
                 <Route path="fieldforce" element={<BlockMasterAdmin><FieldForce /></BlockMasterAdmin>} />
               </Route>
             </Routes>
