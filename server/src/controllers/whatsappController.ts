@@ -566,8 +566,25 @@ export const handleWebhook = async (req: Request, res: Response) => {
             case 'reaction':
               text = `[reaction:${msg.reaction?.emoji || '👍'}:${msg.reaction?.message_id || ''}]`;
               break;
-            case 'interactive':
-              text = msg.interactive?.button_reply?.title || msg.interactive?.list_reply?.title || '[Interactive message]';
+            case 'interactive': {
+              const inter = msg.interactive;
+              if (inter?.type === 'button_reply') {
+                text = `Button: ${inter.button_reply?.title || ''}`;
+              } else if (inter?.type === 'list_reply') {
+                text = `Selected: ${inter.list_reply?.title || ''} - ${inter.list_reply?.description || ''}`;
+              } else if (inter?.type === 'button') {
+                const body = inter.body?.text || '';
+                const buttons = (inter.action?.buttons || []).map((b: any) => b.reply?.title).join(' | ');
+                text = `${body}${buttons ? ' [' + buttons + ']' : ''}`;
+              } else if (inter?.type === 'list') {
+                text = inter.body?.text || '[List message]';
+              } else if (inter?.nfm_reply) {
+                text = `Form reply: ${inter.nfm_reply?.response_json || '[Form submitted]'}`;
+              } else {
+                text = JSON.stringify(inter)?.slice(0, 200) || '[Interactive message]';
+              }
+              break;
+            }
               break;
             case 'contacts':
               text = `👤 Contact shared`;

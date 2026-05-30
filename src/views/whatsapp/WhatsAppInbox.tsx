@@ -47,7 +47,8 @@ type ParsedMessage =
   | { type: 'location'; lat: string; lng: string; name: string }
   | { type: 'call'; callType: string; duration: string }
   | { type: 'reaction'; emoji: string }
-  | { type: 'poll'; question: string; options: string[] };
+  | { type: 'poll'; question: string; options: string[] }
+  | { type: 'interactive'; text: string };
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 interface WhatsAppInboxProps {
@@ -90,6 +91,9 @@ function parseMessage(text: string): ParsedMessage {
     const inner = text.slice(6, -1); // e.g. "Question|Option1|Option2"
     const [question, ...options] = inner.split('|');
     return { type: 'poll', question: question || '', options };
+  }
+  if (text.startsWith('Button:') || text.startsWith('Selected:') || text.startsWith('Form reply:')) {
+    return { type: 'interactive', text };
   }
   return { type: 'text', text };
 }
@@ -265,6 +269,16 @@ function MessageContent({ parsed, isOut, onMediaClick }: {
     case 'sticker':
       return <img src={mediaUrl(parsed.mediaId)} alt="Sticker" className="w-20 h-20 object-contain"
         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />;
+    case 'interactive':
+      return (
+        <div className={cn("flex items-start gap-2", tc)}>
+          <span className="text-lg">🔘</span>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-0.5">Interactive</p>
+            <p className="text-xs font-semibold">{parsed.text}</p>
+          </div>
+        </div>
+      );
 
     case 'location': {
       const mapsUrl = `https://maps.google.com/?q=${parsed.lat},${parsed.lng}`;
