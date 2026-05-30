@@ -42,7 +42,7 @@ const RequireRole: React.FC<{ roles: string[]; children: React.ReactNode }> = ({
   const { user, loading } = useAuth();
   if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>;
   if (!user) return <Navigate to="/login" />;
-  if (!roles.includes(user.role)) return <Navigate to="/app" />;
+  if (!roles.map(r => r.toLowerCase()).includes(user.role?.toLowerCase())) return <Navigate to="/app" />;
   return <>{children}</>;
 };
 
