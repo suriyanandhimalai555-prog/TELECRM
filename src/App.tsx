@@ -21,6 +21,10 @@ import Integrations from './views/integrations/Integrations';
 import Notifications from './views/notifications/Notifications';
 import Workflow from './views/workflow/Workflow';
 import AdminPanel from './views/admin/AdminPanel';
+import TeamManagement from './views/team/TeamManagement';
+import FieldForce from './views/fieldforce/FieldForce';
+import TeamManagement from './views/team/TeamManagement';
+import FieldForce from './views/fieldforce/FieldForce';
 import CompaniesPage from './pages/CompaniesPage';
 import UsersPage from './pages/UsersPage';
 
@@ -84,6 +88,10 @@ export default function App() {
                 <Route path="notifications" element={<BlockMasterAdmin><Notifications /></BlockMasterAdmin>} />
                 <Route path="workflow" element={<BlockMasterAdmin><Workflow /></BlockMasterAdmin>} />
                 <Route path="admin" element={<RequireRole roles={['company_admin','ADMIN']}><AdminPanel /></RequireRole>} />
+                <Route path="team" element={<RequireRole roles={['company_admin','ADMIN','MANAGER']}><TeamManagement /></RequireRole>} />
+                <Route path="fieldforce" element={<BlockMasterAdmin><FieldForce /></BlockMasterAdmin>} />
+                <Route path="team" element={<RequireRole roles={['company_admin','ADMIN','MANAGER']}><TeamManagement /></RequireRole>} />
+                <Route path="fieldforce" element={<BlockMasterAdmin><FieldForce /></BlockMasterAdmin>} />
               </Route>
             </Routes>
           </Router>
