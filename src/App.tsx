@@ -22,12 +22,11 @@ import Notifications from './views/notifications/Notifications';
 import Workflow from './views/workflow/Workflow';
 import AdminPanel from './views/admin/AdminPanel';
 import Attendance from './views/attendance/Attendance';
+import Landing from './views/landing/Landing';
 import Reminders from './views/reminders/Reminders';
 import LeadScoring from './views/leadscoring/LeadScoring';
 import CustomFields from './views/customfields/CustomFields';
 import RolePermissions from './views/roles/RolePermissions';
-import TeamManagement from './views/team/TeamManagement';
-import FieldForce from './views/fieldforce/FieldForce';
 import TeamManagement from './views/team/TeamManagement';
 import FieldForce from './views/fieldforce/FieldForce';
 import CompaniesPage from './pages/CompaniesPage';
@@ -64,7 +63,8 @@ export default function App() {
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
+              <Route path="/" element={<Landing />} />
+              <Route path="/app" element={<PrivateRoute><Layout /></PrivateRoute>}>
                 <Route index element={<Dashboard />} />
                 <Route path="leads" element={<BlockMasterAdmin><Leads /></BlockMasterAdmin>} />
                 <Route path="reports" element={<Reports />} />
