@@ -7,7 +7,7 @@ export default function TeamManagement() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([api.get('/users'), api.get('/leads')])
+    Promise.all([api.get('/settings/users'), api.get('/leads')])
       .then(([usersRes, leadsRes]) => {
         setUsers(usersRes.data || []);
         setLeads(leadsRes.data || []);
