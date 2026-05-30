@@ -5,6 +5,7 @@ import {
   LayoutDashboard, Users, CheckSquare, StickyNote, MessageSquare, 
   Target, BarChart3, Settings, ChevronLeft, ChevronRight,
   Briefcase, Building2, UserCog, ChevronDown, Phone,
+  GitBranch, Contact, Plug, Bell, Workflow, Shield,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { clsx, type ClassValue } from 'clsx';
@@ -45,7 +46,13 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     { name: 'WhatsApp',   path: '/whatsapp',  icon: MessageSquare,   roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'], isWA: true },
     { name: 'Campaigns',  path: '/campaigns', icon: Target,          roles: ['company_admin','ADMIN','MANAGER'] },
     { name: 'Reports',    path: '/reports',   icon: BarChart3,       roles: ['company_admin','ADMIN','MANAGER'] },
-    { name: 'Settings',   path: '/settings',  icon: Settings,        roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
+    { name: 'Pipeline',     path: '/pipeline',      icon: GitBranch,  roles: ['company_admin','ADMIN','MANAGER'] },
+    { name: 'Contacts',     path: '/contacts',      icon: Contact,    roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
+    { name: 'Workflow',     path: '/workflow',      icon: Workflow,   roles: ['company_admin','ADMIN'] },
+    { name: 'Integrations', path: '/integrations',  icon: Plug,       roles: ['company_admin','ADMIN'] },
+    { name: 'Notifications',path: '/notifications', icon: Bell,       roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
+    { name: 'Admin',        path: '/admin',         icon: Shield,     roles: ['company_admin','ADMIN'] },
+    { name: 'Settings',     path: '/settings',      icon: Settings,   roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
   ];
 
   const isMasterAdmin = user?.role === 'master_admin';

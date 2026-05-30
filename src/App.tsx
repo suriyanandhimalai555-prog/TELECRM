@@ -15,6 +15,12 @@ import Projects from './views/projects/Projects';
 import Reports from './views/reports/Reports';
 import CallHistory from './views/calls/CallHistory';
 import Settings from './views/settings/Settings';
+import Pipeline from './views/pipeline/Pipeline';
+import Contacts from './views/contacts/Contacts';
+import Integrations from './views/integrations/Integrations';
+import Notifications from './views/notifications/Notifications';
+import Workflow from './views/workflow/Workflow';
+import AdminPanel from './views/admin/AdminPanel';
 import CompaniesPage from './pages/CompaniesPage';
 import UsersPage from './pages/UsersPage';
 
@@ -72,6 +78,12 @@ export default function App() {
                 <Route path="whatsapp" element={<BlockMasterAdmin><WhatsAppInbox accountIndex={0} /></BlockMasterAdmin>} />
                 <Route path="whatsapp2" element={<BlockMasterAdmin><WhatsAppInbox accountIndex={1} /></BlockMasterAdmin>} />
                 <Route path="whatsapp3" element={<BlockMasterAdmin><WhatsAppInbox accountIndex={2} /></BlockMasterAdmin>} />
+                <Route path="pipeline" element={<BlockMasterAdmin><Pipeline /></BlockMasterAdmin>} />
+                <Route path="contacts" element={<BlockMasterAdmin><Contacts /></BlockMasterAdmin>} />
+                <Route path="integrations" element={<BlockMasterAdmin><Integrations /></BlockMasterAdmin>} />
+                <Route path="notifications" element={<BlockMasterAdmin><Notifications /></BlockMasterAdmin>} />
+                <Route path="workflow" element={<BlockMasterAdmin><Workflow /></BlockMasterAdmin>} />
+                <Route path="admin" element={<RequireRole roles={['company_admin','ADMIN']}><AdminPanel /></RequireRole>} />
               </Route>
             </Routes>
           </Router>
