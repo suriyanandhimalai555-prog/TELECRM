@@ -821,7 +821,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
             </div>
             <div className="flex items-center gap-0.5">
               <button
-                onClick={() => navigate(accountIndex === 0 ? '/whatsapp2' : '/whatsapp')}
+                onClick={() => navigate(accountIndex === 0 ? '/app/whatsapp2' : '/app/whatsapp')}
                 className="px-2 py-1 rounded-lg text-[9px] font-black uppercase border border-gray-200 text-gray-500 hover:bg-gray-100 transition-colors mr-1"
                 title={accountIndex === 0 ? 'Switch to WhatsApp 2' : 'Switch to WhatsApp 1'}
               >
