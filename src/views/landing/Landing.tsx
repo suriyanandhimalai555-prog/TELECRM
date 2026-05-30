@@ -45,13 +45,10 @@ export default function Landing() {
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-white shadow-md" : "bg-white/80 backdrop-blur-md"} border-b border-gray-100`}>
         <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
           <a href="#" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-black text-sm">A</span>
-            </div>
-            <span className="text-xl font-black tracking-tight">AVG<span className="text-blue-600">CRM</span></span>
+            <img src="/logo.png" alt="AVG CRM" className="h-10 w-auto" />
           </a>
           <div className="hidden md:flex items-center gap-8">
-            {["Features", "Industries", "Pricing"].map(link => (
+            {["Features", "Industries", ].map(link => (
               <a key={link} href={`#${link.toLowerCase()}`} className="text-sm font-semibold text-gray-500 hover:text-blue-600 transition-colors">{link}</a>
             ))}
           </div>
@@ -154,21 +151,6 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="py-14 bg-blue-600">
-        <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-white">
-          {[
-            { value: "1000+", label: "Companies" },
-            { value: "50,000+", label: "Active Users" },
-            { value: "3", label: "WhatsApp Accounts" },
-            { value: "30+", label: "Integrations" },
-          ].map(s => (
-            <div key={s.label}>
-              <p className="text-4xl font-black">{s.value}</p>
-              <p className="text-xs font-bold uppercase tracking-widest text-blue-200 mt-1">{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
 
       <section id="features" className="py-24 bg-white">
         <div className="max-w-6xl mx-auto px-6">
@@ -263,36 +245,6 @@ export default function Landing() {
         </div>
       </section>
 
-      <section id="pricing" className="py-24 bg-gray-50">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-14">
-            <span className="text-xs font-black uppercase tracking-widest text-blue-500 mb-2 block">Pricing</span>
-            <h2 className="text-4xl font-black text-gray-900 mb-4">Simple, Affordable Pricing</h2>
-            <p className="text-gray-400">No upfront payment. Monthly subscription. Cancel anytime.</p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6 items-start">
-            {plans.map(p => (
-              <div key={p.plan} className={`rounded-2xl p-7 relative ${p.highlight ? "bg-blue-600 text-white shadow-2xl shadow-blue-200 scale-105" : "bg-white border border-gray-100 shadow-sm"}`}>
-                {p.highlight && <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-yellow-400 text-gray-900 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow">Most Popular</span>}
-                <p className={`text-xs font-black uppercase tracking-widest mb-2 ${p.highlight ? "text-blue-200" : "text-gray-400"}`}>{p.plan}</p>
-                <p className={`text-4xl font-black mb-1 ${p.highlight ? "text-white" : "text-gray-900"}`}>{p.price}</p>
-                <p className={`text-xs mb-6 ${p.highlight ? "text-blue-200" : "text-gray-400"}`}>{p.per || "talk to us"}</p>
-                <ul className="space-y-2.5 mb-7">
-                  {p.features.map(f => (
-                    <li key={f} className="flex items-center gap-2.5">
-                      <span className={`text-sm ${p.highlight ? "text-blue-200" : "text-green-500"}`}>✓</span>
-                      <span className={`text-xs ${p.highlight ? "text-blue-100" : "text-gray-600"}`}>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <button onClick={() => navigate("/login")} className={`w-full py-3 font-black text-xs uppercase tracking-widest rounded-xl transition-all ${p.highlight ? "bg-white text-blue-600 hover:bg-blue-50" : "bg-blue-600 text-white hover:bg-blue-700"}`}>
-                  Get Started →
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       <section className="py-24 bg-blue-600 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500 rounded-full blur-3xl opacity-50" />
@@ -320,7 +272,7 @@ export default function Landing() {
             {[
               { heading: "Features", links: ["Lead Management", "WhatsApp CRM", "Call Management", "Field Force Tracking", "Workflow Automation"] },
               { heading: "Industries", links: ["Real Estate", "Education", "Financial Services", "B2B Sales", "Healthcare"] },
-              { heading: "Company", links: ["About Us", "Pricing", "Support", "Privacy Policy", "Terms of Service"] },
+              { heading: "Company", links: ["About Us", , "Support", "Privacy Policy", "Terms of Service"] },
             ].map(col => (
               <div key={col.heading}>
                 <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">{col.heading}</p>
