@@ -267,7 +267,7 @@ export default function Dashboard() {
               <History className="mr-3 text-aura-red" size={18} /> Extraction Logs
             </h3>
             <button 
-              onClick={() => navigate('/calls')}
+              onClick={() => navigate('/app/calls')}
               className="text-[9px] font-black text-aura-red uppercase hover:underline tracking-widest"
             >
               Full Access View

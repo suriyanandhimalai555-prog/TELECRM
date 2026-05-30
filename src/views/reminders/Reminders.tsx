@@ -57,7 +57,7 @@ export default function Reminders() {
                   <p className="text-[10px] text-red-500 font-bold mt-1">📅 {formatDate(r.next_followup)}</p>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => navigate(`/leads?id=${r.id}`)}
+                  <button onClick={() => navigate(`/app/leads?id=${r.id}`)}
                     className="px-3 py-1.5 bg-blue-500 text-white text-[10px] font-black uppercase rounded-lg hover:bg-blue-600">
                     View Lead
                   </button>
@@ -108,7 +108,7 @@ export default function Reminders() {
                       </p>
                     </td>
                     <td className="py-3">
-                      <button onClick={() => navigate(`/leads?id=${r.id}`)}
+                      <button onClick={() => navigate(`/app/leads?id=${r.id}`)}
                         className="px-3 py-1.5 bg-blue-500 text-white text-[10px] font-black uppercase rounded-lg hover:bg-blue-600">
                         View
                       </button>
