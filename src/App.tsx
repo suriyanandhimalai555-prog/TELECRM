@@ -23,6 +23,9 @@ import Workflow from './views/workflow/Workflow';
 import AdminPanel from './views/admin/AdminPanel';
 import Attendance from './views/attendance/Attendance';
 import Reminders from './views/reminders/Reminders';
+import LeadScoring from './views/leadscoring/LeadScoring';
+import CustomFields from './views/customfields/CustomFields';
+import RolePermissions from './views/roles/RolePermissions';
 import TeamManagement from './views/team/TeamManagement';
 import FieldForce from './views/fieldforce/FieldForce';
 import TeamManagement from './views/team/TeamManagement';
@@ -93,10 +96,16 @@ export default function App() {
                 <Route path="team" element={<RequireRole roles={['company_admin','ADMIN','MANAGER']}><TeamManagement /></RequireRole>} />
                 <Route path="attendance" element={<BlockMasterAdmin><Attendance /></BlockMasterAdmin>} />
                 <Route path="reminders" element={<BlockMasterAdmin><Reminders /></BlockMasterAdmin>} />
+                <Route path="lead-scoring" element={<BlockMasterAdmin><LeadScoring /></BlockMasterAdmin>} />
+                <Route path="custom-fields" element={<RequireRole roles={['company_admin','ADMIN']}><CustomFields /></RequireRole>} />
+                <Route path="roles" element={<RequireRole roles={['company_admin','ADMIN']}><RolePermissions /></RequireRole>} />
                 <Route path="fieldforce" element={<BlockMasterAdmin><FieldForce /></BlockMasterAdmin>} />
                 <Route path="team" element={<RequireRole roles={['company_admin','ADMIN','MANAGER']}><TeamManagement /></RequireRole>} />
                 <Route path="attendance" element={<BlockMasterAdmin><Attendance /></BlockMasterAdmin>} />
                 <Route path="reminders" element={<BlockMasterAdmin><Reminders /></BlockMasterAdmin>} />
+                <Route path="lead-scoring" element={<BlockMasterAdmin><LeadScoring /></BlockMasterAdmin>} />
+                <Route path="custom-fields" element={<RequireRole roles={['company_admin','ADMIN']}><CustomFields /></RequireRole>} />
+                <Route path="roles" element={<RequireRole roles={['company_admin','ADMIN']}><RolePermissions /></RequireRole>} />
                 <Route path="fieldforce" element={<BlockMasterAdmin><FieldForce /></BlockMasterAdmin>} />
               </Route>
             </Routes>

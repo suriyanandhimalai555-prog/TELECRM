@@ -21,6 +21,8 @@ import userRoutes from './server/src/routes/userRoutes';
 import integrationRoutes from './server/src/routes/integrationRoutes';
 import attendanceRoutes from './server/src/routes/attendanceRoutes';
 import reminderRoutes from './server/src/routes/reminderRoutes';
+import leadScoringRoutes from './server/src/routes/leadScoringRoutes';
+import customFieldRoutes from './server/src/routes/customFieldRoutes';
 
 dotenv.config();
 
@@ -152,6 +154,8 @@ app.use('/api/users',     userRoutes);
 app.use('/api/integrations', integrationRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/reminders', reminderRoutes);
+app.use('/api/lead-scoring', leadScoringRoutes);
+app.use('/api/custom-fields', customFieldRoutes);
 // ← REMOVED: callRoutes
 
 (async () => {
