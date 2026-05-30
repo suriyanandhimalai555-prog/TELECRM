@@ -131,4 +131,51 @@ router.post('/workflow/auto-assign', authenticate, async (req, res) => {
   }
 });
 
+// Google Ads webhook
+router.post('/google/webhook', async (req, res) => {
+  try {
+    const { user_column_data, campaign_id, campaign_name, form_id } = req.body;
+    const fields: any = {};
+    if (Array.isArray(user_column_data)) {
+      user_column_data.forEach((f: any) => { fields[f.column_id] = f.string_value; });
+    }
+    const name = fields['FULL_NAME'] || fields['name'] || 'Google Lead';
+    const mobile = fields['PHONE_NUMBER'] || fields['phone'] || '';
+    const email = fields['EMAIL'] || fields['email'] || '';
+    await db.query(
+      `INSERT INTO leads (contact_name, mobile, email, source, company_id, stage)
+       SELECT $1,$2,$3,'Google Ads', id, 'New Lead' FROM companies LIMIT 1`,
+      [name, mobile, email]
+    );
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Email config save
+router.post('/email-config', async (req, res) => {
+  try {
+    const { imap_host, imap_user, imap_pass, imap_port } = req.body;
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS email_config (
+        id SERIAL PRIMARY KEY,
+        imap_host VARCHAR(255),
+        imap_user VARCHAR(255),
+        imap_pass VARCHAR(255),
+        imap_port VARCHAR(10),
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    await db.query('DELETE FROM email_config');
+    await db.query(
+      'INSERT INTO email_config (imap_host, imap_user, imap_pass, imap_port) VALUES ($1,$2,$3,$4)',
+      [imap_host, imap_user, imap_pass, imap_port]
+    );
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
