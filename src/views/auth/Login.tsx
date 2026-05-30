@@ -20,6 +20,15 @@ export default function Login() {
     try {
       const res = await api.post('/auth/login', { email, password });
       login(res.data.token, res.data.user);
+      // Auto check-in with location on login
+      try {
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+          await api.post('/attendance/checkin', {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+          });
+        });
+      } catch {}
       navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to login');

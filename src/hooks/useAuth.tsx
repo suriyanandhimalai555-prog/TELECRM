@@ -41,7 +41,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(user);
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    // Auto check-out on logout
+    try {
+      await api.post('/attendance/checkout');
+    } catch {}
     localStorage.removeItem('token');
     setUser(null);
   }, []);
