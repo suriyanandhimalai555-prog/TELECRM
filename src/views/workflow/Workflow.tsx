@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import api from '../../lib/api';
+import api from '../../services/api';
 
 export default function Workflow() {
   const [assigning, setAssigning] = useState(false);

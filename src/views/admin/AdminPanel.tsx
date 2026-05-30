@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../../lib/api';
+import api from '../../services/api';
 
 export default function AdminPanel() {
   const [stats, setStats] = useState<any>({});
