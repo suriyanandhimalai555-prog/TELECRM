@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Users, CheckSquare, StickyNote, MessageSquare, 
   Target, BarChart3, Settings, ChevronLeft, ChevronRight,
   Briefcase, Building2, UserCog, ChevronDown, Phone,
-  GitBranch, Contact, Plug, Bell, Workflow, Shield, MapPin,
+  GitBranch, Contact, Plug, Bell, Workflow, Shield, MapPin, Clock,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { clsx, type ClassValue } from 'clsx';
