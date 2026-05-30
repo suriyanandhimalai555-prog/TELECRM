@@ -2,6 +2,22 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 
+function scoreLead(lead: any): number {
+  let score = 0;
+  if (lead.email && lead.email !== '') score += 15;
+  if (lead.mobile || lead.whatsapp) score += 15;
+  if (lead.stage === 'WON') score += 40;
+  else if (lead.stage === 'NEGOTIATION') score += 30;
+  else if (lead.stage === 'PROPOSAL') score += 25;
+  else if (lead.stage === 'QUALIFIED') score += 20;
+  else if (lead.stage === 'CONTACTED') score += 10;
+  else if (lead.stage === 'NEW') score += 5;
+  if (lead.next_followup) score += 10;
+  if (lead.revenue && lead.revenue > 0) score += 10;
+  if (lead.source === 'FACEBOOK' || lead.source === 'WEBSITE') score += 10;
+  return Math.min(score, 100);
+}
+
 export default function LeadScoring() {
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -9,7 +25,12 @@ export default function LeadScoring() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    api.get("/lead-scoring/scored").then(r => setLeads(r.data.leads || [])).finally(() => setLoading(false));
+    api.get("/leads").then(r => {
+      const raw = r.data || [];
+      const scored = raw.map((l: any) => ({ ...l, score: scoreLead(l) }))
+        .sort((a: any, b: any) => b.score - a.score);
+      setLeads(scored);
+    }).finally(() => setLoading(false));
   }, []);
 
   const getScoreColor = (score: number) => {
@@ -28,6 +49,8 @@ export default function LeadScoring() {
     l.contact_name?.toLowerCase().includes(search.toLowerCase()) ||
     l.mobile?.includes(search)
   );
+
+  if (loading) return <div className="flex items-center justify-center h-64 text-gray-400">Loading...</div>;
 
   return (
     <div className="p-6">
@@ -56,16 +79,17 @@ export default function LeadScoring() {
             className="text-[11px] border border-gray-200 rounded-xl px-3 py-2 focus:outline-none w-48" />
         </div>
         <div className="space-y-2">
+          {filtered.length === 0 && <p className="text-center text-gray-400 text-sm py-8">No leads found</p>}
           {filtered.map(lead => (
             <div key={lead.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer"
-              onClick={() => navigate("/leads")}>
+              onClick={() => navigate("/app/leads")}>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 font-black text-sm flex items-center justify-center">
                   {lead.contact_name?.charAt(0)?.toUpperCase()}
                 </div>
                 <div>
                   <p className="text-[11px] font-black text-gray-900">{lead.contact_name}</p>
-                  <p className="text-[9px] text-gray-400">{lead.mobile} • {lead.stage}</p>
+                  <p className="text-[9px] text-gray-400">{lead.mobile} · {lead.stage} · {lead.source}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
