@@ -53,6 +53,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     { name: 'Notifications',path: '/notifications', icon: Bell,       roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
     { name: 'Admin',        path: '/admin',         icon: Shield,     roles: ['company_admin','ADMIN'] },
     { name: 'Team',          path: '/team',          icon: Users,      roles: ['company_admin','ADMIN','MANAGER'] },
+    { name: 'Attendance',    path: '/attendance',    icon: Clock,      roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
     { name: 'Field Force',   path: '/fieldforce',    icon: MapPin,     roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
     { name: 'Settings',     path: '/settings',      icon: Settings,   roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
   ];

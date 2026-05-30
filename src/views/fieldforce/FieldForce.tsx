@@ -8,7 +8,7 @@ export default function FieldForce() {
   const [checkedIn, setCheckedIn] = useState(false);
 
   useEffect(() => {
-    api.get("/users").then(r => setUsers(r.data || [])).catch(() => {});
+    api.get("/users").then(r => setUsers(Array.isArray(r.data) ? r.data : [])).catch(() => {});
     const saved = localStorage.getItem("field_checkin");
     if (saved) { setLocation(JSON.parse(saved)); setCheckedIn(true); }
   }, []);

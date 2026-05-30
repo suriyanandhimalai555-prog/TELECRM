@@ -19,6 +19,7 @@ import whatsappRoutes from './server/src/routes/whatsappRoutes';
 import companyRoutes from './server/src/routes/companyRoutes';
 import userRoutes from './server/src/routes/userRoutes';
 import integrationRoutes from './server/src/routes/integrationRoutes';
+import attendanceRoutes from './server/src/routes/attendanceRoutes';
 
 dotenv.config();
 
@@ -148,6 +149,7 @@ app.use('/api/whatsapp',  whatsappRoutes);
 app.use('/api/companies', companyRoutes);
 app.use('/api/users',     userRoutes);
 app.use('/api/integrations', integrationRoutes);
+app.use('/api/attendance', attendanceRoutes);
 // ← REMOVED: callRoutes
 
 (async () => {

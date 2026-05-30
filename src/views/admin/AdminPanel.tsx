@@ -7,9 +7,9 @@ export default function AdminPanel() {
 
   useEffect(() => {
     Promise.all([
-      api.get('/leads'),
-      api.get('/tasks'),
-      api.get('/users'),
+      api.get('/leads').catch(() => ({ data: [] })),
+      api.get('/tasks').catch(() => ({ data: [] })),
+      api.get('/users').catch(() => ({ data: [] })),
     ]).then(([leadsRes, tasksRes, usersRes]) => {
       const leads = leadsRes.data || [];
       const tasks = tasksRes.data || [];
