@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import db from '../config/database';
-import { authenticate, requireAdmin } from '../middleware/auth';
+import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
@@ -95,7 +95,7 @@ router.post('/webhook/lead', async (req, res) => {
 });
 
 // ─── Get webhook URL for this CRM ─────────────────────────────────────────────
-router.get('/webhook/info', authenticate, requireAdmin, (req, res) => {
+router.get('/webhook/info', authenticate, (req, res) => {
   const baseUrl = process.env.APP_URL || 'https://telecrm-copy-production.up.railway.app';
   res.json({
     webhook_url: `${baseUrl}/api/integrations/webhook/lead`,
@@ -107,7 +107,7 @@ router.get('/webhook/info', authenticate, requireAdmin, (req, res) => {
 });
 
 // ─── Workflow automation — auto assign leads ───────────────────────────────────
-router.post('/workflow/auto-assign', authenticate, requireAdmin, async (req, res) => {
+router.post('/workflow/auto-assign', authenticate, async (req, res) => {
   try {
     // Get all unassigned leads
     const { rows: leads } = await db.query(
