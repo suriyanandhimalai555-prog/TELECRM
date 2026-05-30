@@ -42,26 +42,21 @@ export default function Login() {
 
   const handlePledgeConfirm = async () => {
     setPledgeLoading(true);
-    try {
-      navigator.geolocation.getCurrentPosition(async (pos) => {
-        await api.post('/attendance/checkin', {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-        });
-        setPledgeLoading(false);
-        setShowPledge(false);
-        navigate('/app');
-      }, async () => {
-        // If location denied, still check in without location
-        await api.post('/attendance/checkin', { lat: null, lng: null });
-        setPledgeLoading(false);
-        setShowPledge(false);
-        navigate('/app');
-      });
-    } catch {
+    const finish = () => {
       setPledgeLoading(false);
       setShowPledge(false);
       navigate('/app');
+    };
+    try {
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        try { await api.post('/attendance/checkin', { lat: pos.coords.latitude, lng: pos.coords.longitude }); } catch {}
+        finish();
+      }, async () => {
+        try { await api.post('/attendance/checkin', { lat: null, lng: null }); } catch {}
+        finish();
+      });
+    } catch {
+      finish();
     }
   };
 
