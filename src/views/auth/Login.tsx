@@ -9,6 +9,9 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPledge, setShowPledge] = useState(false);
+  const [pledgeData, setPledgeData] = useState<any>(null);
+  const [pledgeLoading, setPledgeLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -16,20 +19,20 @@ export default function Login() {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
       const res = await api.post('/auth/login', { email, password });
       login(res.data.token, res.data.user);
-      // Auto check-in with location on login
+      // Send login notification to admin
       try {
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-          await api.post('/attendance/checkin', {
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-          });
+        await api.post('/attendance/login-notify', {
+          name: res.data.user.name,
+          role: res.data.user.role,
+          email: res.data.user.email,
         });
       } catch {}
-      navigate('/');
+      // Show pledge popup
+      setPledgeData(res.data.user);
+      setShowPledge(true);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to login');
     } finally {
@@ -37,89 +40,110 @@ export default function Login() {
     }
   };
 
+  const handlePledgeConfirm = async () => {
+    setPledgeLoading(true);
+    try {
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        await api.post('/attendance/checkin', {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+        setPledgeLoading(false);
+        setShowPledge(false);
+        navigate('/');
+      }, async () => {
+        // If location denied, still check in without location
+        await api.post('/attendance/checkin', { lat: null, lng: null });
+        setPledgeLoading(false);
+        setShowPledge(false);
+        navigate('/');
+      });
+    } catch {
+      setPledgeLoading(false);
+      setShowPledge(false);
+      navigate('/');
+    }
+  };
+
+  const handlePledgeSkip = () => {
+    setShowPledge(false);
+    navigate('/');
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-        <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-aura-red/10 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-aura-red/10 blur-[120px] rounded-full" />
-      </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-        <div className="flex justify-center">
-          <div className="w-16 h-16 bg-aura-red rounded-2xl flex items-center justify-center text-white shadow-lg shadow-aura-red/20">
-            <LogIn size={32} />
-          </div>
-        </div>
-        <h2 className="mt-6 text-center text-3xl font-black text-gray-900 uppercase tracking-tighter">
-          AVG<span className="text-aura-red">CRM</span> <span className="text-xs align-top bg-aura-red text-white px-1 ml-1 rounded">PRO</span>
-        </h2>
-        <p className="mt-2 text-center text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">
-          Central Command Interface
-        </p>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-        <div className="bg-white py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-gray-100">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {error && (
-              <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
-                <p className="text-xs font-bold text-blue-700 uppercase tracking-wider">{error}</p>
+      {/* Pledge Modal */}
+      {showPledge && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">🤝</span>
               </div>
-            )}
-            
-            <div>
-              <label htmlFor="email" className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">
-                Authorized Email
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-aura-red focus:border-transparent text-sm font-bold transition-all"
-                  placeholder="name@avgcrm.com"
-                />
-              </div>
+              <h2 className="text-xl font-black uppercase tracking-tighter text-gray-900">Attendance Pledge</h2>
+              <p className="text-gray-400 text-sm mt-1">Welcome, {pledgeData?.name}!</p>
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">
-                Access Credentials
-              </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-aura-red focus:border-transparent text-sm font-bold transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
+            <div className="bg-blue-50 rounded-xl p-4 mb-6 border border-blue-100">
+              <p className="text-[12px] text-blue-800 font-semibold text-center leading-relaxed">
+                "I, <strong>{pledgeData?.name}</strong>, pledge to be productive, honest, and committed in my work today. I confirm that I am marking my attendance for{' '}
+                <strong>{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}</strong>."
+              </p>
             </div>
 
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-xs font-black text-white bg-aura-red hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-aura-red disabled:opacity-50 uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98]"
-              >
-                {loading ? 'Validating Access...' : 'Initialize Session'}
+            <div className="text-[10px] text-gray-400 text-center mb-6">
+              📍 Your location will be recorded for attendance tracking
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={handlePledgeSkip}
+                className="flex-1 py-3 border border-gray-200 text-gray-500 font-black uppercase tracking-widest text-[10px] rounded-xl hover:bg-gray-50">
+                Skip
+              </button>
+              <button onClick={handlePledgeConfirm} disabled={pledgeLoading}
+                className="flex-2 flex-grow-[2] py-3 bg-blue-500 text-white font-black uppercase tracking-widest text-[10px] rounded-xl hover:bg-blue-600 disabled:opacity-50">
+                {pledgeLoading ? "Marking Attendance..." : "I Agree & Check In ✓"}
               </button>
             </div>
-          </form>
-
-          <div className="mt-6 pt-6 border-t border-gray-100 text-center">
-            <Link to="/register" className="text-[10px] font-black text-gray-400 hover:text-aura-red uppercase tracking-widest transition-colors">
-              Request New Credentials
-            </Link>
           </div>
+        </div>
+      )}
+
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="flex justify-center mb-6">
+          <img src="/logo.png" alt="AVG CRM" className="h-16 w-auto" />
+        </div>
+        <h2 className="text-center text-3xl font-black uppercase tracking-tighter text-gray-900">Sign in</h2>
+        <p className="mt-2 text-center text-sm text-gray-500">AVG CRM — Sales & Lead Management</p>
+      </div>
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-4 shadow-sm rounded-2xl sm:px-10 border border-gray-100">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl text-sm font-medium">
+                {error}
+              </div>
+            )}
+            <div>
+              <label className="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-2">Email</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-400"
+                placeholder="you@example.com" />
+            </div>
+            <div>
+              <label className="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-2">Password</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-400"
+                placeholder="••••••••" />
+            </div>
+            <button type="submit" disabled={loading}
+              className="w-full flex justify-center items-center gap-2 py-3 px-4 bg-blue-500 hover:bg-blue-600 text-white font-black uppercase tracking-widest text-[11px] rounded-xl disabled:opacity-50 transition-colors">
+              <LogIn size={16} />
+              {loading ? 'Signing in...' : 'Sign In'}
+            </button>
+          </form>
         </div>
       </div>
     </div>

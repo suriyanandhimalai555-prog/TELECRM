@@ -93,4 +93,44 @@ router.get('/all', authenticate, async (req: any, res) => {
   }
 });
 
+// Login notification — stored so admin can see who logged in
+router.post('/login-notify', authenticate, async (req: any, res) => {
+  const { name, role, email } = req.body;
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS login_notifications (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER,
+        user_name VARCHAR(255),
+        user_role VARCHAR(100),
+        user_email VARCHAR(255),
+        company_id INTEGER,
+        logged_in_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    await db.query(
+      'INSERT INTO login_notifications (user_id, user_name, user_role, user_email, company_id) VALUES ($1,$2,$3,$4,$5)',
+      [req.user.id, name, role, email, req.user.company_id]
+    );
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get login notifications for admin
+router.get('/login-notifications', authenticate, async (req: any, res) => {
+  try {
+    const { rows } = await db.query(`
+      SELECT * FROM login_notifications
+      WHERE company_id = $1
+      ORDER BY logged_in_at DESC
+      LIMIT 50
+    `, [req.user.company_id]);
+    res.json({ notifications: rows });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
