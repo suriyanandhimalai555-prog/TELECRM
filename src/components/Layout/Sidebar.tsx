@@ -24,7 +24,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const { user } = useAuth();
   const location = useLocation();
   const [waExpanded, setWaExpanded] = useState(
-    location.pathname === '/whatsapp' || location.pathname === '/whatsapp2'
+    location.pathname === '/app/whatsapp' || location.pathname === '/app/whatsapp2'
   );
 
   const masterAdminNav = [
@@ -69,7 +69,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     ? masterAdminNav
     : companyNav.filter(item => user && item.roles.includes(user.role));
 
-  const isWAActive = location.pathname === '/whatsapp' || location.pathname === '/whatsapp2';
+  const isWAActive = location.pathname === '/app/whatsapp' || location.pathname === '/app/whatsapp2';
 
   return (
     <motion.aside
@@ -154,7 +154,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                           className="overflow-hidden ml-4"
                         >
                           <NavLink
-                            to="/whatsapp"
+                            to="/app/whatsapp"
                             className={({ isActive }) => cn(
                               "flex items-center px-4 py-2 rounded-xl transition-all text-[9px] font-black uppercase tracking-widest mt-1",
                               isActive ? "bg-green-100 text-green-700" : "text-gray-500 hover:bg-green-50 hover:text-green-600"
@@ -164,7 +164,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                             WA Account 1
                           </NavLink>
                           <NavLink
-                            to="/whatsapp2"
+                            to="/app/whatsapp2"
                             className={({ isActive }) => cn(
                               "flex items-center px-4 py-2 rounded-xl transition-all text-[9px] font-black uppercase tracking-widest mt-1",
                               isActive ? "bg-green-100 text-green-700" : "text-gray-500 hover:bg-green-50 hover:text-green-600"
@@ -174,7 +174,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                             WA Account 2
                           </NavLink>
                           <NavLink
-                            to="/whatsapp3"
+                            to="/app/whatsapp3"
                             className={({ isActive }) => cn(
                               "flex items-center px-4 py-2 rounded-xl transition-all text-[9px] font-black uppercase tracking-widest mt-1",
                               isActive ? "bg-green-100 text-green-700" : "text-gray-500 hover:bg-green-50 hover:text-green-600"
@@ -189,7 +189,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                   </>
                 ) : (
                   <NavLink
-                    to="/whatsapp"
+                    to="/app/whatsapp"
                     className={({ isActive }) => cn(
                       "flex items-center px-4 py-2.5 rounded-xl transition-all",
                       isActive ? "bg-green-50 text-green-600 font-bold" : "text-gray-500 hover:bg-green-50 hover:text-green-600"
