@@ -881,6 +881,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
 
   const filteredConversations = conversations
     .filter(c => activeFilter === 'unread' ? c.unread_count > 0 : true)
+    .filter(c => accountIndex === 2 && campaignFilter !== 'all' ? contactCampaigns[c.contact_number] === campaignFilter : true)
     .filter(c =>
       c.contact_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.contact_number.includes(searchTerm)
