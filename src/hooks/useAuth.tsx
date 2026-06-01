@@ -20,8 +20,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const res = await api.get('/auth/me');
       setUser(res.data);
-    } catch (error) {
+    } catch (error: any) {
       setUser(null);
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
     } finally {
       setLoading(false);
     }
