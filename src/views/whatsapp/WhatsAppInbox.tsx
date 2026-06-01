@@ -16,6 +16,107 @@ import { useAuth } from '../../hooks/useAuth';
 import { useSearch } from '../../context/SearchContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 
+const AVG_AD_MESSAGES: Record<string, { emoji: string; message: string }> = {
+  "Website Development": {
+    emoji: "🌐",
+    message: `Hi! 👋 Thank you for your interest in *Professional Website Development* by AVG Prime Tech.
+
+We build stunning, high-performance websites for businesses in Dubai & India.
+
+✅ Custom Design
+✅ Mobile Responsive  
+✅ SEO Optimized
+✅ E-commerce Ready
+✅ Fast Delivery
+
+💬 Please share your requirements and we'll send you a free quote within 24 hours!
+
+📍 AVG Prime Tech — Dubai | India`,
+  },
+  "Mobile App Development": {
+    emoji: "📱",
+    message: `Hi! 👋 Thank you for your interest in *Custom Mobile App Development* by AVG Prime Tech.
+
+We build powerful iOS & Android apps for your business.
+
+✅ Native iOS & Android
+✅ Cross-platform (Flutter/React Native)
+✅ UI/UX Design Included
+✅ Backend & API Integration
+✅ Post-launch Support
+
+💬 Tell us about your app idea and get a free consultation!
+
+📍 AVG Prime Tech — Dubai | India`,
+  },
+  "Play Store Publishing": {
+    emoji: "🚀",
+    message: `Hi! 👋 Thank you for contacting AVG Prime Tech about *App Store Publishing*.
+
+We handle complete app submission for Google Play Store & Apple App Store.
+
+✅ App Store Optimization (ASO)
+✅ Screenshots & Store Listing
+✅ Review & Approval Support
+✅ Fast Turnaround
+✅ Both Platforms Covered
+
+💬 Share your app details and we'll get started immediately!
+
+📍 AVG Prime Tech — Dubai | India`,
+  },
+  "Web3 Development": {
+    emoji: "⛓️",
+    message: `Hi! 👋 Thank you for your interest in *Web3 Development* by AVG Prime Tech.
+
+We build next-generation blockchain & Web3 solutions.
+
+✅ Smart Contract Development
+✅ DeFi Platforms
+✅ NFT Marketplaces
+✅ DAO Development
+✅ Wallet Integration
+
+💬 Share your Web3 project idea for a free technical consultation!
+
+📍 AVG Prime Tech — Dubai | India`,
+  },
+  "Crypto Coin Listing": {
+    emoji: "🪙",
+    message: `Hi! 👋 Thank you for contacting AVG Prime Tech about *Crypto Coin Listing*.
+
+We provide end-to-end support for listing your token on major exchanges.
+
+✅ Exchange Selection & Strategy
+✅ Listing Application Support
+✅ Market Making Guidance
+✅ Compliance & Documentation
+✅ CEX & DEX Listing
+
+💬 Share your token details for a free listing consultation!
+
+📍 AVG Prime Tech — Dubai | India`,
+  },
+  "Crypto Exchange Development": {
+    emoji: "💱",
+    message: `Hi! 👋 Thank you for your interest in *Crypto Exchange Development* by AVG Prime Tech.
+
+We build secure, scalable cryptocurrency exchanges.
+
+✅ Centralized Exchange (CEX)
+✅ Decentralized Exchange (DEX)
+✅ P2P Trading Platform
+✅ Admin Dashboard
+✅ KYC/AML Integration
+✅ Multi-currency Support
+
+💬 Tell us your exchange requirements for a free proposal!
+
+📍 AVG Prime Tech — Dubai | India`,
+  },
+};
+
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Conversation {
   contact_number: string;
@@ -503,6 +604,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
   const [selectedContact, setSelectedContact] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
+  const [selectedAd, setSelectedAd] = useState<string>('');
   const { searchTerm, setSearchTerm } = useSearch();
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -1062,12 +1164,41 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
                     {isRecording ? <MicOff size={19} /> : <Mic size={19} />}
                   </button>
                 </div>
-                <div className="flex-1 bg-gray-100 rounded-2xl overflow-hidden">
-                  <textarea rows={1} value={input} onChange={e => setInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
-                    placeholder="Type a message..."
-                    style={{ minHeight: 42, maxHeight: 120, resize: 'none' }}
-                    className="w-full bg-transparent px-4 py-2.5 text-sm focus:outline-none text-gray-900" />
+                <div className="flex-1 flex flex-col gap-1">
+                  {accountIndex === 2 && (
+                    <div className="flex gap-2 items-center">
+                      <select
+                        value={selectedAd}
+                        onChange={e => {
+                          const ad = e.target.value;
+                          setSelectedAd(ad);
+                          if (ad && AVG_AD_MESSAGES[ad]) {
+                            setInput(AVG_AD_MESSAGES[ad].message);
+                          } else {
+                            setInput('');
+                          }
+                        }}
+                        className="text-[11px] font-bold bg-white border border-gray-200 rounded-xl px-3 py-1.5 focus:outline-none focus:border-blue-400 text-gray-700 w-full">
+                        <option value="">🎯 Select Ad Campaign...</option>
+                        {Object.entries(AVG_AD_MESSAGES).map(([name, val]) => (
+                          <option key={name} value={name}>{val.emoji} {name}</option>
+                        ))}
+                      </select>
+                      {selectedAd && (
+                        <button onClick={() => { setSelectedAd(''); setInput(''); }}
+                          className="text-[10px] text-gray-400 hover:text-red-500 px-2 py-1 rounded-lg border border-gray-200 bg-white whitespace-nowrap">
+                          ✕ Clear
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  <div className="bg-gray-100 rounded-2xl overflow-hidden">
+                    <textarea rows={1} value={input} onChange={e => setInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+                      placeholder={accountIndex === 2 ? "Select an ad above or type a message..." : "Type a message..."}
+                      style={{ minHeight: 42, maxHeight: 120, resize: 'none' }}
+                      className="w-full bg-transparent px-4 py-2.5 text-sm focus:outline-none text-gray-900" />
+                  </div>
                 </div>
                 <button onClick={handleSendMessage} disabled={!input.trim() || sending}
                   className="shrink-0 w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center disabled:opacity-40 shadow-md hover:bg-blue-600 transition-colors">
