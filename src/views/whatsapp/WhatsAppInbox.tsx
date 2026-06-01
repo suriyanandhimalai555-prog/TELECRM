@@ -1039,7 +1039,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
               onChange={e => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-4 py-2 bg-gray-100 rounded-xl focus:outline-none text-xs font-bold text-gray-900" />
           </div>
-          <div className="flex gap-2 mt-2.5">
+          <div className="flex gap-2 mt-2.5 flex-wrap">
             {(['all', 'unread'] as const).map(f => (
               <button key={f} onClick={() => setActiveFilter(f)}
                 className={cn("px-2.5 py-1 rounded-full text-[10px] font-black uppercase transition-colors",
@@ -1047,6 +1047,18 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
                 {f === 'all' ? 'All' : `Unread${totalUnread > 0 ? ` (${totalUnread})` : ''}`}
               </button>
             ))}
+            {accountIndex === 2 && (
+              <select value={campaignFilter} onChange={e => setCampaignFilter(e.target.value)}
+                className="text-[10px] font-black bg-white border-2 border-blue-200 rounded-full px-2 py-1 focus:outline-none focus:border-blue-500 text-gray-700 cursor-pointer uppercase">
+                <option value="all">🎯 All Ads</option>
+                <option value="website">🌐 Website Dev</option>
+                <option value="mobileapp">📱 App Dev</option>
+                <option value="playstore">🚀 Play Store</option>
+                <option value="web3">⛓️ Web3</option>
+                <option value="coinlisting">🪙 Coin Listing</option>
+                <option value="exchange">💱 Crypto Exchange</option>
+              </select>
+            )}
           </div>
         </div>
         <div className="flex-1 overflow-y-auto">
