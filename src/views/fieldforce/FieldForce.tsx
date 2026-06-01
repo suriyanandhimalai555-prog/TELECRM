@@ -11,15 +11,18 @@ export default function FieldForce() {
   const [allAttendance, setAllAttendance] = useState<any[]>([]);
 
   useEffect(() => {
-    api.get("/settings/users").then(r => {
-      const data = r.data;
-      if (Array.isArray(data)) setUsers(data);
-      else if (data?.users) setUsers(data.users);
-    }).catch(() => {
-      api.get("/users").then(r => {
-        if (Array.isArray(r.data)) setUsers(r.data);
-      }).catch(() => {});
-    });
+    const tryEndpoints = async () => {
+      const endpoints = ['/settings/users', '/users', '/team/members', '/auth/users'];
+      for (const ep of endpoints) {
+        try {
+          const r = await api.get(ep);
+          const data = r.data;
+          const list = Array.isArray(data) ? data : data?.users || data?.data || data?.members || [];
+          if (list.length > 0) { setUsers(list); break; }
+        } catch {}
+      }
+    };
+    tryEndpoints();
 
     api.get("/attendance/today").then(r => {
       const att = r.data?.attendance;
