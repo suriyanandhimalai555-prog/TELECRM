@@ -881,7 +881,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
 
   const filteredConversations = conversations
     .filter(c => activeFilter === 'unread' ? c.unread_count > 0 : true)
-    .filter(c => campaignFilter !== 'all' ? (contactCampaigns[c.contact_number] === campaignFilter) : true)
+    .filter(c => campaignFilter !== 'all' ? contactCampaigns[c.contact_number] === campaignFilter : true)
     .filter(c =>
       c.contact_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.contact_number.includes(searchTerm)
@@ -1048,18 +1048,16 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
                 {f === 'all' ? 'All' : `Unread${totalUnread > 0 ? ` (${totalUnread})` : ''}`}
               </button>
             ))}
-            {accountIndex === 2 && (
-              <select value={campaignFilter} onChange={e => setCampaignFilter(e.target.value)}
-                className="text-[10px] font-black bg-white border-2 border-blue-200 rounded-full px-2 py-1 focus:outline-none focus:border-blue-500 text-gray-700 cursor-pointer uppercase">
-                <option value="all">🎯 All Ads</option>
-                <option value="website">🌐 Website Dev</option>
-                <option value="mobileapp">📱 App Dev</option>
-                <option value="playstore">🚀 Play Store</option>
-                <option value="web3">⛓️ Web3</option>
-                <option value="coinlisting">🪙 Coin Listing</option>
-                <option value="exchange">💱 Crypto Exchange</option>
-              </select>
-            )}
+            <select value={campaignFilter} onChange={e => setCampaignFilter(e.target.value)}
+              className="text-[10px] font-black bg-white border-2 border-blue-200 rounded-full px-2 py-1 focus:outline-none focus:border-blue-500 text-gray-700 cursor-pointer uppercase">
+              <option value="all">🎯 All Ads</option>
+              <option value="website">🌐 Website Dev</option>
+              <option value="mobileapp">📱 App Dev</option>
+              <option value="playstore">🚀 Play Store</option>
+              <option value="web3">⛓️ Web3</option>
+              <option value="coinlisting">🪙 Coin Listing</option>
+              <option value="exchange">💱 Crypto Exchange</option>
+            </select>
           </div>
         </div>
         <div className="flex-1 overflow-y-auto">
