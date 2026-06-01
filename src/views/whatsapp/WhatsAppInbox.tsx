@@ -625,13 +625,21 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
   });
 
   const AD_CAMPAIGNS = [
-    { id: 'website', label: 'Website Development', emoji: '🌐' },
-    { id: 'mobileapp', label: 'Mobile App Development', emoji: '📱' },
-    { id: 'playstore', label: 'Play Store Publishing', emoji: '🚀' },
-    { id: 'web3', label: 'Web3 Development', emoji: '⛓️' },
-    { id: 'coinlisting', label: 'Crypto Coin Listing', emoji: '🪙' },
-    { id: 'exchange', label: 'Crypto Exchange', emoji: '💱' },
+    { id: 'website', label: 'Website Development', emoji: '🌐', keywords: ['website', 'web development', 'web design', 'landing page', 'wordpress'] },
+    { id: 'mobileapp', label: 'App Development', emoji: '📱', keywords: ['app', 'mobile app', 'android', 'ios', 'flutter', 'application'] },
+    { id: 'playstore', label: 'Play Store & App Store Listing', emoji: '🚀', keywords: ['play store', 'app store', 'publish', 'listing', 'store listing'] },
+    { id: 'web3', label: 'Web3 Development', emoji: '⛓️', keywords: ['web3', 'blockchain', 'smart contract', 'nft', 'defi', 'dao', 'solidity'] },
+    { id: 'coinlisting', label: 'Crypto Coin Listing', emoji: '🪙', keywords: ['coin listing', 'token listing', 'list coin', 'list token', 'exchange listing'] },
+    { id: 'exchange', label: 'Crypto Exchange Development', emoji: '💱', keywords: ['exchange', 'crypto exchange', 'trading platform', 'dex', 'cex', 'p2p'] },
   ];
+
+  const autoDetectCampaign = (message: string): string => {
+    const lower = message.toLowerCase();
+    for (const ad of AD_CAMPAIGNS) {
+      if (ad.keywords.some(k => lower.includes(k))) return ad.id;
+    }
+    return '';
+  };
 
   const saveCampaignTag = (phone: string, campaignId: string) => {
     const updated = { ...contactCampaigns, [phone]: campaignId };
@@ -749,6 +757,19 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
         last_status: newMsg.status,
         unread_count: unread,
       };
+      // Auto-detect campaign from first inbound message
+      if (newMsg.direction === 'inbound' && accountIndex === 2) {
+        setContactCampaigns(prev => {
+          if (prev[contactNum]) return prev;
+          const detected = autoDetectCampaign(newMsg.message || '');
+          if (detected) {
+            const updated2 = { ...prev, [contactNum]: detected };
+            localStorage.setItem('wa3_campaigns', JSON.stringify(updated2));
+            return updated2;
+          }
+          return prev;
+        });
+      }
       return [updated, ...prev.filter(c => c.contact_number !== contactNum)];
     });
     if (selectedContact) {
