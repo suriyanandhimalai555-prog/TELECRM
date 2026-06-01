@@ -18,8 +18,10 @@ function getPhoneId(account?: string | number): string {
   if (String(account) === '1' && PHONE_NUMBER_ID_2) return PHONE_NUMBER_ID_2;
   return PHONE_NUMBER_ID;
 }
+const WHATSAPP_TOKEN_2  = process.env.WA_ACCESS_TOKEN_2 || process.env.WHATSAPP_ACCESS_TOKEN_2 || WHATSAPP_TOKEN;
 function getToken(account?: string | number): string {
   if (String(account) === '2' && WHATSAPP_TOKEN_3) return WHATSAPP_TOKEN_3;
+  if (String(account) === '1' && WHATSAPP_TOKEN_2) return WHATSAPP_TOKEN_2;
   return WHATSAPP_TOKEN;
 }
 
