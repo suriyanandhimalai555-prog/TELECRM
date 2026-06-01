@@ -183,7 +183,10 @@ export const syncTemplates = async (req: Request, res: Response) => {
       { headers: { Authorization: `Bearer ${token}` } }
     );
     const data = await waRes.json();
-    if (data.error) return res.status(400).json({ error: data.error.message });
+    if (data.error) {
+      console.error('[WA] Meta API error:', JSON.stringify(data.error));
+      return res.status(400).json({ error: data.error.message, details: data.error });
+    }
 
     for (const temp of data.data || []) {
       await db.query(
@@ -233,7 +236,10 @@ export const sendTemplate = async (req: Request, res: Response) => {
     });
 
     const data = await waRes.json();
-    if (data.error) return res.status(400).json({ error: data.error.message });
+    if (data.error) {
+      console.error('[WA] Meta API error:', JSON.stringify(data.error));
+      return res.status(400).json({ error: data.error.message, details: data.error });
+    }
 
     const msgId = data.messages?.[0]?.id;
 
@@ -346,7 +352,10 @@ export const sendMessage = async (req: Request, res: Response) => {
     });
 
     const data = await waRes.json();
-    if (data.error) return res.status(400).json({ error: data.error.message });
+    if (data.error) {
+      console.error('[WA] Meta API error:', JSON.stringify(data.error));
+      return res.status(400).json({ error: data.error.message, details: data.error });
+    }
 
     const msgId = data.messages?.[0]?.id;
 
