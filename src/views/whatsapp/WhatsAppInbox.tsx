@@ -509,6 +509,20 @@ function ContactInfoDrawer({ contact, messages, onClose }: {
           </div>
           <h4 className="font-black text-gray-900 text-sm text-center">{contact.contact_name || contact.contact_number}</h4>
           <p className="text-xs text-gray-500 mt-0.5">{contact.contact_number}</p>
+          {accountIndex === 2 && (
+            <div className="mt-3 w-full px-2">
+              <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Ad Campaign</p>
+              <select
+                value={contactCampaigns[contact.contact_number] || ''}
+                onChange={e => saveCampaignTag(contact.contact_number, e.target.value)}
+                className="w-full text-[11px] font-bold bg-white border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-400 text-gray-700">
+                <option value="">🎯 Select Ad Campaign</option>
+                {AD_CAMPAIGNS.map(c => (
+                  <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
         <div className="p-4 space-y-2.5 border-b border-gray-100">
           {[
@@ -1045,7 +1059,14 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
                     <div className="flex items-center justify-between mb-0.5">
                       <span className="text-xs font-black text-gray-900 truncate flex items-center gap-1">
                         {isPinned && <Star size={9} className="text-yellow-400 shrink-0" fill="currentColor" />}
-                        {conv.contact_name || conv.contact_number}
+                        <span className="flex items-center gap-1">
+                          {conv.contact_name || conv.contact_number}
+                          {accountIndex === 2 && contactCampaigns[conv.contact_number] && (
+                            <span className="text-[9px] px-1 py-0.5 bg-blue-100 text-blue-600 rounded-full">
+                              {AD_CAMPAIGNS.find(a => a.id === contactCampaigns[conv.contact_number])?.emoji}
+                            </span>
+                          )}
+                        </span>
                       </span>
                       <span className="text-[9px] text-gray-400 shrink-0 ml-2">{formatTime(conv.last_timestamp)}</span>
                     </div>
