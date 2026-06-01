@@ -605,6 +605,25 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [selectedAd, setSelectedAd] = useState<string>('');
+  const [campaignFilter, setCampaignFilter] = useState<string>('all');
+  const [contactCampaigns, setContactCampaigns] = useState<Record<string, string>>(() => {
+    try { return JSON.parse(localStorage.getItem('wa3_campaigns') || '{}'); } catch { return {}; }
+  });
+
+  const AD_CAMPAIGNS = [
+    { id: 'website', label: 'Website Development', emoji: '🌐' },
+    { id: 'mobileapp', label: 'Mobile App Development', emoji: '📱' },
+    { id: 'playstore', label: 'Play Store Publishing', emoji: '🚀' },
+    { id: 'web3', label: 'Web3 Development', emoji: '⛓️' },
+    { id: 'coinlisting', label: 'Crypto Coin Listing', emoji: '🪙' },
+    { id: 'exchange', label: 'Crypto Exchange', emoji: '💱' },
+  ];
+
+  const saveCampaignTag = (phone: string, campaignId: string) => {
+    const updated = { ...contactCampaigns, [phone]: campaignId };
+    setContactCampaigns(updated);
+    localStorage.setItem('wa3_campaigns', JSON.stringify(updated));
+  };
   const { searchTerm, setSearchTerm } = useSearch();
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
