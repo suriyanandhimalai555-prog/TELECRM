@@ -53,6 +53,13 @@ export const updateCampaign = async (req: AuthRequest, res: Response) => {
   const { name, type, phone_number, status } = req.body;
   if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
   try {
+    if (req.user.role !== 'master_admin') {
+      const check = await db.query('SELECT company_id FROM campaigns WHERE id = $1', [id]);
+      if (check.rows.length === 0 || check.rows[0].company_id !== req.user.company_id) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+    }
+
     await db.query(`
       UPDATE campaigns 
       SET name = $1, type = $2, phone_number = $3, status = $4, updated_at = CURRENT_TIMESTAMP
@@ -70,6 +77,13 @@ export const deleteCampaign = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
   try {
+    if (req.user.role !== 'master_admin') {
+      const check = await db.query('SELECT company_id FROM campaigns WHERE id = $1', [id]);
+      if (check.rows.length === 0 || check.rows[0].company_id !== req.user.company_id) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+    }
+
     await db.query('DELETE FROM campaigns WHERE id = $1', [id]);
     res.json({ message: 'Campaign deleted successfully' });
   } catch (error) {

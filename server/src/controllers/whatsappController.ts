@@ -31,39 +31,61 @@ function normalizePhone(phone: string): string {
 }
 
 // ─── Helper: find a lead by phone number ────────────────────────────────────
-async function findLeadByPhone(phone: string): Promise<any | null> {
+async function findLeadByPhone(phone: string, companyId?: number | null): Promise<any | null> {
   const normalized = normalizePhone(phone);
-  const { rows } = await db.query(
-    `SELECT * FROM leads 
-     WHERE mobile LIKE $1 
-        OR whatsapp LIKE $1 
-     LIMIT 1`,
-    [`%${normalized}`]
-  );
+  let queryStr = `SELECT * FROM leads WHERE (mobile LIKE $1 OR whatsapp LIKE $1)`;
+  const params = [`%${normalized}`];
+  if (companyId) {
+    queryStr += ` AND company_id = $2`;
+    params.push(companyId as any);
+  }
+  queryStr += ` LIMIT 1`;
+  const { rows } = await db.query(queryStr, params);
   return rows[0] ?? null;
 }
 
 // ─── Helper: get admin user id ───────────────────────────────────────────────
-async function getAdminUserId(): Promise<number> {
-  const { rows } = await db.query(
-    `SELECT id FROM users WHERE role = 'ADMIN' ORDER BY id ASC LIMIT 1`
-  );
-  return rows[0]?.id ?? 1;
+async function getAdminUserId(companyId?: number | null): Promise<number> {
+  let queryStr = `SELECT id FROM users WHERE role = 'ADMIN'`;
+  const params = [];
+  if (companyId) {
+    queryStr += ` AND company_id = $1`;
+    params.push(companyId);
+  }
+  queryStr += ` ORDER BY id ASC LIMIT 1`;
+  const { rows } = await db.query(queryStr, params);
+  if (rows.length > 0) return rows[0].id;
+  const fallback = await db.query(`SELECT id FROM users ORDER BY id ASC LIMIT 1`);
+  return fallback.rows[0]?.id ?? 1;
 }
 
 // ─── Helper: get user's WhatsApp credentials ─────────────────────────────────
 async function getUserWACredentials(userId: number, account?: string | number) {
-  const { rows } = await db.query(
-    'SELECT whatsapp_token, whatsapp_phone_id, whatsapp_waba_id FROM users WHERE id = $1',
-    [userId]
-  );
-  const u = rows[0];
+  const userRes = await db.query('SELECT role, company_id, whatsapp_token, whatsapp_phone_id, whatsapp_waba_id FROM users WHERE id = $1', [userId]);
+  const u = userRes.rows[0];
+  if (!u) {
+    return { token: WHATSAPP_TOKEN, phoneId: PHONE_NUMBER_ID, wabaId: WABA_ID };
+  }
+  const companyId = u.company_id;
+  if (companyId) {
+    const waRes = await db.query(
+      'SELECT access_token, phone_number_id, phone_number FROM whatsapp_accounts WHERE company_id = $1 ORDER BY id ASC LIMIT 1',
+      [companyId]
+    );
+    if (waRes.rows.length > 0) {
+      const waAcc = waRes.rows[0];
+      return {
+        token: waAcc.access_token || WHATSAPP_TOKEN,
+        phoneId: waAcc.phone_number_id || PHONE_NUMBER_ID,
+        wabaId: WABA_ID,
+      };
+    }
+  }
   return {
-    token:   getToken(account) || u?.whatsapp_token || WHATSAPP_TOKEN,
-    phoneId: getPhoneId(account) || u?.whatsapp_phone_id || PHONE_NUMBER_ID,
-    wabaId:  String(account) === '2' ? WABA_ID_3 : u?.whatsapp_waba_id || WABA_ID,
-  };
-}
+    token:   getToken(account) || u.whatsapp_token || WHATSAPP_TOKEN,
+    phoneId: getPhoneId(account) || u.whatsapp_phone_id || PHONE_NUMBER_ID,
+    wabaId:  String(account) === '2' ? WABA_ID_3 : u.whatsapp_waba_id || WABA_ID,
+  };}
 
 // ─── Helper: fetch media URL + mime_type from Meta ───────────────────────────
 async function fetchMediaInfo(
@@ -161,9 +183,11 @@ export const proxyMedia = async (req: Request, res: Response) => {
 // ─── Templates ───────────────────────────────────────────────────────────────
 
 export const getTemplates = async (req: Request, res: Response) => {
+  const companyId = (req as any).user?.company_id;
   try {
     const { rows } = await db.query(
-      'SELECT * FROM whatsapp_templates ORDER BY created_at DESC'
+      'SELECT * FROM whatsapp_templates WHERE company_id = $1 ORDER BY created_at DESC',
+      [companyId]
     );
     res.json({ templates: rows });
   } catch (err) {
@@ -174,6 +198,7 @@ export const getTemplates = async (req: Request, res: Response) => {
 
 export const syncTemplates = async (req: Request, res: Response) => {
   const userId = (req as any).user?.id;
+  const companyId = (req as any).user?.company_id;
   try {
     const { token, wabaId } = await getUserWACredentials(userId);
     if (!token) return res.status(400).json({ error: 'WhatsApp Token missing' });
@@ -190,14 +215,14 @@ export const syncTemplates = async (req: Request, res: Response) => {
 
     for (const temp of data.data || []) {
       await db.query(
-        `INSERT INTO whatsapp_templates (name, category, language, components, status)
-         VALUES ($1, $2, $3, $4, $5)
-         ON CONFLICT (name) DO UPDATE SET
+        `INSERT INTO whatsapp_templates (company_id, name, category, language, components, status)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         ON CONFLICT (company_id, name) DO UPDATE SET
            category   = EXCLUDED.category,
            language   = EXCLUDED.language,
            components = EXCLUDED.components,
            status     = EXCLUDED.status`,
-        [temp.name, temp.category, temp.language, JSON.stringify(temp.components), temp.status]
+        [companyId, temp.name, temp.category, temp.language, JSON.stringify(temp.components), temp.status]
       );
     }
 
@@ -211,6 +236,7 @@ export const syncTemplates = async (req: Request, res: Response) => {
 export const sendTemplate = async (req: Request, res: Response) => {
   const { to, templateName, languageCode, components, contactName, account } = req.body;
   const userId = (req as any).user?.id;
+  const companyId = (req as any).user?.company_id;
 
   if (!to || !templateName) {
     return res.status(400).json({ error: 'to and templateName required' });
@@ -245,9 +271,9 @@ export const sendTemplate = async (req: Request, res: Response) => {
 
     await db.query(
       `INSERT INTO whatsapp_messages
-         (message_id, from_number, to_number, message_text, direction, status, contact_name, is_read)
-       VALUES ($1, $2, $3, $4, 'outbound', 'sent', $5, true)`,
-      [msgId, phoneId, phone, `Template: ${templateName}`, contactName || '']
+         (message_id, from_number, to_number, message_text, direction, status, contact_name, is_read, company_id)
+       VALUES ($1, $2, $3, $4, 'outbound', 'sent', $5, true, $6)`,
+      [msgId, phoneId, phone, `Template: ${templateName}`, contactName || '', companyId]
     );
 
     res.json({ success: true, messageId: msgId });
@@ -262,6 +288,7 @@ export const sendTemplate = async (req: Request, res: Response) => {
 export const bulkSendMessage = async (req: Request, res: Response) => {
   const { contacts, message, account } = req.body;
   const userId = (req as any).user?.id;
+  const companyId = (req as any).user?.company_id;
 
   if (!contacts || !Array.isArray(contacts) || !message) {
     return res.status(400).json({ error: 'contacts (array) and message required' });
@@ -299,9 +326,9 @@ export const bulkSendMessage = async (req: Request, res: Response) => {
           const msgId = data.messages?.[0]?.id;
           await db.query(
             `INSERT INTO whatsapp_messages
-               (message_id, from_number, to_number, message_text, direction, status, contact_name, is_read)
-             VALUES ($1, $2, $3, $4, 'outbound', 'sent', $5, true)`,
-            [msgId, phoneId, phone, message, name]
+               (message_id, from_number, to_number, message_text, direction, status, contact_name, is_read, company_id)
+             VALUES ($1, $2, $3, $4, 'outbound', 'sent', $5, true, $6)`,
+            [msgId, phoneId, phone, message, name, companyId]
           );
           results.push({ phone: rawPhone, success: true });
         } else {
@@ -327,6 +354,7 @@ export const bulkSendMessage = async (req: Request, res: Response) => {
 export const sendMessage = async (req: Request, res: Response) => {
   const { to, message, contactName, account } = req.body;
   const userId = (req as any).user?.id;
+  const companyId = (req as any).user?.company_id;
 
   if (!to || !message) return res.status(400).json({ error: 'to and message required' });
 
@@ -361,10 +389,10 @@ export const sendMessage = async (req: Request, res: Response) => {
 
     const { rows: savedRows } = await db.query(
       `INSERT INTO whatsapp_messages
-         (message_id, from_number, to_number, message_text, direction, status, contact_name, is_read)
-       VALUES ($1, $2, $3, $4, 'outbound', 'sent', $5, true)
+         (message_id, from_number, to_number, message_text, direction, status, contact_name, is_read, company_id)
+       VALUES ($1, $2, $3, $4, 'outbound', 'sent', $5, true, $6)
        RETURNING *`,
-      [msgId, phoneId, phone, message, contactName || '']
+      [msgId, phoneId, phone, message, contactName || '', companyId]
     );
 
     const reqWithIo = req as any;
@@ -383,17 +411,24 @@ export const sendMessage = async (req: Request, res: Response) => {
 
 export const getHistory = async (req: Request, res: Response) => {
   const phone = req.params.phone.replace(/[^0-9]/g, '');
-  const { account } = req.query;
-  const phoneId = getPhoneId(account as string);
+  const companyId = (req as any).user?.company_id;
+  const userRole = (req as any).user?.role;
   try {
-    const { rows } = await db.query(
-      `SELECT * FROM whatsapp_messages
-       WHERE (from_number = $1 OR to_number = $1)
-       AND (to_number = $2 OR from_number = $2)
-       ORDER BY timestamp ASC
-       LIMIT 200`,
-      [phone, phoneId]
-    );
+    let queryStr = `
+      SELECT * FROM whatsapp_messages
+      WHERE (from_number = $1 OR to_number = $1)
+    `;
+    const params = [phone];
+    if (userRole !== 'master_admin') {
+      queryStr += ` AND company_id = $2`;
+      params.push(companyId);
+    } else if (req.query.company_id) {
+      queryStr += ` AND company_id = $2`;
+      params.push(parseInt(req.query.company_id as string));
+    }
+    
+    queryStr += ` ORDER BY timestamp ASC LIMIT 200`;
+    const { rows } = await db.query(queryStr, params);
     res.json({ messages: rows });
   } catch (err) {
     console.error('[WA] getHistory error:', err);
@@ -405,9 +440,9 @@ export const getHistory = async (req: Request, res: Response) => {
 
 export const getConversations = async (req: Request, res: Response) => {
   const { search, account } = req.query;
-
-  // Filter by which phone number ID sent/received the message
-  const phoneId = getPhoneId(account as string);
+  const companyId = (req as any).user?.company_id;
+  const role = (req as any).user?.role || 'EMPLOYEE';
+  const uid = (req as any).user?.id || 0;
 
   try {
     let query = `
@@ -448,18 +483,19 @@ export const getConversations = async (req: Request, res: Response) => {
           OR RIGHT(l.whatsapp, 10) = RIGHT(
                CASE WHEN wm.direction = 'inbound' THEN wm.from_number ELSE wm.to_number END, 10
              )
-        WHERE
-          -- scope to the right phone number ID
-          (wm.direction = 'inbound'  AND wm.to_number   = $1)
-          OR
-          (wm.direction = 'outbound' AND wm.from_number = $1)
-      ) t
-      WHERE rn = 1
+        WHERE 1=1
     `;
 
-    const params: any[] = [phoneId];
-    const role = (req as any).user?.role || 'EMPLOYEE';
-    const uid = (req as any).user?.id || 0;
+    const params: any[] = [];
+    if (role !== 'master_admin') {
+      params.push(companyId);
+      query += ` AND wm.company_id = $${params.length}`;
+    } else if (req.query.company_id) {
+      params.push(parseInt(req.query.company_id as string));
+      query += ` AND wm.company_id = $${params.length}`;
+    }
+
+    query += ` ) t WHERE rn = 1`;
 
     if (role === 'EMPLOYEE') {
       query += ` AND lead_id IN (SELECT id FROM leads WHERE owner_id = $${params.length + 1})`;
@@ -622,28 +658,31 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
           console.log(`[WA] 📩 INBOUND from ${from} (${name}): type=${msg.type} → phoneId=${receivingPhoneId}`);
 
-          let lead = await findLeadByPhone(from);
+          const accountRes = await db.query('SELECT company_id FROM whatsapp_accounts WHERE phone_number_id = $1 LIMIT 1', [receivingPhoneId]);
+          const companyId = accountRes.rows[0]?.company_id || null;
+
+          let lead = await findLeadByPhone(from, companyId);
           if (!lead) {
-            const adminId = await getAdminUserId();
+            const adminId = await getAdminUserId(companyId);
             const { rows: newLeadRows } = await db.query(
               `INSERT INTO leads
-                 (contact_name, mobile, whatsapp, source, stage, owner_id, revenue, created_at, updated_at)
-               VALUES ($1, $2, $3, 'WHATSAPP', 'NEW', $4, 0, NOW(), NOW())
+                 (contact_name, mobile, whatsapp, source, stage, owner_id, revenue, created_at, updated_at, company_id)
+               VALUES ($1, $2, $3, 'WHATSAPP', 'NEW', $4, 0, NOW(), NOW(), $5)
                RETURNING *`,
-              [name, from, from, adminId]
+              [name, from, from, adminId, companyId]
             );
             lead = newLeadRows[0];
-            console.log(`[WA] ✅ Auto-created lead #${lead?.id} for ${from} (owner: ${adminId})`);
+            console.log(`[WA] ✅ Auto-created lead #${lead?.id} for ${from} in company #${companyId}`);
           }
 
           // Store with the actual receiving phone ID so conversations are scoped correctly
           const { rows: savedRows } = await db.query(
             `INSERT INTO whatsapp_messages
-               (message_id, from_number, to_number, message_text, direction, status, contact_name, timestamp, is_read)
-             VALUES ($1, $2, $3, $4, 'inbound', 'received', $5, $6, false)
+               (message_id, from_number, to_number, message_text, direction, status, contact_name, timestamp, is_read, company_id)
+             VALUES ($1, $2, $3, $4, 'inbound', 'received', $5, $6, false, $7)
              ON CONFLICT (message_id) DO NOTHING
              RETURNING *`,
-            [msgId, from, receivingPhoneId, text, name, ts]
+            [msgId, from, receivingPhoneId, text, name, ts, companyId]
           );
 
           const reqWithIo = req as any;
@@ -674,6 +713,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
 export const sendMedia = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
+    const companyId = (req as any).user?.company_id;
     const account = req.body.account;
     const { token, phoneId } = await getUserWACredentials(userId, account);
     const to: string = req.body.to;
@@ -719,7 +759,7 @@ export const sendMedia = async (req: Request, res: Response) => {
     if (!sendData.messages?.[0]?.id) return res.status(500).json({ error: 'Send failed', detail: sendData });
 
     const messageId = sendData.messages[0].id;
-    const lead = await findLeadByPhone(to);
+    const lead = await findLeadByPhone(to, companyId);
 
     const msgText = waType === 'document'
       ? `[document:${mediaId}:${file.originalname}:${mime}]`
@@ -728,10 +768,10 @@ export const sendMedia = async (req: Request, res: Response) => {
       : `[audio:${mediaId}]`;
 
     await db.query(
-      `INSERT INTO whatsapp_messages (message_id, from_number, to_number, message_text, direction, status, contact_name, timestamp)
-       VALUES ($1, $2, $3, $4, 'outbound', 'sent', $5, NOW())
+      `INSERT INTO whatsapp_messages (message_id, from_number, to_number, message_text, direction, status, contact_name, timestamp, company_id)
+       VALUES ($1, $2, $3, $4, 'outbound', 'sent', $5, NOW(), $6)
        ON CONFLICT (message_id) DO NOTHING`,
-      [messageId, phoneId, to, msgText, contactName || lead?.contact_name || to]
+      [messageId, phoneId, to, msgText, contactName || lead?.contact_name || to, companyId]
     );
 
     res.json({ success: true, messageId, mediaId });
@@ -744,7 +784,15 @@ export const sendMedia = async (req: Request, res: Response) => {
 // ─── Delete Message ───────────────────────────────────────────────────────────
 export const deleteMessage = async (req: Request, res: Response) => {
   const { id } = req.params;
+  const companyId = (req as any).user?.company_id;
+  const userRole = (req as any).user?.role;
   try {
+    if (userRole !== 'master_admin') {
+      const check = await db.query('SELECT company_id FROM whatsapp_messages WHERE id = $1', [id]);
+      if (check.rows.length === 0 || check.rows[0].company_id !== companyId) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+    }
     await db.query('DELETE FROM whatsapp_messages WHERE id = $1', [id]);
     res.json({ success: true });
   } catch (err: any) {
@@ -754,11 +802,16 @@ export const deleteMessage = async (req: Request, res: Response) => {
 // ─── Delete All Messages for a Contact ───────────────────────────────────────
 export const deleteConversation = async (req: Request, res: Response) => {
   const phone = req.params.phone.replace(/[^0-9]/g, '');
+  const companyId = (req as any).user?.company_id;
+  const userRole = (req as any).user?.role;
   try {
-    await db.query(
-      'DELETE FROM whatsapp_messages WHERE from_number = $1 OR to_number = $1',
-      [phone]
-    );
+    let queryStr = 'DELETE FROM whatsapp_messages WHERE (from_number = $1 OR to_number = $1)';
+    const params = [phone];
+    if (userRole !== 'master_admin') {
+      queryStr += ' AND company_id = $2';
+      params.push(companyId);
+    }
+    await db.query(queryStr, params);
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

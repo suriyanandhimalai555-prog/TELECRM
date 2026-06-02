@@ -116,8 +116,16 @@ export const createLead = async (req: AuthRequest, res: Response) => {
 export const updateLead = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const body = req.body;
+  if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
 
   try {
+    if (req.user.role !== 'master_admin') {
+      const check = await db.query('SELECT company_id FROM leads WHERE id = $1', [id]);
+      if (check.rows.length === 0 || check.rows[0].company_id !== req.user.company_id) {
+        return res.status(403).json({ message: 'Forbidden: Lead does not belong to your company' });
+      }
+    }
+
     const fieldMap: Record<string, any> = {};
 
     if (body.contact_name  !== undefined) fieldMap.contact_name  = body.contact_name;
@@ -165,6 +173,13 @@ export const deleteLead = async (req: AuthRequest, res: Response) => {
   }
 
   try {
+    if (req.user.role !== 'master_admin') {
+      const check = await db.query('SELECT company_id FROM leads WHERE id = $1', [id]);
+      if (check.rows.length === 0 || check.rows[0].company_id !== req.user.company_id) {
+        return res.status(403).json({ message: 'Forbidden: Lead does not belong to your company' });
+      }
+    }
+
     await db.query('DELETE FROM leads WHERE id = $1', [id]);
     res.json({ message: 'Lead deleted successfully' });
   } catch (error) {
@@ -175,8 +190,16 @@ export const deleteLead = async (req: AuthRequest, res: Response) => {
 export const reassignLead = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { owner_id } = req.body;
+  if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
 
   try {
+    if (req.user.role !== 'master_admin') {
+      const check = await db.query('SELECT company_id FROM leads WHERE id = $1', [id]);
+      if (check.rows.length === 0 || check.rows[0].company_id !== req.user.company_id) {
+        return res.status(403).json({ message: 'Forbidden: Lead does not belong to your company' });
+      }
+    }
+
     await db.query(
       'UPDATE leads SET owner_id = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
       [owner_id, id]

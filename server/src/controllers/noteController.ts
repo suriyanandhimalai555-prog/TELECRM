@@ -85,6 +85,13 @@ export const deleteNote = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
   try {
+    if (req.user.role !== 'master_admin') {
+      const check = await db.query('SELECT company_id FROM notes WHERE id = $1', [id]);
+      if (check.rows.length === 0 || check.rows[0].company_id !== req.user.company_id) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+    }
+
     const noteResult = await db.query('SELECT user_id FROM notes WHERE id = $1', [id]);
     const note = noteResult.rows[0];
     if (!note) return res.status(404).json({ message: 'Note not found' });

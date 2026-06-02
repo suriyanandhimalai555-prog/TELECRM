@@ -85,6 +85,13 @@ export const updateProject = async (req: AuthRequest, res: Response) => {
   }
 
   try {
+    if (req.user.role !== 'master_admin') {
+      const check = await db.query('SELECT company_id FROM projects WHERE id = $1', [id]);
+      if (check.rows.length === 0 || check.rows[0].company_id !== req.user.company_id) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+    }
+
     await db.query(
       'UPDATE projects SET name = $1, description = $2, status = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4',
       [name, description, status, id]
@@ -107,6 +114,13 @@ export const deleteProject = async (req: AuthRequest, res: Response) => {
   }
 
   try {
+    if (req.user.role !== 'master_admin') {
+      const check = await db.query('SELECT company_id FROM projects WHERE id = $1', [id]);
+      if (check.rows.length === 0 || check.rows[0].company_id !== req.user.company_id) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+    }
+
     const leadsInUse = await db.query('SELECT id FROM leads WHERE project_id = $1 LIMIT 1', [id]);
     if (leadsInUse.rows.length > 0) {
       return res.status(400).json({ message: 'Cannot delete project that is currently assigned to leads' });

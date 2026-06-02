@@ -1,13 +1,25 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import db from '../config/database';
 
 export interface AuthRequest extends Request {
   user?: { id: number; email: string; role: string; company_id: number | null; };
 }
-export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ message: 'No token' });
-  try { req.user = jwt.verify(token, process.env.JWT_SECRET || 'secret') as any; next(); }
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as any;
+    req.user = decoded;
+
+    if (decoded.role !== 'master_admin' && decoded.company_id) {
+      const compCheck = await db.query('SELECT status FROM companies WHERE id = $1', [decoded.company_id]);
+      if (compCheck.rows.length > 0 && compCheck.rows[0].status === 'disabled') {
+        return res.status(403).json({ message: 'Your company has been disabled' });
+      }
+    }
+    next();
+  }
   catch { res.status(401).json({ message: 'Invalid token' }); }
 };
 export const requireMasterAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {

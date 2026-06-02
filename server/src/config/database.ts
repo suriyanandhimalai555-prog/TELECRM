@@ -42,9 +42,16 @@ export const initDb = async () => {
     CREATE TABLE IF NOT EXISTS companies (
       id           SERIAL PRIMARY KEY,
       company_name VARCHAR(255) NOT NULL,
+      whatsapp_number VARCHAR(50),
+      logo         TEXT,
+      status       VARCHAR(20) DEFAULT 'active',
       created_at   TIMESTAMP DEFAULT NOW()
     )
   `);
+
+  await pool.query(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS whatsapp_number VARCHAR(50)`);
+  await pool.query(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS logo TEXT`);
+  await pool.query(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'active'`);
 
   // ── Multi-tenant: whatsapp_accounts per company ───────────────────────────
   await pool.query(`
@@ -57,6 +64,21 @@ export const initDb = async () => {
       access_token    TEXT,
       status          VARCHAR(20) DEFAULT 'inactive',
       created_at      TIMESTAMP DEFAULT NOW()
+    )
+  `);
+
+  // ── Multi-tenant: whatsapp_templates per company ───────────────────────────
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS whatsapp_templates (
+      id              SERIAL PRIMARY KEY,
+      company_id      INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+      name            VARCHAR(255) NOT NULL,
+      category        VARCHAR(100),
+      language        VARCHAR(50),
+      components      TEXT,
+      status          VARCHAR(50),
+      created_at      TIMESTAMP DEFAULT NOW(),
+      CONSTRAINT whatsapp_templates_company_name_key UNIQUE (company_id, name)
     )
   `);
 
@@ -197,6 +219,20 @@ export const initDb = async () => {
   await pool.query(`ALTER TABLE projects  ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE`);
   await pool.query(`ALTER TABLE notes     ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE`);
   await pool.query(`ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE`);
+  await pool.query(`ALTER TABLE whatsapp_messages ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE`);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS email_config (
+      id SERIAL PRIMARY KEY,
+      company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+      imap_host VARCHAR(255),
+      imap_user VARCHAR(255),
+      imap_pass VARCHAR(255),
+      imap_port VARCHAR(10),
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+  await pool.query(`ALTER TABLE email_config ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE`);
 
   // Fix calls table missing columns
   await pool.query(`ALTER TABLE calls ADD COLUMN IF NOT EXISTS agent_id INTEGER REFERENCES users(id)`);

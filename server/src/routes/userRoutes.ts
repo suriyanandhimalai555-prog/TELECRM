@@ -86,13 +86,18 @@ router.post('/', authenticate, requireAdmin, async (req: AuthRequest, res) => {
 router.delete('/:id', authenticate, requireAdmin, async (req: AuthRequest, res) => {
   const target = await db.query('SELECT * FROM users WHERE id=$1', [req.params.id]);
   if (!target.rows[0]) return res.status(404).json({ message: 'Not found' });
-  if (req.user?.role === 'company_admin' && target.rows[0].company_id !== req.user.company_id)
+  if (req.user?.role !== 'master_admin' && target.rows[0].company_id !== req.user?.company_id)
     return res.status(403).json({ message: 'Forbidden' });
   await db.query('DELETE FROM users WHERE id=$1', [req.params.id]);
   res.json({ message: 'Deleted' });
 });
 
 router.post('/:id/update', authenticate, requireAdmin, async (req: AuthRequest, res) => {
+  const target = await db.query('SELECT * FROM users WHERE id=$1', [req.params.id]);
+  if (!target.rows[0]) return res.status(404).json({ message: 'Not found' });
+  if (req.user?.role !== 'master_admin' && target.rows[0].company_id !== req.user?.company_id)
+    return res.status(403).json({ message: 'Forbidden' });
+
   const { name, email, phone, role, company_id, password } = req.body;
   const updates: any[] = [];
   const values: any[] = [];

@@ -90,8 +90,16 @@ export const createTask = async (req: AuthRequest, res: Response) => {
 export const updateTask = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   const { status, notes, type, due_date, user_id, lead_id, project_id } = req.body;
+  if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
 
   try {
+    if (req.user.role !== 'master_admin') {
+      const check = await db.query('SELECT company_id FROM tasks WHERE id = $1', [id]);
+      if (check.rows.length === 0 || check.rows[0].company_id !== req.user.company_id) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+    }
+
     await db.query(`
       UPDATE tasks 
       SET status = $1, notes = $2, type = $3, due_date = $4, user_id = $5, lead_id = $6, project_id = $7, updated_at = CURRENT_TIMESTAMP
@@ -107,7 +115,15 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
 
 export const deleteTask = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
+  if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
   try {
+    if (req.user.role !== 'master_admin') {
+      const check = await db.query('SELECT company_id FROM tasks WHERE id = $1', [id]);
+      if (check.rows.length === 0 || check.rows[0].company_id !== req.user.company_id) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+    }
+
     await db.query('DELETE FROM tasks WHERE id = $1', [id]);
     res.json({ message: 'Task deleted successfully' });
   } catch (error) {
