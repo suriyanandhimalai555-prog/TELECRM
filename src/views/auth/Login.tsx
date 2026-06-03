@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAuthStore } from '../../store/authStore';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../services/api';
@@ -22,9 +23,8 @@ export default function Login() {
     try {
       const res = await api.post('/auth/login', { email, password });
       login(res.data.token, res.data.user);
-      // Sync company_id from full user object
-      const { useAuthStore } = await import('../store/authStore');
       useAuthStore.getState().setUser({ ...res.data.user, token: res.data.token });
+
       // Send login notification to admin
       try {
         await api.post('/attendance/login-notify', {
