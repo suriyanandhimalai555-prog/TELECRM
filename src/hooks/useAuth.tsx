@@ -67,6 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('token', token);
     setUser(user);
     syncToStore(user, token);
+    setLoading(false);
   }, [syncToStore]);
 
   const logout = useCallback(async () => {
