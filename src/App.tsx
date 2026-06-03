@@ -35,8 +35,11 @@ import UsersPage from './pages/UsersPage';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
+  const hasToken = !!localStorage.getItem('token');
   if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>;
-  return user ? <>{children}</> : <Navigate to="/login" />;
+  if (!user && !hasToken) return <Navigate to="/login" />;
+  if (!user && hasToken) return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  return <>{children}</>;
 };
 
 const RequireRole: React.FC<{ roles: string[]; children: React.ReactNode }> = ({ roles, children }) => {
