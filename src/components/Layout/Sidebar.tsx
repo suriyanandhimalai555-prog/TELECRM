@@ -84,7 +84,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center">
             <img src="/logo.png" alt="AVG CRM" className="w-14 h-14 object-contain mr-2" />
             <span className="text-lg font-black text-gray-900 tracking-tighter uppercase">
-              AVG<span className="text-red-500">CRM</span>
+              {user?.company_name || 'AVG'}<span className="text-red-500">CRM</span>
             </span>
           </motion.div>
         )}
@@ -242,6 +242,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
             <div className="ml-3 overflow-hidden">
               <p className="text-[10px] font-black text-gray-900 truncate uppercase tracking-tighter">{user?.name}</p>
               <p className="text-[8px] font-bold text-gray-400 truncate uppercase tracking-widest">{user?.role}</p>
+              {user?.company_name && <p className="text-[8px] font-bold text-blue-400 truncate uppercase tracking-widest">{user?.company_name}</p>}
             </div>
           )}
         </div>

@@ -110,7 +110,7 @@ export default function Login() {
           <img src="/logo.png" alt="AVG CRM" className="h-16 w-auto" />
         </div>
         <h2 className="text-center text-3xl font-black uppercase tracking-tighter text-gray-900">Sign in</h2>
-        <p className="mt-2 text-center text-sm text-gray-500">AVG CRM — Sales & Lead Management</p>
+        <p className="mt-2 text-center text-sm text-gray-500">CRM — Sales & Lead Management</p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
