@@ -495,6 +495,13 @@ export const getConversations = async (req: Request, res: Response) => {
       query += ` AND wm.company_id = $${params.length}`;
     }
 
+    // Filter by WhatsApp account using phone_number_id
+    const phoneId = getPhoneId(account as string);
+    if (phoneId) {
+      params.push(phoneId);
+      query += ` AND wm.phone_number_id = $${params.length}`;
+    }
+
     query += ` ) t WHERE rn = 1`;
 
     if (role === 'EMPLOYEE') {
