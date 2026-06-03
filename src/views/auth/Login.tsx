@@ -33,10 +33,6 @@ export default function Login() {
           email: res.data.user.email,
         });
       } catch {}
-      // Show pledge popup
-      setPledgeData(res.data.user);
-      setShowPledge(true);
-      // Navigate immediately so PrivateRoute sees the token
       navigate('/app');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to login');
