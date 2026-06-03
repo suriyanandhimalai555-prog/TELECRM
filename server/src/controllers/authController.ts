@@ -55,7 +55,7 @@ export const register = async (req: Request, res: Response) => {
 };
 
 export const login = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const { email, password, company_id } = req.body;
 
   try {
     // ← UPDATED: now joins companies to get company_name
@@ -70,6 +70,9 @@ export const login = async (req: Request, res: Response) => {
 
     if (!user || !bcrypt.compareSync(password, user.password)) {
       return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    if (company_id && user.company_id !== company_id) {
+      return res.status(401).json({ message: 'Invalid credentials for this company' });
     }
 
     const { password: _, ...userWithoutPassword } = user;

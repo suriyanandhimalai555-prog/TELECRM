@@ -84,7 +84,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center">
             <img src="/logo.png" alt="AVG CRM" className="w-14 h-14 object-contain mr-2" />
             <span className="text-lg font-black text-gray-900 tracking-tighter uppercase">
-              {user?.company_name || 'AVG'}<span className="text-red-500">CRM</span>
+              AVG<span className="text-red-500">CRM</span>
             </span>
           </motion.div>
         )}
