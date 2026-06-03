@@ -25,14 +25,7 @@ export default function Login() {
       login(res.data.token, res.data.user);
       useAuthStore.getState().setUser({ ...res.data.user, token: res.data.token });
 
-      // Send login notification to admin
-      try {
-        await api.post('/attendance/login-notify', {
-          name: res.data.user.name,
-          role: res.data.user.role,
-          email: res.data.user.email,
-        });
-      } catch {}
+
       navigate('/app');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to login');
