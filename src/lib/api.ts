@@ -1,6 +1,6 @@
 import { useAuthStore } from '../store/authStore';
 
-const BASE = import.meta.env.VITE_API_URL || 'https://telecrm-copy-production.up.railway.app/api';
+const BASE = import.meta.env.VITE_API_URL || '/api';
 
 const buildRequest = (path: string) => {
   const { token, user, viewingCompanyId } = useAuthStore.getState();
