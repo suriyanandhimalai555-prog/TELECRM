@@ -17,12 +17,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const { setUser: setStoreUser } = useAuthStore();
+  const syncToStore = useCallback((userData: any, token: string) => {
+    if (userData?.company_id) {
+      try {
+        useAuthStore.getState().setUser({
+          id: userData.id,
+          email: userData.email,
+          name: userData.name,
+          role: userData.role,
+          company_id: userData.company_id,
+          company_name: userData.company_name,
+          token,
+        });
+      } catch {}
+    }
+  }, []);
+
   const refreshUser = useCallback(async () => {
     try {
       const res = await api.get('/auth/me');
       setUser(res.data);
-      if (res.data?.company_id) setStoreUser({ ...res.data, token: localStorage.getItem('token') || '' });
+      syncToStore(res.data, localStorage.getItem('token') || '');
     } catch (error: any) {
       setUser(null);
       if (error.response?.status === 401) {
@@ -32,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [syncToStore]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -46,16 +61,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = useCallback((token: string, user: User) => {
     localStorage.setItem('token', token);
     setUser(user);
-    if (user?.company_id) setStoreUser({ ...user, token });
-  }, []);
+    syncToStore(user, token);
+  }, [syncToStore]);
 
   const logout = useCallback(async () => {
-    // Auto check-out on logout
     try {
       await api.post('/attendance/checkout');
     } catch {}
     localStorage.removeItem('token');
     setUser(null);
+    useAuthStore.getState().logout();
   }, []);
 
   const value = useMemo(() => ({ 
