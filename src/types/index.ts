@@ -5,6 +5,8 @@ export interface User {
   email: string;
   name: string;
   role: Role;
+  company_id?: number;
+  company_name?: string;
   reporting_to?: number;
   assigned_projects?: number[];
   client_key?: string;
