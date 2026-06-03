@@ -40,10 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       syncToStore(res.data, localStorage.getItem('token') || '');
     } catch (error: any) {
       setUser(null);
-      if (error.response?.status === 401) {
-        localStorage.removeItem('token');
-        window.location.href = '/login';
-      }
+      localStorage.removeItem('token');
     } finally {
       setLoading(false);
     }
