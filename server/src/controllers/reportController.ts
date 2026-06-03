@@ -146,11 +146,7 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
     const cA = (companyId && role !== 'master_admin') ? ` AND company_id = ${companyId}` : '';
     const cW = (companyId && role !== 'master_admin') ? `WHERE c.company_id = ${companyId}` : '';
 
-    const companyId = (req as any).user?.company_id;
-    const role = (req as any).user?.role;
-    const cF = (companyId && role !== 'master_admin') ? ` WHERE company_id = ${companyId}` : '';
-    const cA = (companyId && role !== 'master_admin') ? ` AND company_id = ${companyId}` : '';
-    const cW = (companyId && role !== 'master_admin') ? `WHERE c.company_id = ${companyId}` : '';
+
 
     const [mainStats, recentCallsRes, callTypeRes, tasksRes, unreadWaRes, msgTodayRes] = await Promise.all([
       db.query(`
