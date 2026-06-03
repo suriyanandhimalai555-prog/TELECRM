@@ -39,7 +39,12 @@ const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>;
   if (!user && !hasToken) return <Navigate to="/login" />;
   if (!user && hasToken) {
-    setTimeout(() => { localStorage.removeItem('token'); window.location.href = '/login'; }, 5000);
+    // Decode JWT inline as fallback
+    try {
+      const token = localStorage.getItem('token')!;
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload?.id) return <>{children}</>;
+    } catch {}
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
   return <>{children}</>;

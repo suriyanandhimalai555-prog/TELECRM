@@ -39,8 +39,10 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       const url = error.config?.url || '';
-      if (!url.includes('/auth/') ) {
+      if (!url.includes('/auth/') && !url.includes('/attendance/')) {
         localStorage.removeItem('token');
+        localStorage.removeItem('company_id');
+        localStorage.removeItem('user_role');
         window.location.href = '/login';
       }
     }
