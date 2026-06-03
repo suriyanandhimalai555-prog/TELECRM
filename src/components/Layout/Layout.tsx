@@ -5,7 +5,10 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 
 export default function Layout() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem('sidebarOpen');
+    return saved !== null ? saved === 'true' : true;
+  });
   const location = useLocation();
 
   return (

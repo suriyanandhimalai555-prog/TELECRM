@@ -91,7 +91,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={() => { setIsOpen(!isOpen); localStorage.setItem('sidebarOpen', String(!isOpen)); }}
           className={cn("p-1.5 rounded-lg bg-gray-50 text-gray-400 hover:text-red-500 transition-all", !isOpen && "mx-auto")}
         >
           {isOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
