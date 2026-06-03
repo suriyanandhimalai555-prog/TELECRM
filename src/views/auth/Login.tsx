@@ -26,7 +26,7 @@ export default function Login() {
       useAuthStore.getState().setUser({ ...res.data.user, token: res.data.token });
 
 
-      navigate('/app');
+      window.location.href = '/app';
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to login');
     } finally {
@@ -39,7 +39,7 @@ export default function Login() {
     const finish = () => {
       setPledgeLoading(false);
       setShowPledge(false);
-      navigate('/app');
+      window.location.href = '/app';
     };
     try {
       navigator.geolocation.getCurrentPosition(async (pos) => {
