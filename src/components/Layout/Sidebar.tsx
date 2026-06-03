@@ -68,7 +68,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const hasWA2 = ['company_admin','ADMIN','MANAGER'].includes(user?.role || '');
   const navItems = isMasterAdmin
     ? masterAdminNav
-    : companyNav.filter(item => user && item.roles.includes(user.role));
+    : companyNav.filter(item => !user || item.roles.includes(user.role));
 
   const isWAActive = location.pathname === '/app/whatsapp' || location.pathname === '/app/whatsapp2';
 

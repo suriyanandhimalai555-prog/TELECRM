@@ -18,19 +18,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   const syncToStore = useCallback((userData: any, token: string) => {
-    if (userData?.company_id) {
-      try {
-        useAuthStore.getState().setUser({
-          id: userData.id,
-          email: userData.email,
-          name: userData.name,
-          role: userData.role,
-          company_id: userData.company_id,
-          company_name: userData.company_name,
-          token,
-        });
-      } catch {}
-    }
+    try {
+      useAuthStore.getState().setUser({
+        id: userData.id,
+        email: userData.email,
+        name: userData.name,
+        role: userData.role,
+        company_id: userData.company_id ?? null,
+        company_name: userData.company_name ?? '',
+        token,
+      });
+    } catch {}
   }, []);
 
   const refreshUser = useCallback(async () => {
