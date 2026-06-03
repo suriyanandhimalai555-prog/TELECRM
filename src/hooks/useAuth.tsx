@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext, useMemo, useCallback } from 'react';
 import api from '../services/api';
 import { User } from '../types';
+import { useAuthStore } from '../store/authStore';
 
 interface AuthContextType {
   user: User | null;
@@ -16,10 +17,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const { setUser: setStoreUser } = useAuthStore();
   const refreshUser = useCallback(async () => {
     try {
       const res = await api.get('/auth/me');
       setUser(res.data);
+      if (res.data?.company_id) setStoreUser({ ...res.data, token: localStorage.getItem('token') || '' });
     } catch (error: any) {
       setUser(null);
       if (error.response?.status === 401) {
@@ -43,6 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = useCallback((token: string, user: User) => {
     localStorage.setItem('token', token);
     setUser(user);
+    if (user?.company_id) setStoreUser({ ...user, token });
   }, []);
 
   const logout = useCallback(async () => {
