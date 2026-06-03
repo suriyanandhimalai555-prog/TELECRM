@@ -36,6 +36,8 @@ export default function Login() {
       // Show pledge popup
       setPledgeData(res.data.user);
       setShowPledge(true);
+      // Navigate immediately so PrivateRoute sees the token
+      navigate('/app');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to login');
     } finally {
