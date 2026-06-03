@@ -38,7 +38,10 @@ const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const hasToken = !!localStorage.getItem('token');
   if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>;
   if (!user && !hasToken) return <Navigate to="/login" />;
-  if (!user && hasToken) return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  if (!user && hasToken) {
+    setTimeout(() => { localStorage.removeItem('token'); window.location.href = '/login'; }, 5000);
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  }
   return <>{children}</>;
 };
 
