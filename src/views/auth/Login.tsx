@@ -24,8 +24,8 @@ export default function Login() {
       const res = await api.post('/auth/login', { email, password });
       login(res.data.token, res.data.user);
       useAuthStore.getState().setUser({ ...res.data.user, token: res.data.token });
-
-
+      localStorage.setItem('company_id', res.data.user.company_id);
+      localStorage.setItem('user_role', res.data.user.role);
       window.location.href = '/app';
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to login');

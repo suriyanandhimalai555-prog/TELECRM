@@ -18,15 +18,13 @@ api.interceptors.request.use((config) => {
   const url = config.url || '';
   if (!url.includes('/auth/')) {
     let effectiveCompanyId = user?.role === 'master_admin' ? viewingCompanyId : user?.company_id ?? null;
-    // Fallback: decode JWT directly if store not ready
+    // Fallback: read from localStorage if store not ready
     if (!effectiveCompanyId) {
-      try {
-        const token = localStorage.getItem('token');
-        if (token) {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          if (payload?.role !== 'master_admin') effectiveCompanyId = payload?.company_id ?? null;
-        }
-      } catch {}
+      const storedRole = localStorage.getItem('user_role');
+      const storedCompanyId = localStorage.getItem('company_id');
+      if (storedRole !== 'master_admin' && storedCompanyId) {
+        effectiveCompanyId = parseInt(storedCompanyId);
+      }
     }
     if (effectiveCompanyId) {
       config.params = { ...config.params, company_id: effectiveCompanyId };
