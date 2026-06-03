@@ -140,15 +140,21 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
   try {
     const today = new Date().toISOString().split('T')[0];
 
+    const companyId = (req as any).user?.company_id;
+    const role = (req as any).user?.role;
+    const cF = (companyId && role !== 'master_admin') ? ` WHERE company_id = ${companyId}` : '';
+    const cA = (companyId && role !== 'master_admin') ? ` AND company_id = ${companyId}` : '';
+    const cW = (companyId && role !== 'master_admin') ? `WHERE c.company_id = ${companyId}` : '';
+
     const [mainStats, recentCallsRes, callTypeRes, tasksRes, unreadWaRes, msgTodayRes] = await Promise.all([
       db.query(`
         SELECT
-          (SELECT COUNT(*) FROM leads)    AS "totalContacts",
-          (SELECT COUNT(*) FROM calls)    AS "totalCalls",
-          (SELECT COUNT(*) FROM calls WHERE status = 'connected') AS "connectedCalls",
-          (SELECT COALESCE(SUM(duration_seconds), 0) FROM calls) AS "totalDuration",
-          (SELECT COALESCE(AVG(duration_seconds), 0) FROM calls WHERE status = 'connected') AS "avgDuration",
-          (SELECT COUNT(*) FROM projects) AS "totalProjects"
+          (SELECT COUNT(*) FROM leads${cF})    AS "totalContacts",
+          (SELECT COUNT(*) FROM calls${cF})    AS "totalCalls",
+          (SELECT COUNT(*) FROM calls WHERE status = 'connected'${cA}) AS "connectedCalls",
+          (SELECT COALESCE(SUM(duration_seconds), 0) FROM calls${cF}) AS "totalDuration",
+          (SELECT COALESCE(AVG(duration_seconds), 0) FROM calls WHERE status = 'connected'${cA}) AS "avgDuration",
+          (SELECT COUNT(*) FROM projects${cF}) AS "totalProjects"
       `),
       db.query(`
         SELECT c.id, c.caller, c.type, c.status, c.duration_seconds,
@@ -156,12 +162,13 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
         FROM calls c
         LEFT JOIN users u ON u.id = c.agent_id
         LEFT JOIN leads l ON l.id = c.lead_id
+        ${cW}
         ORDER BY c.start_time DESC LIMIT 10
       `),
-      db.query(`SELECT COALESCE(type, 'Unknown') AS type, COUNT(*) AS count FROM calls GROUP BY type ORDER BY count DESC`),
-      db.query(`SELECT COUNT(*) AS count FROM tasks WHERE status != 'COMPLETED'`).catch(() => ({ rows: [{ count: 0 }] })),
-      db.query(`SELECT COUNT(*) AS count FROM whatsapp_messages WHERE direction = 'inbound' AND is_read = false`).catch(() => ({ rows: [{ count: 0 }] })),
-      db.query(`SELECT COUNT(*) AS count FROM whatsapp_messages WHERE direction = 'outbound' AND DATE(created_at) = '${today}'`).catch(() => ({ rows: [{ count: 0 }] })),
+      db.query(`SELECT COALESCE(type, 'Unknown') AS type, COUNT(*) AS count FROM calls${cF} GROUP BY type ORDER BY count DESC`),
+      db.query(`SELECT COUNT(*) AS count FROM tasks WHERE status != 'COMPLETED'${cA}`).catch(() => ({ rows: [{ count: 0 }] })),
+      db.query(`SELECT COUNT(*) AS count FROM whatsapp_messages WHERE direction = 'inbound' AND is_read = false${cA}`).catch(() => ({ rows: [{ count: 0 }] })),
+      db.query(`SELECT COUNT(*) AS count FROM whatsapp_messages WHERE direction = 'outbound' AND DATE(created_at) = '${today}'${cA}`).catch(() => ({ rows: [{ count: 0 }] })),
     ]);
 
     const row = mainStats.rows[0];
