@@ -47,11 +47,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload && payload.id) {
+          const userData = { id: payload.id, email: payload.email, name: payload.name, role: payload.role, company_id: payload.company_id, company_name: payload.company_name };
+          setUser(userData as any);
+          syncToStore(userData, token);
+          setLoading(false);
+          return;
+        }
+      } catch {}
       refreshUser();
     } else {
       setLoading(false);
     }
-  }, [refreshUser]);
+  }, [refreshUser, syncToStore]);
 
   const login = useCallback((token: string, user: User) => {
     localStorage.setItem('token', token);
