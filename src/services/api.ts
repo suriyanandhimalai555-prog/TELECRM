@@ -13,11 +13,14 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  // Auto-inject company_id for all roles
+  // Auto-inject company_id for all roles (except auth endpoints)
   const { user, viewingCompanyId } = useAuthStore.getState();
-  const effectiveCompanyId = user?.role === 'master_admin' ? viewingCompanyId : user?.company_id ?? null;
-  if (effectiveCompanyId) {
-    config.params = { ...config.params, company_id: effectiveCompanyId };
+  const url = config.url || '';
+  if (!url.includes('/auth/')) {
+    const effectiveCompanyId = user?.role === 'master_admin' ? viewingCompanyId : user?.company_id ?? null;
+    if (effectiveCompanyId) {
+      config.params = { ...config.params, company_id: effectiveCompanyId };
+    }
   }
 
   return config;
