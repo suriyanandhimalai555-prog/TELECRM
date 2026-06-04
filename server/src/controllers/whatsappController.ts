@@ -160,6 +160,9 @@ export const proxyMedia = async (req: Request, res: Response) => {
     const buffer = Buffer.from(arrayBuffer);
 
     const total = buffer.length;
+    if (total === 0) {
+      return res.status(410).json({ error: "Media expired or unavailable" });
+    }
     res.setHeader('Content-Type', mimeType);
     res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     res.setHeader('Cache-Control', 'private, max-age=3600');
