@@ -145,31 +145,17 @@ export const proxyMedia = async (req: Request, res: Response) => {
   const { mediaId } = req.params;
 
   try {
-    let token = WHATSAPP_TOKEN;
-
-    if (!token) {
-      try {
-        const adminId = await getAdminUserId();
-        const creds = await getUserWACredentials(adminId);
-        if (creds.token) token = creds.token;
-      } catch (dbErr) {
-        console.error('[WA] proxyMedia: failed to get admin token from DB:', dbErr);
-      }
+    const tokenRows = (await db.query('SELECT access_token FROM whatsapp_accounts WHERE access_token IS NOT NULL ORDER BY id ASC')).rows;
+    const allTokens = [WHATSAPP_TOKEN, ...tokenRows.map((r) => r.access_token)].filter(Boolean);
+    let metaData = null;
+    let token = '';
+    for (const t of allTokens) {
+      const r = await fetch('https://graph.facebook.com/v25.0/' + mediaId, { headers: { Authorization: 'Bearer ' + t } });
+      const d = await r.json();
+      if (!d.error && d.url) { metaData = d; token = t; break; }
     }
+    if (!metaData) return res.status(410).json({ error: 'Media expired or unavailable' });
 
-    if (!token) {
-      return res.status(400).json({ error: 'WhatsApp token missing. Please set it in Settings.' });
-    }
-
-    const metaRes = await fetch(`https://graph.facebook.com/v25.0/${mediaId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const metaData = await metaRes.json();
-
-    if (metaData.error) {
-      console.error('[WA] proxyMedia meta error:', metaData.error);
-      return res.status(400).json({ error: metaData.error.message });
-    }
 
     const mediaUrl: string = metaData.url;
     const mimeType: string = metaData.mime_type || 'application/octet-stream';
