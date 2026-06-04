@@ -119,12 +119,14 @@ function previewMessage(text: string): string {
   return text;
 }
 
+const WA_BASE = import.meta.env.VITE_API_URL?.startsWith('http') 
+  ? import.meta.env.VITE_API_URL.replace('/api','') 
+  : 'https://telecrm-copy-production.up.railway.app';
 function mediaUrl(mediaId: string): string {
   if (mediaId.startsWith('cached:')) {
-    // format: cached:/api/whatsapp/cached-media/filename.pdf
-    return mediaId.slice('cached:'.length);
+    return WA_BASE + mediaId.slice('cached:'.length);
   }
-  return `/api/whatsapp/media/${mediaId}`;
+  return WA_BASE + `/api/whatsapp/media/${mediaId}`;
 }
 
 function linkifyText(text: string) {
