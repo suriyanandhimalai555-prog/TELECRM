@@ -187,7 +187,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                             )}
                           >
                             <span className="w-2 h-2 rounded-full bg-blue-400 mr-2" />
-                            WA Account 3
+                            Almanzar Primetech LLC
                           </NavLink>
                           )}
                         </motion.div>
