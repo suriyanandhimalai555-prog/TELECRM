@@ -56,7 +56,16 @@ function parseMessage(text: string): ParsedMessage {
   if (text === '[unsupported message]') return { type: 'text', text: '⚠️ Unsupported message' };
   if (text.startsWith('[image:')) return { type: 'image', mediaId: text.slice(7, -1) };
   if (text.startsWith('[document:')) {
-    const inner = text.slice(10, -1).split(':');
+    const raw = text.slice(10, -1);
+    if (raw.startsWith('cached:')) {
+      // format: cached:/api/whatsapp/cached-media/filename.pdf:mediaId:origFilename
+      const withoutCached = raw.slice(7); // /api/whatsapp/cached-media/filename.pdf:mediaId:origFilename
+      const secondColon = withoutCached.indexOf(':', withoutCached.indexOf('/api'));
+      const cachedUrl = 'cached:' + withoutCached.slice(0, secondColon);
+      const rest = withoutCached.slice(secondColon + 1).split(':');
+      return { type: 'document', mediaId: cachedUrl, filename: rest[1] || rest[0] || 'document', mimeType: 'application/octet-stream' };
+    }
+    const inner = raw.split(':');
     return { type: 'document', mediaId: inner[0], filename: inner[1] || 'document', mimeType: inner[2] || 'application/octet-stream' };
   }
   if (text.startsWith('[audio:')) return { type: 'audio', mediaId: text.slice(7, -1) };
