@@ -219,8 +219,12 @@ function previewMessage(text: string): string {
   return text;
 }
 
+const WA_BASE = 'https://telecrm-copy-production.up.railway.app';
 function mediaUrl(mediaId: string): string {
-  return `/api/whatsapp/media/${mediaId}`;
+  if (mediaId.startsWith('cached:')) {
+    return WA_BASE + mediaId.slice('cached:'.length);
+  }
+  return WA_BASE + `/api/whatsapp/media/${mediaId}`;
 }
 
 function linkifyText(text: string) {
