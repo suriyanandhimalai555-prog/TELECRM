@@ -24,7 +24,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const { user } = useAuth();
   const location = useLocation();
   const [waExpanded, setWaExpanded] = useState(
-    location.pathname.includes("/app/whatsapp")
+    location.pathname === '/app/whatsapp' || location.pathname === '/app/whatsapp2'
   );
 
   const masterAdminNav = [
@@ -70,7 +70,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     ? masterAdminNav
     : companyNav.filter(item => !user || item.roles.includes(user.role));
 
-  const isWAActive = location.pathname.includes("/app/whatsapp");
+  const isWAActive = location.pathname === '/app/whatsapp' || location.pathname === '/app/whatsapp2';
 
   return (
     <motion.aside

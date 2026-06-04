@@ -983,11 +983,11 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
             </div>
             <div className="flex items-center gap-0.5">
               <button
-                onClick={() => navigate(accountIndex === 0 ? '/app/whatsapp2' : '/app/whatsapp')}
+                onClick={() => { const routes = ['/app/whatsapp','/app/whatsapp2','/app/whatsapp3','/app/whatsapp4']; navigate(routes[(accountIndex + 1) % 4]); }}
                 className="px-2 py-1 rounded-lg text-[9px] font-black uppercase border border-gray-200 text-gray-500 hover:bg-gray-100 transition-colors mr-1"
                 title={accountIndex === 0 ? 'Switch to WhatsApp 2' : 'Switch to WhatsApp 1'}
               >
-                {accountIndex === 0 ? 'WA 2 →' : '← WA 1'}
+                {`WA ${accountIndex + 1} → WA ${(accountIndex + 1) % 4 + 1}`}
               </button>
               <div className="relative" ref={filterRef}>
                 <button onClick={() => setShowFilterMenu(v => !v)} className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
