@@ -2,6 +2,8 @@ import nodeFetch from 'node-fetch';
 import FormDataNode from 'form-data';
 import { Request, Response } from 'express';
 import db from '../config/database';
+import fs from 'fs';
+import path from 'path';
 
 const PHONE_NUMBER_ID   = process.env.WHATSAPP_PHONE_NUMBER_ID   || '1023163197557145';
 const PHONE_NUMBER_ID_2 = process.env.WHATSAPP_PHONE_NUMBER_ID_2 || ''; // ← add to .env
@@ -29,6 +31,32 @@ function getToken(account?: string | number): string {
   return WHATSAPP_TOKEN;
 }
 
+// ─── Helper: download and cache media from Meta ─────────────────────────────
+async function downloadAndCacheMedia(mediaId: string, token: string): Promise<string | null> {
+  try {
+    const uploadDir = path.join(process.cwd(), 'server', 'uploads');
+    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+    const metaRes = await fetch(`https://graph.facebook.com/v25.0/${mediaId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const metaData: any = await metaRes.json();
+    if (metaData.error || !metaData.url) return null;
+    const fileRes = await fetch(metaData.url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!fileRes.ok) return null;
+    const ext = (metaData.mime_type || 'application/octet-stream').split('/')[1]?.split(';')[0] || 'bin';
+    const filename = `${mediaId}.${ext}`;
+    const filepath = path.join(uploadDir, filename);
+    const buffer = Buffer.from(await fileRes.arrayBuffer());
+    if (buffer.length === 0) return null;
+    fs.writeFileSync(filepath, buffer);
+    return `/api/whatsapp/cached-media/${filename}`;
+  } catch (e) {
+    console.error('[WA] downloadAndCacheMedia error:', e);
+    return null;
+  }
+}
 // ─── Helper: normalize phone to last 10 digits for matching ─────────────────
 function normalizePhone(phone: string): string {
   return phone.replace(/[^0-9]/g, '').slice(-10);
@@ -701,6 +729,18 @@ export const handleWebhook = async (req: Request, res: Response) => {
             [msgId, from, receivingPhoneId, text, name, ts, companyId]
           );
 
+          // Download media immediately so it doesn't expire
+          if (mediaType && savedRows?.length > 0) {
+            const mediaMatch = text.match(/\[(image|document|audio|video|sticker):([^:\]]+)/);
+            const mediaId = mediaMatch?.[2];
+            if (mediaId) {
+              const accountToken = (await db.query('SELECT access_token FROM whatsapp_accounts WHERE phone_number_id = $1', [receivingPhoneId])).rows[0]?.access_token || WHATSAPP_TOKEN;
+              const cachedUrl = await downloadAndCacheMedia(mediaId, accountToken);
+              if (cachedUrl) {
+                await db.query('UPDATE whatsapp_messages SET message_text = $1 WHERE message_id = $2', [text.replace(mediaId, `cached:${cachedUrl}:${mediaId}`), msgId]);
+              }
+            }
+          }
           const reqWithIo = req as any;
           if (reqWithIo.io && savedRows?.length > 0) {
             reqWithIo.io.emit('whatsapp:message', { ...savedRows[0], lead_id: lead?.id });

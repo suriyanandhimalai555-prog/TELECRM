@@ -9,6 +9,11 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 16 
 router.get('/webhook', verifyWebhook);
 router.post('/webhook', handleWebhook);
 router.get('/media/:mediaId', proxyMedia);
+router.get('/cached-media/:filename', (req, res) => {
+  const fp = require('path').join(process.cwd(), 'server', 'uploads', req.params.filename);
+  if (require('fs').existsSync(fp)) res.sendFile(fp);
+  else res.status(404).json({ error: 'File not found' });
+});
 router.post('/send', authenticate, sendMessage);
 router.get('/history/:phone', authenticate, getHistory);
 router.get('/conversations', authenticate, getConversations);
