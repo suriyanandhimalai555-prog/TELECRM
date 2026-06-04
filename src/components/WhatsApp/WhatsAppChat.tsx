@@ -119,9 +119,7 @@ function previewMessage(text: string): string {
   return text;
 }
 
-const WA_BASE = import.meta.env.VITE_API_URL?.startsWith('http') 
-  ? import.meta.env.VITE_API_URL.replace('/api','') 
-  : 'https://telecrm-copy-production.up.railway.app';
+const WA_BASE = 'https://telecrm-copy-production.up.railway.app';
 function mediaUrl(mediaId: string): string {
   if (mediaId.startsWith('cached:')) {
     return WA_BASE + mediaId.slice('cached:'.length);
