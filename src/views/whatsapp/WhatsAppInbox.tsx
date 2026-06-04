@@ -164,8 +164,16 @@ function parseMessage(text: string): ParsedMessage {
   }
   if (text.startsWith('[image:')) return { type: 'image', mediaId: text.slice(7, -1) };
   if (text.startsWith('[document:')) {
-    const inner = text.slice(10, -1).split(':');
-    return { type: 'document', mediaId: inner[0], filename: inner[1] || 'document', mimeType: inner[2] || 'application/octet-stream' };
+    const inner = text.slice(10, -1);
+    if (inner.startsWith('cached:')) {
+      const withoutCached = inner.slice(7);
+      const colonIdx = withoutCached.indexOf(':', withoutCached.indexOf('/api'));
+      const cachedUrl = 'cached:' + withoutCached.slice(0, colonIdx);
+      const rest = withoutCached.slice(colonIdx + 1).split(':');
+      return { type: 'document', mediaId: cachedUrl, filename: rest[1] || 'document', mimeType: rest[2] || 'application/octet-stream' };
+    }
+    const parts = inner.split(':');
+    return { type: 'document', mediaId: parts[0], filename: parts[1] || 'document', mimeType: parts[2] || 'application/octet-stream' };
   }
   if (text.startsWith('[audio:')) return { type: 'audio', mediaId: text.slice(7, -1) };
   if (text.startsWith('[video:')) return { type: 'video', mediaId: text.slice(7, -1) };
