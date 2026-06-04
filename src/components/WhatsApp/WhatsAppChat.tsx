@@ -111,6 +111,10 @@ function previewMessage(text: string): string {
 }
 
 function mediaUrl(mediaId: string): string {
+  if (mediaId.startsWith('cached:')) {
+    const parts = mediaId.split(':');
+    return parts[1] + ':' + parts[2]; // /api/whatsapp/cached-media/filename.pdf
+  }
   return `/api/whatsapp/media/${mediaId}`;
 }
 
