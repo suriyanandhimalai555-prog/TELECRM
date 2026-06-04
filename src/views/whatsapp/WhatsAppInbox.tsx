@@ -698,10 +698,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
       if (searchTerm) params.set('search', searchTerm);
       params.set('account', String(accountIndex));
       const res = await api.get(`/whatsapp/conversations?${params.toString()}`);
-      const deleted = JSON.parse(localStorage.getItem('deleted_convos') || '[]');
-      setConversations((res.data.conversations || []).filter(
-        (c: any) => !deleted.includes(c.contact_number.replace(/[^0-9]/g, ''))
-      ));
+      setConversations(res.data.conversations || []);
     } catch { } finally { setLoading(false); }
   }, [searchTerm, accountIndex]);
 
@@ -857,11 +854,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
       } catch {}
       setConversations(prev => prev.filter(c => c.contact_number !== selectedContact.contact_number));
       setSelectedContact(null);
-      const deleted = JSON.parse(localStorage.getItem('deleted_convos') || '[]');
-      if (!deleted.includes(phone)) {
-        deleted.push(phone);
-        localStorage.setItem('deleted_convos', JSON.stringify(deleted));
-      }
+      // conversation removed from view only
     }
     setDeleteModal(null);
   };
