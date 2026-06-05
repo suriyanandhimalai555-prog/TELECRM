@@ -15,7 +15,12 @@ router.get('/media/:mediaId', proxyMedia);
 router.get('/cached-media/:filename', async (req, res) => {
   try {
     const fp = path.join(process.cwd(), 'server', 'uploads', req.params.filename);
-    if (fs.existsSync(fp)) return res.sendFile(fp);
+    if (fs.existsSync(fp)) {
+      const mime = require('mime-types').lookup(fp) || 'application/octet-stream';
+      res.setHeader('Content-Type', mime);
+      res.setHeader('Content-Disposition', 'inline; filename="' + req.params.filename + '"');
+      return res.sendFile(fp);
+    }
     const mediaId = req.params.filename.replace(/\.[^.]+$/, '');
     const tokenRes = await db.query('SELECT access_token FROM whatsapp_accounts WHERE access_token IS NOT NULL ORDER BY id ASC');
     const allTokens = tokenRes.rows.map((r: any) => r.access_token).filter(Boolean);
