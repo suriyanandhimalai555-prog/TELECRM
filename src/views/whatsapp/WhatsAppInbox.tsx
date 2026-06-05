@@ -811,10 +811,12 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
     fetchConversations();
     fetchTemplates();
     socket.on('whatsapp:message', handleMessage);
+    socket.on('connect', fetchConversations);
     socket.on('whatsapp:read', handleRead);
     socket.on('whatsapp:status', handleStatus);
     return () => {
       socket.off('whatsapp:message', handleMessage);
+      socket.off('connect', fetchConversations);
       socket.off('whatsapp:read', handleRead);
       socket.off('whatsapp:status', handleStatus);
     };
