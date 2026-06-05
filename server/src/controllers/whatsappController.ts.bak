@@ -101,11 +101,11 @@ async function getUserWACredentials(userId: number, account?: string | number) {
   const companyId = u.company_id;
   if (companyId) {
     const waRes = await db.query(
-      'SELECT access_token, phone_number_id, phone_number FROM whatsapp_accounts WHERE company_id = $1 ORDER BY id ASC',
+      'SELECT access_token, phone_number_id, phone_number FROM whatsapp_accounts WHERE company_id = $1 ORDER BY id ASC LIMIT 1',
       [companyId]
     );
     if (waRes.rows.length > 0) {
-      const idx = Math.min(Number(account) || 0, waRes.rows.length - 1); const waAcc = waRes.rows[idx];
+      const waAcc = waRes.rows[0];
       return {
         token: waAcc.access_token || WHATSAPP_TOKEN,
         phoneId: waAcc.phone_number_id || PHONE_NUMBER_ID,
