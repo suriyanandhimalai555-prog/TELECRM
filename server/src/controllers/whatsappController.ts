@@ -708,8 +708,8 @@ export const handleWebhook = async (req: Request, res: Response) => {
           // Store with the actual receiving phone ID so conversations are scoped correctly
           const { rows: savedRows } = await db.query(
             `INSERT INTO whatsapp_messages
-               (message_id, from_number, to_number, message_text, direction, status, contact_name, timestamp, is_read, company_id)
-             VALUES ($1, $2, $3, $4, 'inbound', 'received', $5, $6, false, $7)
+               (message_id, from_number, to_number, message_text, direction, status, contact_name, timestamp, is_read, company_id, phone_number_id)
+             VALUES ($1, $2, $3, $4, 'inbound', 'received', $5, $6, false, $7, $3)
              ON CONFLICT (message_id) DO NOTHING
              RETURNING *`,
             [msgId, from, receivingPhoneId, text, name, ts, companyId]
