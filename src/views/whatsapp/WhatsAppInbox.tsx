@@ -797,7 +797,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
         if (newMsg.direction === 'inbound') api.put(`/whatsapp/mark-read/${contactNum}`).catch(() => {});
       }
     }
-  }, [selectedContact]);
+  }, [selectedContact, accountIndex]);
 
   const handleRead = useCallback(({ phone }: { phone: string }) => {
     setConversations(prev => prev.map(c => c.contact_number === phone ? { ...c, unread_count: 0 } : c));
