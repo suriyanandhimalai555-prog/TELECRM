@@ -495,8 +495,8 @@ function MessageContent({ parsed, isOut, onMediaClick }: {
 }
 
 // ─── Contact Info Drawer ──────────────────────────────────────────────────────
-function ContactInfoDrawer({ contact, messages, onClose }: {
-  contact: Conversation; messages: Message[]; onClose: () => void;
+function ContactInfoDrawer({ contact, messages, onClose, accountIndex = 0 }: {
+  contact: Conversation; messages: Message[]; onClose: () => void; accountIndex?: number;
 }) {
   const mediaMessages = messages.filter(m =>
     m.message_text.startsWith('[image:') ||
@@ -1316,7 +1316,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
         )}
         <AnimatePresence>
           {showContactInfo && selectedContact && (
-            <ContactInfoDrawer contact={selectedContact} messages={messages} onClose={() => setShowContactInfo(false)} />
+            <ContactInfoDrawer contact={selectedContact} messages={messages} onClose={() => setShowContactInfo(false)} accountIndex={accountIndex} />
           )}
         </AnimatePresence>
       </div>
