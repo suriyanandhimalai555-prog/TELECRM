@@ -902,7 +902,8 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
     .sort((a, b) => {
       const ap = pinnedChats.includes(a.contact_number);
       const bp = pinnedChats.includes(b.contact_number);
-      return ap === bp ? 0 : ap ? -1 : 1;
+      if (ap !== bp) return ap ? -1 : 1;
+      return new Date(b.last_timestamp).getTime() - new Date(a.last_timestamp).getTime();
     });
 
   const totalUnread = conversations.reduce((s, c) => s + (Number(c.unread_count) || 0), 0);
