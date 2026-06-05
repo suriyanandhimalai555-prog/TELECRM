@@ -292,8 +292,8 @@ export const sendTemplate = async (req: Request, res: Response) => {
 
     await db.query(
       `INSERT INTO whatsapp_messages
-         (message_id, from_number, to_number, message_text, direction, status, contact_name, is_read, company_id)
-       VALUES ($1, $2, $3, $4, 'outbound', 'sent', $5, true, $6)`,
+         (message_id, from_number, to_number, message_text, direction, status, contact_name, is_read, company_id, phone_number_id)
+       VALUES ($1, $2, $3, $4, 'outbound', 'sent', $5, true, $6, $7)`,
       [msgId, phoneId, phone, `Template: ${templateName}`, contactName || '', companyId]
     );
 
@@ -347,8 +347,8 @@ export const bulkSendMessage = async (req: Request, res: Response) => {
           const msgId = data.messages?.[0]?.id;
           await db.query(
             `INSERT INTO whatsapp_messages
-               (message_id, from_number, to_number, message_text, direction, status, contact_name, is_read, company_id)
-             VALUES ($1, $2, $3, $4, 'outbound', 'sent', $5, true, $6)`,
+               (message_id, from_number, to_number, message_text, direction, status, contact_name, is_read, company_id, phone_number_id)
+             VALUES ($1, $2, $3, $4, 'outbound', 'sent', $5, true, $6, $7)`,
             [msgId, phoneId, phone, message, name, companyId]
           );
           results.push({ phone: rawPhone, success: true });
@@ -410,10 +410,10 @@ export const sendMessage = async (req: Request, res: Response) => {
 
     const { rows: savedRows } = await db.query(
       `INSERT INTO whatsapp_messages
-         (message_id, from_number, to_number, message_text, direction, status, contact_name, is_read, company_id)
-       VALUES ($1, $2, $3, $4, 'outbound', 'sent', $5, true, $6)
+         (message_id, from_number, to_number, message_text, direction, status, contact_name, is_read, company_id, phone_number_id)
+       VALUES ($1, $2, $3, $4, 'outbound', 'sent', $5, true, $6, $7)
        RETURNING *`,
-      [msgId, phoneId, phone, message, contactName || '', companyId]
+      [msgId, phoneId, phone, message, contactName || '', companyId, phoneId]
     );
 
     const reqWithIo = req as any;
