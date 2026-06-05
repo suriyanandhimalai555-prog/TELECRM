@@ -618,6 +618,13 @@ function DeleteModal({ type, onConfirm, onCancel }: {
   );
 }
 
+const ACCOUNT_PHONE_IDS: Record<number, string> = {
+  0: "1093345597202562",
+  1: "1093345597202562",
+  2: "1070621209476657",
+  3: "1106116902589892",
+};
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) {
   const { user } = useAuth();
@@ -751,12 +758,6 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
     } catch { } finally { setSending(false); }
   };
 
-  const ACCOUNT_PHONE_IDS: Record<number, string> = {
-    0: "1093345597202562",
-    1: "1093345597202562",
-    2: "1070621209476657",
-    3: "1106116902589892",
-  };
   const handleMessage = useCallback((newMsg: Message) => {
     const myPhoneId = ACCOUNT_PHONE_IDS[accountIndex];
     if (newMsg.phone_number_id && myPhoneId && newMsg.phone_number_id !== myPhoneId) return;
