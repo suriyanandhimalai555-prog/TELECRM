@@ -760,7 +760,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
 
   const handleMessage = useCallback((newMsg: Message) => {
     const myPhoneId = ACCOUNT_PHONE_IDS[accountIndex];
-    if (newMsg.phone_number_id && myPhoneId && newMsg.phone_number_id !== myPhoneId) return;
+    if (!myPhoneId || (newMsg.phone_number_id && newMsg.phone_number_id !== myPhoneId)) return;
     setConversations(prev => {
       const contactNum = newMsg.direction === 'inbound' ? newMsg.from_number : newMsg.to_number;
       const existing = prev.find(c => c.contact_number === contactNum);
