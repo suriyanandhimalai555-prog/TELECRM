@@ -723,12 +723,21 @@ export const handleWebhook = async (req: Request, res: Response) => {
                 if (msgLower.includes(proj.name.toLowerCase())) { detectedProjectId = proj.id; break; }
               }
             }
+            // Auto-assign owner based on project
+            const projectOwnerMap: Record<number, number> = {
+              9: 66,  // Crypto Exchange → Syed
+              10: 69, // Web Development → Jatin
+              11: 67, // Digital Marketing → Himanshi
+              12: 68, // Video Editing → Nithin
+              13: 68, // Trading → Nithin
+            };
+            const assignedOwnerId = detectedProjectId ? (projectOwnerMap[detectedProjectId] || adminId) : adminId;
             const { rows: newLeadRows } = await db.query(
               `INSERT INTO leads
                  (contact_name, mobile, whatsapp, source, stage, owner_id, revenue, created_at, updated_at, company_id, project_id)
                VALUES ($1, $2, $3, 'WHATSAPP', 'NEW', $4, 0, NOW(), NOW(), $5, $6)
                RETURNING *`,
-              [name, from, from, adminId, companyId, detectedProjectId]
+              [name, from, from, assignedOwnerId, companyId, detectedProjectId]
             );
             lead = newLeadRows[0];
             console.log(`[WA] ✅ Auto-created lead #${lead?.id} for ${from} in company #${companyId} project #${detectedProjectId}`);
