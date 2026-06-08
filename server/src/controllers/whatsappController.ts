@@ -694,15 +694,35 @@ export const handleWebhook = async (req: Request, res: Response) => {
           let lead = await findLeadByPhone(from, companyId);
           if (!lead) {
             const adminId = await getAdminUserId(companyId);
+            // Auto-detect project from message keywords
+            const msgLower = text.toLowerCase();
+            const keywordMap: Record<string, number> = {
+              'crypto': 9, 'bitcoin': 9, 'exchange': 9, 'token': 9, 'coin': 9, 'blockchain': 9,
+              'web': 10, 'website': 10, 'development': 10, 'app': 10, 'software': 10,
+              'marketing': 11, 'digital': 11, 'seo': 11, 'ads': 11, 'social media': 11, 'instagram': 11, 'facebook': 11,
+              'video': 12, 'editing': 12, 'reel': 12, 'youtube': 12, 'content': 12,
+              'trading': 13, 'forex': 13, 'stock': 13, 'invest': 13,
+            };
+            let detectedProjectId: number | null = null;
+            for (const [keyword, projectId] of Object.entries(keywordMap)) {
+              if (msgLower.includes(keyword)) { detectedProjectId = projectId; break; }
+            }
+            // Also check company-specific projects dynamically
+            if (!detectedProjectId && companyId) {
+              const projRes = await db.query('SELECT id, name FROM projects WHERE company_id = $1', [companyId]);
+              for (const proj of projRes.rows) {
+                if (msgLower.includes(proj.name.toLowerCase())) { detectedProjectId = proj.id; break; }
+              }
+            }
             const { rows: newLeadRows } = await db.query(
               `INSERT INTO leads
-                 (contact_name, mobile, whatsapp, source, stage, owner_id, revenue, created_at, updated_at, company_id)
-               VALUES ($1, $2, $3, 'WHATSAPP', 'NEW', $4, 0, NOW(), NOW(), $5)
+                 (contact_name, mobile, whatsapp, source, stage, owner_id, revenue, created_at, updated_at, company_id, project_id)
+               VALUES ($1, $2, $3, 'WHATSAPP', 'NEW', $4, 0, NOW(), NOW(), $5, $6)
                RETURNING *`,
-              [name, from, from, adminId, companyId]
+              [name, from, from, adminId, companyId, detectedProjectId]
             );
             lead = newLeadRows[0];
-            console.log(`[WA] ✅ Auto-created lead #${lead?.id} for ${from} in company #${companyId}`);
+            console.log(`[WA] ✅ Auto-created lead #${lead?.id} for ${from} in company #${companyId} project #${detectedProjectId}`);
           }
 
           // Store with the actual receiving phone ID so conversations are scoped correctly
