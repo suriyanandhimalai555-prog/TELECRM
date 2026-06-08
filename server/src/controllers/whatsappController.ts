@@ -757,9 +757,17 @@ export const handleWebhook = async (req: Request, res: Response) => {
                       messaging_product: 'whatsapp',
                       to: from,
                       type: 'text',
-                      text: { body: companyId === 8 
-                        ? `Hello! 👋 Welcome to Almanzar. Thank you for reaching out. Our team will get back to you shortly.`
-                        : `Hello! 👋 Welcome to AVG Prime Tech. Thank you for reaching out. Our team will get back to you shortly.` }
+                      text: { body: (() => {
+                        if (companyId === 3) return `Hello! 👋 Welcome to AVG Prime Tech. Thank you for reaching out. Our team will get back to you shortly.`;
+                        const pm: Record<number, string> = {
+                          9:  `Hello! 👋 Welcome to Almanzar. We specialize in *Crypto Exchange Development*. Our team will contact you shortly! 🚀`,
+                          10: `Hello! 👋 Welcome to Almanzar. We build professional *Websites & Apps*. Our team will contact you shortly! 💻`,
+                          11: `Hello! 👋 Welcome to Almanzar. We offer *Digital Marketing* solutions. Our team will contact you shortly! 📈`,
+                          12: `Hello! 👋 Welcome to Almanzar. We provide *Video Editing* services. Our team will contact you shortly! 🎬`,
+                          13: `Hello! 👋 Welcome to Almanzar. We offer *Trading* expertise. Our team will contact you shortly! 📊`,
+                        };
+                        return pm[detectedProjectId as number] || `Hello! 👋 Welcome to Almanzar. Thank you for reaching out. Our team will get back to you shortly.`;
+                      })() }
                     })
                   });
                   console.log(`[WA] ✅ Welcome message sent to ${from}`);
