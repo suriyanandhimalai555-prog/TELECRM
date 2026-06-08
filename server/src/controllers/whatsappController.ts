@@ -696,8 +696,8 @@ export const handleWebhook = async (req: Request, res: Response) => {
           if (lead && (companyId === 8 || companyId === 3)) {
             try {
               const lastOutbound = await db.query(
-                `SELECT id FROM whatsapp_messages WHERE lead_id = $1 AND direction = 'outbound' ORDER BY created_at DESC LIMIT 1`,
-                [lead.id]
+                `SELECT id FROM whatsapp_messages WHERE to_number = $1 AND direction = 'outbound' AND company_id = $2 ORDER BY created_at DESC LIMIT 1`,
+                [from, companyId]
               );
               if (lastOutbound.rows.length === 0) {
                 // No agent reply yet — send auto-reply
