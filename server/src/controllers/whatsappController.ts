@@ -696,13 +696,22 @@ export const handleWebhook = async (req: Request, res: Response) => {
             const adminId = await getAdminUserId(companyId);
             // Auto-detect project from message keywords
             const msgLower = text.toLowerCase();
-            const keywordMap: Record<string, number> = {
-              'crypto': 9, 'bitcoin': 9, 'exchange': 9, 'token': 9, 'coin': 9, 'blockchain': 9,
-              'web': 10, 'website': 10, 'development': 10, 'app': 10, 'software': 10,
-              'marketing': 11, 'digital': 11, 'seo': 11, 'ads': 11, 'social media': 11, 'instagram': 11, 'facebook': 11,
-              'video': 12, 'editing': 12, 'reel': 12, 'youtube': 12, 'content': 12,
-              'trading': 13, 'forex': 13, 'stock': 13, 'invest': 13,
+            // Keywords per company
+            const keywordMapByCompany: Record<number, Record<string, number>> = {
+              8: { // ALMANZAR
+                'crypto': 9, 'bitcoin': 9, 'exchange': 9, 'token': 9, 'coin': 9, 'blockchain': 9,
+                'web': 10, 'website': 10, 'development': 10, 'app': 10, 'software': 10,
+                'marketing': 11, 'digital': 11, 'seo': 11, 'ads': 11, 'social media': 11, 'instagram': 11, 'facebook': 11,
+                'video': 12, 'editing': 12, 'reel': 12, 'youtube': 12, 'content': 12,
+                'trading': 13, 'forex': 13, 'stock': 13, 'invest': 13,
+              },
+              3: { // AVG Prime Tech
+                'telecaller': 14, 'tele caller': 14, 'telecalling': 14, 'bpo': 14, 'call center': 14,
+                'video editor': 15, 'video editing': 15, 'editor': 15, 'editing': 15, 'reel': 15,
+                'job': 16, 'placement': 16, 'vacancy': 16, 'hiring': 16, 'career': 16, 'work': 16, 'salary': 16,
+              },
             };
+            const keywordMap = keywordMapByCompany[companyId] || {};
             let detectedProjectId: number | null = null;
             for (const [keyword, projectId] of Object.entries(keywordMap)) {
               if (msgLower.includes(keyword)) { detectedProjectId = projectId; break; }
@@ -723,8 +732,8 @@ export const handleWebhook = async (req: Request, res: Response) => {
             );
             lead = newLeadRows[0];
             console.log(`[WA] ✅ Auto-created lead #${lead?.id} for ${from} in company #${companyId} project #${detectedProjectId}`);
-            // Send one-time welcome message to new leads for ALMANZAR (company_id=8)
-            if (companyId === 8) {
+            // Send one-time welcome message to new leads
+            if (companyId === 8 || companyId === 3) {
               try {
                 const waAccRes = await db.query(
                   'SELECT access_token, phone_number_id FROM whatsapp_accounts WHERE company_id = $1 ORDER BY id DESC LIMIT 1',
@@ -739,7 +748,9 @@ export const handleWebhook = async (req: Request, res: Response) => {
                       messaging_product: 'whatsapp',
                       to: from,
                       type: 'text',
-                      text: { body: `Hello! 👋 Welcome to Almanzar. Thank you for reaching out. Our team will get back to you shortly.` }
+                      text: { body: companyId === 8 
+                        ? `Hello! 👋 Welcome to Almanzar. Thank you for reaching out. Our team will get back to you shortly.`
+                        : `Hello! 👋 Welcome to AVG Prime Tech. Thank you for reaching out. Our team will get back to you shortly.` }
                     })
                   });
                   console.log(`[WA] ✅ Welcome message sent to ${from}`);
