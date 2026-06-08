@@ -723,6 +723,31 @@ export const handleWebhook = async (req: Request, res: Response) => {
             );
             lead = newLeadRows[0];
             console.log(`[WA] ✅ Auto-created lead #${lead?.id} for ${from} in company #${companyId} project #${detectedProjectId}`);
+            // Send one-time welcome message to new leads for ALMANZAR (company_id=8)
+            if (companyId === 8) {
+              try {
+                const waAccRes = await db.query(
+                  'SELECT access_token, phone_number_id FROM whatsapp_accounts WHERE company_id = $1 ORDER BY id DESC LIMIT 1',
+                  [companyId]
+                );
+                const waAcc = waAccRes.rows[0];
+                if (waAcc) {
+                  await fetch(`https://graph.facebook.com/v18.0/${waAcc.phone_number_id}/messages`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${waAcc.access_token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      messaging_product: 'whatsapp',
+                      to: from,
+                      type: 'text',
+                      text: { body: `Hello! 👋 Welcome to Almanzar. Thank you for reaching out. Our team will get back to you shortly.` }
+                    })
+                  });
+                  console.log(`[WA] ✅ Welcome message sent to ${from}`);
+                }
+              } catch (e) {
+                console.log(`[WA] ❌ Welcome message failed:`, e);
+              }
+            }
           }
 
           // Store with the actual receiving phone ID so conversations are scoped correctly
