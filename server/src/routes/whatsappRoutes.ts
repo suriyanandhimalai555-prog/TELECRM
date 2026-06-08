@@ -7,7 +7,7 @@ import { authenticate } from "../middleware/auth";
 import multer from 'multer';
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 16 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 64 * 1024 * 1024 } });
 
 router.get('/webhook', verifyWebhook);
 router.post('/webhook', handleWebhook);
@@ -16,7 +16,9 @@ router.get('/cached-media/:filename', async (req, res) => {
   try {
     const fp = path.join(process.cwd(), 'server', 'uploads', req.params.filename);
     if (fs.existsSync(fp)) {
-      const mime = require('mime-types').lookup(fp) || 'application/octet-stream';
+      const mimeTypes: Record<string,string> = {jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',gif:'image/gif',webp:'image/webp',mp4:'video/mp4',pdf:'application/pdf',doc:'application/msword',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',mp3:'audio/mpeg',ogg:'audio/ogg',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'};
+      const ext = fp.split('.').pop()?.toLowerCase() || '';
+      const mime = mimeTypes[ext] || 'application/octet-stream';
       res.setHeader('Content-Type', mime);
       res.setHeader('Content-Disposition', 'inline; filename="' + req.params.filename + '"');
       return res.sendFile(fp);
