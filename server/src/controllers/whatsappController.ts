@@ -692,6 +692,49 @@ export const handleWebhook = async (req: Request, res: Response) => {
           const companyId = accountRes.rows[0]?.company_id || null;
 
           let lead = await findLeadByPhone(from, companyId);
+          // Auto-reply for existing leads who haven't been replied to yet
+          if (lead && (companyId === 8 || companyId === 3)) {
+            try {
+              const lastOutbound = await db.query(
+                `SELECT id FROM whatsapp_messages WHERE lead_id = $1 AND direction = 'outbound' ORDER BY created_at DESC LIMIT 1`,
+                [lead.id]
+              );
+              if (lastOutbound.rows.length === 0) {
+                // No agent reply yet — send auto-reply
+                const waAccRes = await db.query(
+                  'SELECT access_token, phone_number_id FROM whatsapp_accounts WHERE company_id = $1 ORDER BY id DESC LIMIT 1',
+                  [companyId]
+                );
+                const waAcc = waAccRes.rows[0];
+                if (waAcc) {
+                  const msgLowerAuto = text.toLowerCase();
+                  const pmAuto: Record<number, string> = {
+                    9:  `Hello! 👋 Welcome to Almanzar. We specialize in *Crypto Exchange Development*. Our team will contact you shortly! 🚀`,
+                    10: `Hello! 👋 Welcome to Almanzar. We build professional *Websites & Apps*. Our team will contact you shortly! 💻`,
+                    11: `Hello! 👋 Welcome to Almanzar. We offer *Digital Marketing* solutions. Our team will contact you shortly! 📈`,
+                    12: `Hello! 👋 Welcome to Almanzar. We provide *Video Editing* services. Our team will contact you shortly! 🎬`,
+                    13: `Hello! 👋 Welcome to Almanzar. We offer *Trading* expertise. Our team will contact you shortly! 📊`,
+                  };
+                  const autoBody = companyId === 3
+                    ? `Hello! 👋 Welcome to AVG Prime Tech. Thank you for reaching out. Our team will get back to you shortly.`
+                    : (pmAuto[lead.project_id] || `Hello! 👋 Welcome to Almanzar. Thank you for reaching out. Our team will get back to you shortly.`);
+                  await fetch(`https://graph.facebook.com/v18.0/${waAcc.phone_number_id}/messages`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${waAcc.access_token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      messaging_product: 'whatsapp',
+                      to: from,
+                      type: 'text',
+                      text: { body: autoBody }
+                    })
+                  });
+                  console.log(`[WA] ✅ Auto-reply sent to existing lead ${from}`);
+                }
+              }
+            } catch (e) {
+              console.log(`[WA] ❌ Auto-reply failed:`, e);
+            }
+          }
           if (!lead) {
             const adminId = await getAdminUserId(companyId);
             // Auto-detect project from message keywords
