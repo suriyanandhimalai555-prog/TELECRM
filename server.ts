@@ -23,6 +23,7 @@ import attendanceRoutes from './server/src/routes/attendanceRoutes';
 import reminderRoutes from './server/src/routes/reminderRoutes';
 import leadScoringRoutes from './server/src/routes/leadScoringRoutes';
 import customFieldRoutes from './server/src/routes/customFieldRoutes';
+import callRoutes from './server/src/routes/callRoutes';
 
 dotenv.config();
 
@@ -156,7 +157,7 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/reminders', reminderRoutes);
 app.use('/api/lead-scoring', leadScoringRoutes);
 app.use('/api/custom-fields', customFieldRoutes);
-// ← REMOVED: callRoutes
+app.use('/api/calls', callRoutes);
 
 (async () => {
   if (process.env.NODE_ENV !== 'production') {

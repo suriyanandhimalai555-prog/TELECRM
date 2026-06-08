@@ -307,7 +307,9 @@ export default function Leads() {
         notes: `Call with ${activeCall.lead.contact_name}`,
         start_time: new Date(Date.now() - activeCall.seconds * 1000).toISOString(),
         end_time: new Date().toISOString(),
-      }).catch(() => {});
+      }).catch((err) => {
+        console.error('Call save error:', err?.response?.data || err.message);
+      });
       setActiveCall(null);
       return;
     }
