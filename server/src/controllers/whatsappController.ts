@@ -688,6 +688,8 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
           console.log(`[WA] 📩 INBOUND from ${from} (${name}): type=${msg.type} → phoneId=${receivingPhoneId}`);
 
+          // Normalize old ALMANZAR phone ID to correct one
+          if (receivingPhoneId === '1106116902589892') receivingPhoneId = '1070621209476657';
           const accountRes = await db.query('SELECT company_id FROM whatsapp_accounts WHERE phone_number_id = $1 LIMIT 1', [receivingPhoneId]);
           const companyId = accountRes.rows[0]?.company_id || null;
 
