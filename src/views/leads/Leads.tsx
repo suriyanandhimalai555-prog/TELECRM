@@ -318,7 +318,7 @@ export default function Leads() {
     if (user?.role === 'MANAGER') {
       window.open(`https://wa.me/${phone}`, '_blank');
     } else {
-      navigate(`/app/whatsapp?phone=${phone}`);
+      navigate(`/app/whatsapp4?phone=${phone}`);
     }
   };
 
@@ -356,7 +356,7 @@ export default function Leads() {
     const phone = '91' + raw;
     if (phone) {
       if (type === 'whatsapp') {
-        navigate(`/app/whatsapp?phone=${phone}`);
+        navigate(`/app/whatsapp4?phone=${phone}`);
       } else {
         const a = document.createElement('a');
         a.href = `tel:+${phone}`;
