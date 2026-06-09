@@ -90,6 +90,22 @@ export default function Leads() {
     }
   }, [user?.id]);
 
+  // Restart interval if call was restored from localStorage after page refresh
+  useEffect(() => {
+    if (activeCall && activeCall.interval === null) {
+      const saved = localStorage.getItem('activeCall');
+      const startTime = saved ? JSON.parse(saved).startTime : Date.now();
+      const interval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        setActiveCall(prev => prev ? { ...prev, seconds: elapsed } : null);
+        localStorage.setItem('activeCall', JSON.stringify({ 
+          lead: activeCall.lead, seconds: elapsed, type: activeCall.type, startTime 
+        }));
+      }, 1000);
+      setActiveCall(prev => prev ? { ...prev, interval } : null);
+    }
+  }, []);
+
   const triggerFlash = (type: 'white' | 'red') => {
     setFlash(type);
     setTimeout(() => setFlash(null), 300);
