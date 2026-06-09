@@ -68,8 +68,8 @@ export const createCall = async (req: AuthRequest, res: Response) => {
 
   try {
     const result = await db.query(`
-      INSERT INTO calls (agent_id, lead_id, caller, start_time, end_time, duration_seconds, type, campaign_id, status, feedback, notes, outcome)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      INSERT INTO calls (agent_id, lead_id, caller, start_time, end_time, duration_seconds, type, campaign_id, status, feedback, notes, outcome, company_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING id
     `, [req.user.id, lead_id, caller, start_time, end_time, duration_seconds, type, campaign_id, status, feedback, notes, outcome]);
 
