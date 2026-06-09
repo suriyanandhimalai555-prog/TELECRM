@@ -33,7 +33,17 @@ export default function Leads() {
   const navigate = useNavigate();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedLeadIds, setSelectedLeadIds] = useState<number[]>([]);
-  const [activeCall, setActiveCall] = useState<{ lead: Lead; seconds: number; interval: any; type: 'phone' | 'whatsapp' } | null>(null);
+  const [activeCall, setActiveCall] = useState<{ lead: Lead; seconds: number; interval: any; type: 'phone' | 'whatsapp' } | null>(() => {
+    try {
+      const saved = localStorage.getItem('activeCall');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const elapsed = Math.floor((Date.now() - parsed.startTime) / 1000);
+        return { lead: parsed.lead, seconds: elapsed, interval: null, type: parsed.type };
+      }
+    } catch {}
+    return null;
+  });
   const [callPopup, setCallPopup] = useState<Lead | null>(null);
   const [historyPopup, setHistoryPopup] = useState<{ lead: Lead; calls: any[] } | null>(null);
   const [showBulkModal, setShowBulkModal] = useState(false);
@@ -313,10 +323,15 @@ export default function Leads() {
         console.error('Call save error:', err?.response?.data || err.message);
       });
       setActiveCall(null);
+      localStorage.removeItem('activeCall');
       return;
     }
+    const callStartTime = Date.now();
+    localStorage.setItem('activeCall', JSON.stringify({ lead, seconds: 0, type, startTime: callStartTime }));
     const interval = setInterval(() => {
-      setActiveCall(prev => prev ? { ...prev, seconds: prev.seconds + 1 } : null);
+      const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
+      setActiveCall(prev => prev ? { ...prev, seconds: elapsed } : null);
+      localStorage.setItem('activeCall', JSON.stringify({ lead, seconds: elapsed, type, startTime: callStartTime }));
     }, 1000);
     setActiveCall({ lead, seconds: 0, interval, type });
     let raw = (lead.mobile || lead.whatsapp || '').replace(/[^0-9]/g, '');
