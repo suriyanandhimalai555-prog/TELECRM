@@ -601,7 +601,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
         const val = change.value;
 
         // Determine which of our phone IDs received this message
-        const receivingPhoneId = val?.metadata?.phone_number_id || PHONE_NUMBER_ID;
+        let receivingPhoneId = val?.metadata?.phone_number_id || PHONE_NUMBER_ID;
 
         for (const msg of val?.messages || []) {
           const from    = msg.from as string;
