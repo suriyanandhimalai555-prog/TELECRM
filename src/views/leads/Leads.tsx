@@ -327,7 +327,7 @@ export default function Leads() {
       if (type === 'whatsapp') {
         navigate(`/app/whatsapp?phone=${phone}`);
       } else {
-        window.open(`tel:+${phone}`, '_self');
+        window.open(`tel:+${phone}`);
       }
     }
   };
