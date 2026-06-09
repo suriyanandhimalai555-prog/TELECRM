@@ -810,7 +810,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
   useEffect(() => {
     fetchConversations();
     fetchTemplates();
-    const refreshInterval = setInterval(fetchConversations, 15000);
+    const refreshInterval = setInterval(fetchConversations, 5000);
     socket.on('whatsapp:message', handleMessage);
     socket.on('connect', fetchConversations);
     socket.on('whatsapp:read', handleRead);
@@ -849,14 +849,36 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
     setSending(true);
     const text = input;
     setInput('');
+    // Optimistic update - show message instantly
+    const tempMsg: Message = {
+      id: Date.now(),
+      message_id: `temp_${Date.now()}`,
+      message_text: text,
+      direction: 'outbound',
+      status: 'sent',
+      timestamp: new Date().toISOString(),
+      contact_name: selectedContact.contact_name,
+      from_number: '',
+      to_number: selectedContact.contact_number,
+      is_read: true,
+    };
+    setMessages(prev => [...prev, tempMsg]);
     try {
-      await api.post('/whatsapp/send', {
+      const res = await api.post('/whatsapp/send', {
         to: selectedContact.contact_number,
         message: text,
         contactName: selectedContact.contact_name,
         account: accountIndex,
       });
-    } catch { } finally { setSending(false); }
+      // Replace temp message with real one if returned
+      if (res.data?.message_id) {
+        setMessages(prev => prev.map(m => m.message_id === tempMsg.message_id ? { ...tempMsg, message_id: res.data.message_id, status: 'delivered' } : m));
+      }
+    } catch {
+      // Remove temp message on failure
+      setMessages(prev => prev.filter(m => m.message_id !== tempMsg.message_id));
+      setInput(text);
+    } finally { setSending(false); }
   };
 
   const handleResolve = () => {
