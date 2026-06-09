@@ -99,7 +99,7 @@ export default function App() {
                 <Route path="whatsapp" element={<BlockMasterAdmin><WhatsAppInbox accountIndex={0} /></BlockMasterAdmin>} />
                 <Route path="whatsapp2" element={<BlockMasterAdmin><WhatsAppInbox accountIndex={1} /></BlockMasterAdmin>} />
                 <Route path="whatsapp3" element={<BlockMasterAdmin><WhatsAppInbox accountIndex={2} /></BlockMasterAdmin>} />
-                <Route path="whatsapp4" element={<BlockMasterAdmin><WhatsAppInbox accountIndex={2} /></BlockMasterAdmin>} />
+                <Route path="whatsapp4" element={<BlockMasterAdmin><WhatsAppInbox accountIndex={3} /></BlockMasterAdmin>} />
                 <Route path="pipeline" element={<BlockMasterAdmin><Pipeline /></BlockMasterAdmin>} />
                 <Route path="contacts" element={<BlockMasterAdmin><Contacts /></BlockMasterAdmin>} />
                 <Route path="integrations" element={<BlockMasterAdmin><Integrations /></BlockMasterAdmin>} />
