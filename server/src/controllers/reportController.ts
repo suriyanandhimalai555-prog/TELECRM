@@ -41,9 +41,9 @@ export const getAllReports = async (req: AuthRequest, res: Response) => {
       db.query(`
         SELECT
           COUNT(*) AS total,
-          SUM(CASE WHEN c.status = 'connected' THEN 1 ELSE 0 END) AS connected,
+          SUM(CASE WHEN c.LOWER(status) = 'connected' THEN 1 ELSE 0 END) AS connected,
           COALESCE(SUM(c.duration_seconds), 0) AS total_duration,
-          COALESCE(AVG(CASE WHEN c.status = 'connected' THEN c.duration_seconds END), 0) AS avg_duration
+          COALESCE(AVG(CASE WHEN c.LOWER(status) = 'connected' THEN c.duration_seconds END), 0) AS avg_duration
         FROM calls c WHERE 1=1 ${callScopeJ} ${dateCalls}`),
       db.query(`SELECT COUNT(*) AS total FROM whatsapp_messages WHERE 1=1 ${dateWa}`),
     ]);
@@ -59,7 +59,7 @@ export const getAllReports = async (req: AuthRequest, res: Response) => {
     const [callSummary, callTypes] = await Promise.all([
       db.query(`
         SELECT DATE(start_time) AS date, COUNT(*) AS total,
-          SUM(CASE WHEN status = 'connected' THEN 1 ELSE 0 END) AS connected,
+          SUM(CASE WHEN LOWER(status) = 'connected' THEN 1 ELSE 0 END) AS connected,
           SUM(CASE WHEN status != 'connected' THEN 1 ELSE 0 END) AS failed
         FROM calls WHERE 1=1 ${callScope} ${dateCallsP}
         GROUP BY DATE(start_time) ORDER BY date DESC LIMIT 30`),
@@ -95,7 +95,7 @@ export const getAllReports = async (req: AuthRequest, res: Response) => {
       SELECT u.id, u.name, u.role,
         COUNT(DISTINCT l.id) AS total_leads,
         COUNT(DISTINCT c.id) AS total_calls,
-        SUM(CASE WHEN c.status = 'connected' THEN 1 ELSE 0 END) AS connected_calls,
+        SUM(CASE WHEN c.LOWER(status) = 'connected' THEN 1 ELSE 0 END) AS connected_calls,
         COALESCE(SUM(c.duration_seconds), 0) AS total_duration
       FROM users u
       LEFT JOIN leads l ON l.owner_id  = u.id ${tl}
@@ -124,9 +124,9 @@ export const getStats = async (req: AuthRequest, res: Response) => {
     const result = await db.query(`
       SELECT
         (SELECT COUNT(*) FROM leads) AS "totalLeads",
-        (SELECT COUNT(*) FROM calls WHERE status = 'connected') AS "connectedCalls",
-        (SELECT COALESCE(SUM(duration_seconds), 0) FROM calls WHERE status = 'connected') AS "totalDuration",
-        (SELECT COALESCE(AVG(duration_seconds), 0) FROM calls WHERE status = 'connected') AS "avgDuration",
+        (SELECT COUNT(*) FROM calls WHERE LOWER(status) = 'connected') AS "connectedCalls",
+        (SELECT COALESCE(SUM(duration_seconds), 0) FROM calls WHERE LOWER(status) = 'connected') AS "totalDuration",
+        (SELECT COALESCE(AVG(duration_seconds), 0) FROM calls WHERE LOWER(status) = 'connected') AS "avgDuration",
         (SELECT COUNT(*) FROM whatsapp_messages) AS "whatsappNotes"`);
     return res.json(result.rows[0]);
   } catch (err) {
@@ -153,9 +153,9 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
         SELECT
           (SELECT COUNT(*) FROM leads${cF})    AS "totalContacts",
           (SELECT COUNT(*) FROM calls${cF})    AS "totalCalls",
-          (SELECT COUNT(*) FROM calls WHERE status = 'connected'${cA}) AS "connectedCalls",
+          (SELECT COUNT(*) FROM calls WHERE LOWER(status) = 'connected'${cA}) AS "connectedCalls",
           (SELECT COALESCE(SUM(duration_seconds), 0) FROM calls${cF}) AS "totalDuration",
-          (SELECT COALESCE(AVG(duration_seconds), 0) FROM calls WHERE status = 'connected'${cA}) AS "avgDuration",
+          (SELECT COALESCE(AVG(duration_seconds), 0) FROM calls WHERE LOWER(status) = 'connected'${cA}) AS "avgDuration",
           (SELECT COUNT(*) FROM projects${cF}) AS "totalProjects"
       `),
       db.query(`
@@ -198,7 +198,7 @@ export const getCallSummary = async (req: AuthRequest, res: Response) => {
   try {
     const result = await db.query(`
       SELECT DATE(start_time) AS date, COUNT(*) AS total,
-        SUM(CASE WHEN status = 'connected' THEN 1 ELSE 0 END) AS connected,
+        SUM(CASE WHEN LOWER(status) = 'connected' THEN 1 ELSE 0 END) AS connected,
         SUM(CASE WHEN status != 'connected' THEN 1 ELSE 0 END) AS failed
       FROM calls GROUP BY DATE(start_time) ORDER BY date DESC LIMIT 30`);
     return res.json(result.rows);
@@ -237,7 +237,7 @@ export const getTeamPerformance = async (req: AuthRequest, res: Response) => {
       SELECT u.id, u.name, u.role,
         COUNT(DISTINCT l.id) AS total_leads,
         COUNT(DISTINCT c.id) AS total_calls,
-        SUM(CASE WHEN c.status = 'connected' THEN 1 ELSE 0 END) AS connected_calls,
+        SUM(CASE WHEN c.LOWER(status) = 'connected' THEN 1 ELSE 0 END) AS connected_calls,
         COALESCE(SUM(c.duration_seconds), 0) AS total_duration
       FROM users u
       LEFT JOIN leads l ON l.owner_id = u.id

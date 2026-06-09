@@ -619,10 +619,10 @@ function DeleteModal({ type, onConfirm, onCancel }: {
 }
 
 const ACCOUNT_PHONE_IDS: Record<number, string> = {
-  0: "1093345597202562",
-  1: "1093345597202562",
-  2: "1070621209476657",
-  3: "1106116902589892",
+  0: "1093345597202562",  // WA1 - AVG Prime Tech
+  1: "1093345597202562",  // WA2 - AVG Prime Tech
+  2: "1106116902589892",  // WA3 - Dubai (ALMANZAR)
+  3: "1070621209476657",  // WA4 - India (ALMANZAR)
 };
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -726,7 +726,10 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
     const phone = params.get("phone");
     if (!phone || !conversations.length) return;
     const match = conversations.find(c => c.contact_number.replace(/[^0-9]/g, "").endsWith(phone.replace(/[^0-9]/g, "")));
-    if (match) setSelectedContact(match);
+    if (match) {
+      setSelectedContact(match);
+      setTimeout(() => window.history.replaceState({}, '', location.pathname), 1000);
+    }
   }, [location.search, conversations]);
 
   const fetchMessages = useCallback(async (phone: string) => {
