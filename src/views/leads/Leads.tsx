@@ -90,7 +90,9 @@ export default function Leads() {
       const res = await api.get('/leads', { params: { search } });
       let allLeads = res.data;
       if (user?.role === 'MANAGER') {
-        allLeads = allLeads.filter((l: any) => l.owner_id === user.id);
+        if (!['ADMIN', 'master_admin', 'company_admin'].includes(user.role)) {
+          allLeads = allLeads.filter((l: any) => l.owner_id === user.id);
+        }
       }
       setLeads(allLeads);
     } catch (error) {
