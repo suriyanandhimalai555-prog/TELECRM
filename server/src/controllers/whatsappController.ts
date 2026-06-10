@@ -13,6 +13,9 @@ const WHATSAPP_TOKEN_3  = process.env.WA_ACCESS_TOKEN_3 || '';
 const WABA_ID           = process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || '27198788186399333';
 const WABA_ID_3         = process.env.WHATSAPP_BUSINESS_ACCOUNT_ID_3 || '964486646396502';
 const PHONE_NUMBER_ID_3 = process.env.WHATSAPP_PHONE_NUMBER_ID_3 || '';
+const PHONE_NUMBER_ID_4 = process.env.WHATSAPP_PHONE_NUMBER_ID_4 || '';
+const WHATSAPP_TOKEN_2  = process.env.WA_ACCESS_TOKEN_2 || process.env.WHATSAPP_ACCESS_TOKEN_2 || WHATSAPP_TOKEN;
+const WHATSAPP_TOKEN_4  = process.env.WA_ACCESS_TOKEN_4 || '';
 
 // ─── Helper: pick phone ID by account index ───────────────────────────────────
 function getPhoneId(account?: string | number): string {
@@ -21,9 +24,6 @@ function getPhoneId(account?: string | number): string {
   if (String(account) === '1' && PHONE_NUMBER_ID_2) return PHONE_NUMBER_ID_2;
   return PHONE_NUMBER_ID;
 }
-const WHATSAPP_TOKEN_2  = process.env.WA_ACCESS_TOKEN_2 || process.env.WHATSAPP_ACCESS_TOKEN_2 || WHATSAPP_TOKEN;
-const WHATSAPP_TOKEN_4  = process.env.WA_ACCESS_TOKEN_4 || '';
-const PHONE_NUMBER_ID_4 = process.env.WHATSAPP_PHONE_NUMBER_ID_4 || '';
 function getToken(account?: string | number): string {
   if (String(account) === '3' && WHATSAPP_TOKEN_4) return WHATSAPP_TOKEN_4;
   if (String(account) === '2' && WHATSAPP_TOKEN_3) return WHATSAPP_TOKEN_3;
