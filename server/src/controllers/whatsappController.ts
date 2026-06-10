@@ -105,7 +105,7 @@ async function getUserWACredentials(userId: number, account?: string | number) {
       [companyId]
     );
     if (waRes.rows.length > 0) {
-      const idx = Math.min(Number(account) || 0, waRes.rows.length - 1); const waAcc = waRes.rows[idx];
+      const idx: number = Math.min(Number(account) || 0, waRes.rows.length - 1); const waAcc = waRes.rows[idx as unknown as string];
       return {
         token: waAcc.access_token || WHATSAPP_TOKEN,
         phoneId: waAcc.phone_number_id || PHONE_NUMBER_ID,
@@ -445,7 +445,7 @@ export const getHistory = async (req: Request, res: Response) => {
       params.push(companyId);
     } else if (req.query.company_id) {
       queryStr += ` AND company_id = $2`;
-      params.push(parseInt(req.query.company_id as string));
+      params.push(String(parseInt(req.query.company_id as string)));
     }
     
     queryStr += ` ORDER BY timestamp ASC LIMIT 200`;
@@ -512,7 +512,7 @@ export const getConversations = async (req: Request, res: Response) => {
       params.push(companyId);
       query += ` AND wm.company_id = $${params.length}`;
     } else if (req.query.company_id) {
-      params.push(parseInt(req.query.company_id as string));
+      params.push(String(parseInt(req.query.company_id as string)));
       query += ` AND wm.company_id = $${params.length}`;
     }
 

@@ -149,7 +149,8 @@ type ParsedMessage =
   | { type: 'call'; callType: string; duration: string }
   | { type: 'reaction'; emoji: string }
   | { type: 'poll'; question: string; options: string[] }
-  | { type: 'interactive'; text: string };
+  | { type: 'interactive'; text: string }
+  | { type: 'unsupported'; text: string };
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 interface WhatsAppInboxProps {
@@ -495,8 +496,9 @@ function MessageContent({ parsed, isOut, onMediaClick }: {
 }
 
 // ─── Contact Info Drawer ──────────────────────────────────────────────────────
-function ContactInfoDrawer({ contact, messages, onClose, accountIndex = 0 }: {
+function ContactInfoDrawer({ contact, messages, onClose, accountIndex = 0, contactCampaigns, saveCampaignTag, AD_CAMPAIGNS }: {
   contact: Conversation; messages: Message[]; onClose: () => void; accountIndex?: number;
+  contactCampaigns: Record<string, string>; saveCampaignTag: (p: string, c: string) => void; AD_CAMPAIGNS: any[];
 }) {
   const mediaMessages = messages.filter(m =>
     m.message_text.startsWith('[image:') ||
@@ -763,7 +765,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
 
   const handleMessage = useCallback((newMsg: Message) => {
     const myPhoneId = ACCOUNT_PHONE_IDS[accountIndex];
-    if (!myPhoneId || (newMsg.phone_number_id && newMsg.phone_number_id !== myPhoneId)) return;
+    if (!myPhoneId || ((newMsg as any).phone_number_id && (newMsg as any).phone_number_id !== myPhoneId)) return;
     setConversations(prev => {
       const contactNum = newMsg.direction === 'inbound' ? newMsg.from_number : newMsg.to_number;
       const existing = prev.find(c => c.contact_number === contactNum);
@@ -782,7 +784,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
       if (newMsg.direction === 'inbound' && accountIndex === 2) {
         setContactCampaigns(prev => {
           if (prev[contactNum]) return prev;
-          const detected = autoDetectCampaign(newMsg.message || '');
+          const detected = autoDetectCampaign((newMsg as any).message || '');
           if (detected) {
             const updated2 = { ...prev, [contactNum]: detected };
             localStorage.setItem('wa3_campaigns', JSON.stringify(updated2));
@@ -863,7 +865,6 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
       contact_name: selectedContact.contact_name,
       from_number: '',
       to_number: selectedContact.contact_number,
-      is_read: true,
     };
     setMessages(prev => [...prev, tempMsg]);
     try {
@@ -1345,7 +1346,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
         )}
         <AnimatePresence>
           {showContactInfo && selectedContact && (
-            <ContactInfoDrawer contact={selectedContact} messages={messages} onClose={() => setShowContactInfo(false)} accountIndex={accountIndex} />
+            <ContactInfoDrawer contact={selectedContact} messages={messages} onClose={() => setShowContactInfo(false)} accountIndex={accountIndex} contactCampaigns={contactCampaigns} saveCampaignTag={saveCampaignTag} AD_CAMPAIGNS={AD_CAMPAIGNS} />
           )}
         </AnimatePresence>
       </div>

@@ -476,11 +476,7 @@ export default function CallHistory() {
                 className="absolute -top-3 -right-3 z-20 bg-white rounded-full p-1.5 shadow-lg border border-gray-100 text-gray-500 hover:text-red-500 transition-colors">
                 <X size={16} />
               </button>
-              <WhatsAppChat 
-                phone={activeWhatsApp.phone} 
-                name={activeWhatsApp.name} 
-                onClose={() => setActiveWhatsApp(null)} 
-              />
+              <WhatsAppChat />
             </div>
           </div>
         )}
