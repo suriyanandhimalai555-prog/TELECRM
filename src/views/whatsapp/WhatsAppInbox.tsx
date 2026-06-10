@@ -719,7 +719,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
       if (searchTerm) params.set('search', searchTerm);
       params.set('account', String(accountIndex));
       const res = await api.get(`/whatsapp/conversations?${params.toString()}`);
-      const newConvs = res.data.conversations || [];
+      const newConvs = Array.isArray(res.data) ? res.data : (res.data.conversations || []);
       setConversations(prev => {
         // Merge: keep selected contact's unread count at 0 if currently selected
         return newConvs.map((c: any) => {
@@ -733,12 +733,15 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
     } catch { } finally { setLoading(false); }
   }, [searchTerm, accountIndex]);
 
+  const urlAutoSelectedRef = useRef(false);
   useEffect(() => {
+    if (urlAutoSelectedRef.current) return;
     const params = new URLSearchParams(location.search);
     const phone = params.get("phone");
     if (!phone || !conversations.length) return;
     const match = conversations.find(c => c.contact_number.replace(/[^0-9]/g, "").endsWith(phone.replace(/[^0-9]/g, "")));
     if (match) {
+      urlAutoSelectedRef.current = true;
       setSelectedContact(match);
       setTimeout(() => window.history.replaceState({}, '', location.pathname), 1000);
     }
