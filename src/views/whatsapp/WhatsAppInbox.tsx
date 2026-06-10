@@ -749,7 +749,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
       const res = await api.get(`/whatsapp/history/${phone}?account=${accountIndex}`);
       setMessages(res.data.messages || []);
     } catch { }
-  }, []);
+  }, [accountIndex]);
 
   const handleSyncTemplates = async () => {
     setSyncingTemplates(true);
