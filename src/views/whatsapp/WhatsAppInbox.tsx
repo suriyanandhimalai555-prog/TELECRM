@@ -719,7 +719,17 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
       if (searchTerm) params.set('search', searchTerm);
       params.set('account', String(accountIndex));
       const res = await api.get(`/whatsapp/conversations?${params.toString()}`);
-      setConversations(res.data.conversations || []);
+      const newConvs = res.data.conversations || [];
+      setConversations(prev => {
+        // Merge: keep selected contact's unread count at 0 if currently selected
+        return newConvs.map((c: any) => {
+          const existing = prev.find(p => p.contact_number === c.contact_number);
+          if (existing && existing.unread_count === 0) {
+            return { ...c, unread_count: 0 };
+          }
+          return c;
+        });
+      });
     } catch { } finally { setLoading(false); }
   }, [searchTerm, accountIndex]);
 
@@ -829,8 +839,12 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
     };
   }, [fetchConversations, fetchTemplates, handleMessage, handleRead, handleStatus]);
 
+  const selectedContactRef = useRef<Conversation | null>(null);
   useEffect(() => {
-    if (selectedContact) fetchMessages(selectedContact.contact_number);
+    if (selectedContact && selectedContact.contact_number !== selectedContactRef.current?.contact_number) {
+      selectedContactRef.current = selectedContact;
+      fetchMessages(selectedContact.contact_number);
+    }
   }, [selectedContact, fetchMessages]);
 
   useEffect(() => {
