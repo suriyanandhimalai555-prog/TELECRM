@@ -1024,7 +1024,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
   };
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; msgId: number | string } | null>(null);
 
-  const accountLabel = accountIndex === 0 ? 'WhatsApp' : accountIndex === 1 ? 'WhatsApp 2' : 'WhatsApp 3';
+  const accountLabel = accountIndex === 0 ? 'WhatsApp' : accountIndex === 1 ? 'WhatsApp 2' : accountIndex === 2 ? 'WhatsApp 3' : 'WhatsApp 4';
   const accountColor = accountIndex === 0 ? 'text-blue-600' : accountIndex === 1 ? 'text-green-600' : 'text-purple-600';
 
   return (
@@ -1046,7 +1046,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
                 className="px-2 py-1 rounded-lg text-[9px] font-black uppercase border border-gray-200 text-gray-500 hover:bg-gray-100 transition-colors mr-1"
                 title={accountIndex === 0 ? 'Switch to WhatsApp 2' : 'Switch to WhatsApp 1'}
               >
-                {`WA ${accountIndex + 1} → WA ${(accountIndex + 1) % 4 + 1}`}
+                {accountIndex === 2 ? 'WA 3 → WA 4' : accountIndex === 3 ? 'WA 4 → WA 3' : `WA ${accountIndex + 1} → WA ${accountIndex + 2}`}
               </button>
               <div className="relative" ref={filterRef}>
                 <button onClick={() => setShowFilterMenu(v => !v)} className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
