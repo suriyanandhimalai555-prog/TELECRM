@@ -825,7 +825,9 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
   useEffect(() => {
     fetchConversations();
     fetchTemplates();
-    const refreshInterval = setInterval(fetchConversations, 5000);
+    const refreshInterval = setInterval(() => {
+      fetchConversations();
+    }, 5000);
     socket.on('whatsapp:message', handleMessage);
     socket.on('connect', fetchConversations);
     socket.on('whatsapp:read', handleRead);
