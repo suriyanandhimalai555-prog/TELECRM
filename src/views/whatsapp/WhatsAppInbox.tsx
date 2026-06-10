@@ -153,7 +153,7 @@ type ParsedMessage =
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 interface WhatsAppInboxProps {
-  accountIndex?: 0 | 1 | 2;
+  accountIndex?: 0 | 1 | 2 | 3;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
