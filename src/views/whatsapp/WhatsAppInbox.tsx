@@ -811,7 +811,11 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
     if (selectedContact) {
       const contactNum = newMsg.direction === 'inbound' ? newMsg.from_number : newMsg.to_number;
       if (contactNum === selectedContact.contact_number) {
-        setMessages(prev => prev.some(m => m.message_id === newMsg.message_id) ? prev : [...prev, newMsg]);
+        setMessages(prev => {
+          if (prev.some(m => m.message_id === newMsg.message_id)) return prev;
+          if (prev.some(m => m.id === newMsg.id)) return prev;
+          return [...prev, newMsg];
+        });
         if (newMsg.direction === 'inbound') api.put(`/whatsapp/mark-read/${contactNum}`).catch(() => {});
       }
     }
@@ -895,7 +899,12 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
       });
       // Replace temp message with real one if returned
       if (res.data?.message_id) {
-        setMessages(prev => prev.map(m => m.message_id === tempMsg.message_id ? { ...tempMsg, message_id: res.data.message_id, status: 'delivered' } : m));
+        setMessages(prev => {
+          // Remove temp and add real, avoid duplicates
+          const withoutTemp = prev.filter(m => m.message_id !== tempMsg.message_id);
+          if (withoutTemp.some(m => m.message_id === res.data.message_id)) return withoutTemp;
+          return [...withoutTemp, { ...tempMsg, message_id: res.data.message_id, status: 'delivered' }];
+        });
       }
     } catch {
       // Remove temp message on failure
