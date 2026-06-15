@@ -19,16 +19,21 @@ export const getAllReports = async (req: AuthRequest, res: Response) => {
     const dateCallsP = startDate && endDate ? `AND DATE(start_time)   BETWEEN '${startDate}' AND '${endDate}'` : '';
 
     // ✅ FIXED: use owner_id instead of assigned_to
-    const leadScopeJ  = isAdmin ? '' : isManager
+    const companyId = req.user.company_id;
+    const companyFilter = companyId ? `AND c.company_id = ${companyId}` : '';
+    const companyFilterL = companyId ? `AND l.company_id = ${companyId}` : '';
+    const companyFilterP = companyId ? `AND company_id = ${companyId}` : '';
+
+    const leadScopeJ  = isAdmin ? companyFilterL : isManager
       ? `AND (l.owner_id = ${userId} OR l.owner_id IN (SELECT id FROM users WHERE reporting_to = ${userId}))`
       : `AND l.owner_id = ${userId}`;
-    const callScopeJ  = isAdmin ? '' : isManager
+    const callScopeJ  = isAdmin ? companyFilter : isManager
       ? `AND (c.agent_id = ${userId} OR c.agent_id IN (SELECT id FROM users WHERE reporting_to = ${userId}))`
       : `AND c.agent_id = ${userId}`;
-    const leadScope   = isAdmin ? '' : isManager
+    const leadScope   = isAdmin ? companyFilterL : isManager
       ? `AND (owner_id = ${userId} OR owner_id IN (SELECT id FROM users WHERE reporting_to = ${userId}))`
       : `AND owner_id = ${userId}`;
-    const callScope   = isAdmin ? '' : isManager
+    const callScope   = isAdmin ? companyFilterP : isManager
       ? `AND (agent_id = ${userId} OR agent_id IN (SELECT id FROM users WHERE reporting_to = ${userId}))`
       : `AND agent_id = ${userId}`;
     const projectScope = isAdmin ? '' : `AND owner_id = ${userId}`;
@@ -41,9 +46,9 @@ export const getAllReports = async (req: AuthRequest, res: Response) => {
       db.query(`
         SELECT
           COUNT(*) AS total,
-          SUM(CASE WHEN c.LOWER(status) = 'connected' THEN 1 ELSE 0 END) AS connected,
+          SUM(CASE WHEN LOWER(c.status) = 'connected' THEN 1 ELSE 0 END) AS connected,
           COALESCE(SUM(c.duration_seconds), 0) AS total_duration,
-          COALESCE(AVG(CASE WHEN c.LOWER(status) = 'connected' THEN c.duration_seconds END), 0) AS avg_duration
+          COALESCE(AVG(CASE WHEN LOWER(c.status) = 'connected' THEN c.duration_seconds END), 0) AS avg_duration
         FROM calls c WHERE 1=1 ${callScopeJ} ${dateCalls}`),
       db.query(`SELECT COUNT(*) AS total FROM whatsapp_messages WHERE 1=1 ${dateWa}`),
     ]);
@@ -95,7 +100,7 @@ export const getAllReports = async (req: AuthRequest, res: Response) => {
       SELECT u.id, u.name, u.role,
         COUNT(DISTINCT l.id) AS total_leads,
         COUNT(DISTINCT c.id) AS total_calls,
-        SUM(CASE WHEN c.LOWER(status) = 'connected' THEN 1 ELSE 0 END) AS connected_calls,
+        SUM(CASE WHEN LOWER(c.status) = 'connected' THEN 1 ELSE 0 END) AS connected_calls,
         COALESCE(SUM(c.duration_seconds), 0) AS total_duration
       FROM users u
       LEFT JOIN leads l ON l.owner_id  = u.id ${tl}
@@ -237,7 +242,7 @@ export const getTeamPerformance = async (req: AuthRequest, res: Response) => {
       SELECT u.id, u.name, u.role,
         COUNT(DISTINCT l.id) AS total_leads,
         COUNT(DISTINCT c.id) AS total_calls,
-        SUM(CASE WHEN c.LOWER(status) = 'connected' THEN 1 ELSE 0 END) AS connected_calls,
+        SUM(CASE WHEN LOWER(c.status) = 'connected' THEN 1 ELSE 0 END) AS connected_calls,
         COALESCE(SUM(c.duration_seconds), 0) AS total_duration
       FROM users u
       LEFT JOIN leads l ON l.owner_id = u.id
