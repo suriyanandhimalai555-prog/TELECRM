@@ -416,12 +416,7 @@ export const sendMessage = async (req: Request, res: Response) => {
       [msgId, phoneId, phone, message, contactName || '', companyId, phoneId]
     );
 
-    const reqWithIo = req as any;
-    if (reqWithIo.io) {
-      reqWithIo.io.emit('whatsapp:message', savedRows[0]);
-    }
-
-    res.json({ success: true, messageId: msgId });
+    res.json({ success: true, messageId: msgId, message: savedRows[0] });
   } catch (err) {
     console.error('[WA] sendMessage error:', err);
     res.status(500).json({ error: 'Failed to send' });
