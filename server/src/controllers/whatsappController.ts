@@ -101,7 +101,7 @@ async function getUserWACredentials(userId: number, account?: string | number) {
   const companyId = u.company_id;
   if (companyId) {
     const waRes = await db.query(
-      'SELECT access_token, phone_number_id, phone_number FROM whatsapp_accounts WHERE company_id = $1 ORDER BY id DESC',
+      'SELECT access_token, phone_number_id, phone_number FROM whatsapp_accounts WHERE company_id = $1 ORDER BY id ASC',
       [companyId]
     );
     if (waRes.rows.length > 0) {
