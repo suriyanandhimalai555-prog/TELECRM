@@ -105,7 +105,7 @@ async function getUserWACredentials(userId: number, account?: string | number) {
       [companyId]
     );
     if (waRes.rows.length > 0) {
-      const idx: number = Math.min(Number(account) || 0, waRes.rows.length - 1); const waAcc = waRes.rows[idx as unknown as string];
+      const reqIdx = Number(account) || 0; if (!(waRes.rows.length > 0 && reqIdx < waRes.rows.length)) { return { token: getToken(account) || u.whatsapp_token || WHATSAPP_TOKEN, phoneId: getPhoneId(account) || u.whatsapp_phone_id || PHONE_NUMBER_ID, wabaId: String(account) === "2" ? WABA_ID_3 : u.whatsapp_waba_id || WABA_ID }; } const waAcc = waRes.rows[reqIdx];
       return {
         token: waAcc.access_token || WHATSAPP_TOKEN,
         phoneId: waAcc.phone_number_id || PHONE_NUMBER_ID,
