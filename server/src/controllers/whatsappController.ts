@@ -698,7 +698,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
               if (lastOutbound.rows.length === 0) {
                 // No agent reply yet — send auto-reply
                 const waAccRes = await db.query(
-                  'SELECT access_token, phone_number_id FROM whatsapp_accounts WHERE company_id = $1 ORDER BY id DESC LIMIT 1',
+                  'SELECT access_token, phone_number_id FROM whatsapp_accounts WHERE phone_number_id = $1 LIMIT 1',
                   [companyId]
                 );
                 const waAcc = waAccRes.rows[0];
@@ -784,7 +784,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
             if (companyId === 8 || companyId === 3) {
               try {
                 const waAccRes = await db.query(
-                  'SELECT access_token, phone_number_id FROM whatsapp_accounts WHERE company_id = $1 ORDER BY id DESC LIMIT 1',
+                  'SELECT access_token, phone_number_id FROM whatsapp_accounts WHERE phone_number_id = $1 LIMIT 1',
                   [companyId]
                 );
                 const waAcc = waAccRes.rows[0];
