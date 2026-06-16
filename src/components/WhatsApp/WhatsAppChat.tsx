@@ -569,7 +569,7 @@ export default function WhatsAppInbox() {
     if (!selectedTemplate || !selectedContact || sending) return;
     setSending(true);
     try {
-      await api.post('/whatsapp/templates/send', {
+      await api.post('/whatsapp/templates/send', { account: 2,
         to: selectedContact.contact_number,
         templateName: selectedTemplate.name,
         languageCode: selectedTemplate.language,
@@ -675,7 +675,7 @@ export default function WhatsAppInbox() {
     setMessages(prev => [...prev, tempMsg]);
     setSending(true);
     try {
-      await api.post('/whatsapp/send', {
+      await api.post('/whatsapp/send', { account: 2,
         to: selectedContact.contact_number,
         message: text,
         contactName: selectedContact.contact_name
