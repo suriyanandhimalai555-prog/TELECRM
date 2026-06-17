@@ -689,7 +689,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
           let lead = await findLeadByPhone(from, companyId);
           // Auto-reply for existing leads who haven't been replied to yet
-          if (lead && (companyId === 8 || companyId === 3)) {
+          if (lead && (companyId === 11 || companyId === 12 || companyId === 3)) {
             try {
               const lastOutbound = await db.query(
                 `SELECT id FROM whatsapp_messages WHERE to_number = $1 AND direction = 'outbound' AND phone_number_id = $2 ORDER BY created_at DESC LIMIT 1`,
@@ -737,7 +737,21 @@ export const handleWebhook = async (req: Request, res: Response) => {
             const msgLower = text.toLowerCase();
             // Keywords per company
             const keywordMapByCompany: Record<number, Record<string, number>> = {
-              8: { // ALMANZAR
+              8: { // ALMANZAR (legacy, kept for safety)
+                'crypto': 9, 'bitcoin': 9, 'exchange': 9, 'token': 9, 'coin': 9, 'blockchain': 9,
+                'web': 10, 'website': 10, 'development': 10, 'app': 10, 'software': 10,
+                'marketing': 11, 'digital': 11, 'seo': 11, 'ads': 11, 'social media': 11, 'instagram': 11, 'facebook': 11,
+                'video': 12, 'editing': 12, 'reel': 12, 'youtube': 12, 'content': 12,
+                'trading': 13, 'forex': 13, 'stock': 13, 'invest': 13,
+              },
+              11: { // Almanzar Digital
+                'crypto': 9, 'bitcoin': 9, 'exchange': 9, 'token': 9, 'coin': 9, 'blockchain': 9,
+                'web': 10, 'website': 10, 'development': 10, 'app': 10, 'software': 10,
+                'marketing': 11, 'digital': 11, 'seo': 11, 'ads': 11, 'social media': 11, 'instagram': 11, 'facebook': 11,
+                'video': 12, 'editing': 12, 'reel': 12, 'youtube': 12, 'content': 12,
+                'trading': 13, 'forex': 13, 'stock': 13, 'invest': 13,
+              },
+              12: { // Almanzar Primetech LLC
                 'crypto': 9, 'bitcoin': 9, 'exchange': 9, 'token': 9, 'coin': 9, 'blockchain': 9,
                 'web': 10, 'website': 10, 'development': 10, 'app': 10, 'software': 10,
                 'marketing': 11, 'digital': 11, 'seo': 11, 'ads': 11, 'social media': 11, 'instagram': 11, 'facebook': 11,
@@ -781,7 +795,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
             lead = newLeadRows[0];
             console.log(`[WA] ✅ Auto-created lead #${lead?.id} for ${from} in company #${companyId} project #${detectedProjectId}`);
             // Send one-time welcome message to new leads
-            if (companyId === 8 || companyId === 3) {
+            if (companyId === 11 || companyId === 12 || companyId === 3) {
               try {
                 const waAccRes = await db.query(
                   'SELECT access_token, phone_number_id FROM whatsapp_accounts WHERE phone_number_id = $1 LIMIT 1',
