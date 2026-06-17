@@ -443,8 +443,8 @@ export const getHistory = async (req: Request, res: Response) => {
       params.push(String(parseInt(req.query.company_id as string)));
     }
     
-    queryStr += ` ORDER BY timestamp ASC LIMIT 200`;
-    const { rows } = await db.query(queryStr, params);
+    const wrappedQuery = `SELECT * FROM (${queryStr} ORDER BY timestamp DESC LIMIT 200) recent ORDER BY timestamp ASC`;
+    const { rows } = await db.query(wrappedQuery, params);
     res.json({ messages: rows });
   } catch (err) {
     console.error('[WA] getHistory error:', err);
