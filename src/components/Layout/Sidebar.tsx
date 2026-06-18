@@ -178,7 +178,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                             WA Account 2
                           </NavLink>
                           )}
-                          {user?.company_id === 8 && (
+                          {(user?.company_id === 11) && (
                           <NavLink
                             to="/app/whatsapp3"
                             className={({ isActive }) => cn(
@@ -190,7 +190,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                             Almanzar Digital
                           </NavLink>
                           )}
-                          {user?.company_id === 8 && (
+                          {(user?.company_id === 12) && (
                           <NavLink
                             to="/app/whatsapp4"
                             className={({ isActive }) => cn(
