@@ -154,7 +154,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                           exit={{ opacity: 0, height: 0 }}
                           className="overflow-hidden ml-4"
                         >
-                          {user?.company_id !== 8 && (
+                          {(user?.company_id !== 8 && user?.company_id !== 11 && user?.company_id !== 12) && (
                           <NavLink
                             to="/app/whatsapp"
                             className={({ isActive }) => cn(
@@ -166,7 +166,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                             WA Account 1
                           </NavLink>
                           )}
-                          {user?.company_id !== 8 && (
+                          {(user?.company_id !== 8 && user?.company_id !== 11 && user?.company_id !== 12) && (
                           <NavLink
                             to="/app/whatsapp2"
                             className={({ isActive }) => cn(
