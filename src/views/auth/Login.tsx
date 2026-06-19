@@ -7,8 +7,8 @@ import { LogIn } from 'lucide-react';
 
 const COMPANIES = [
   { id: 3, name: 'AVG Prime Tech Bangalore' },
-  { id: 11, name: 'Almanzar Primetech LLC (India)' },
-  { id: 12, name: 'Almanzar Digital (Dubai)' },
+  { id: 11, name: 'Almanzar Digital (Dubai)' },
+  { id: 12, name: 'Almanzar Primetech LLC (India)' },
 ];
 
 export default function Login() {
