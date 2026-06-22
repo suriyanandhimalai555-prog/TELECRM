@@ -11,9 +11,10 @@ if (process.env.DATABASE_URL) {
   pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: isLocal ? false : { rejectUnauthorized: false },
-    connectionTimeoutMillis: 10000,
-    idleTimeoutMillis: 30000,
-    max: 10,
+    connectionTimeoutMillis: 30000,
+    idleTimeoutMillis: 60000,
+    max: 20,
+    allowExitOnIdle: false,
   });
 } else {
   pool = new Pool({
@@ -25,9 +26,10 @@ if (process.env.DATABASE_URL) {
     ssl: process.env.DB_HOST && !process.env.DB_HOST.includes('localhost') 
          ? { rejectUnauthorized: false } 
          : false,
-    connectionTimeoutMillis: 10000,
-    idleTimeoutMillis: 30000,
-    max: 10,
+    connectionTimeoutMillis: 30000,
+    idleTimeoutMillis: 60000,
+    max: 20,
+    allowExitOnIdle: false,
   });
 }
 
