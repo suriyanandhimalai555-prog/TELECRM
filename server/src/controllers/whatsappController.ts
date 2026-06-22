@@ -689,6 +689,16 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
           let lead = await findLeadByPhone(from, companyId);
           // Auto-reply for existing leads who haven't been replied to yet
+          // Auto-assign lead to employee based on project
+          const projectAssignMap: Record<number, number> = {
+            9: 66,  // Crypto Exchange -> Syed
+            10: 68, // Web Development -> Nithin
+            11: 67, // Digital Marketing -> Hemanshi
+            13: 69, // Trading -> Jathin
+          };
+          if (lead?.project_id && projectAssignMap[lead.project_id] && !lead.assigned_to) {
+            await db.query('UPDATE leads SET assigned_to = $1 WHERE id = $2', [projectAssignMap[lead.project_id], lead.id]);
+          }
           if (lead && (companyId === 11 || companyId === 12 || companyId === 3)) {
             try {
               const lastOutbound = await db.query(
