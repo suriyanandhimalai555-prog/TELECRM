@@ -75,6 +75,8 @@ export const getLeads = async (req: AuthRequest, res: Response) => {
   }
 };
 
+import { sendMetaLeadEvent } from '../utils/metaPixel';
+
 export const createLead = async (req: AuthRequest, res: Response) => {
   const { contact_name, mobile, whatsapp, email, source, stage, revenue, next_followup, owner_id, project_id, company, tags } = req.body;
   if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
@@ -106,6 +108,10 @@ export const createLead = async (req: AuthRequest, res: Response) => {
     `, [finalOwnerId, leadId, dueDate.toISOString()]);
 
     const newLeadResult = await db.query('SELECT * FROM leads WHERE id = $1', [leadId]);
+
+    // Fire Meta CAPI Lead event (non-blocking)
+    sendMetaLeadEvent({ email, phone: mobile, eventName: 'Lead' }).catch(() => {});
+
     res.status(201).json(newLeadResult.rows[0]);
   } catch (error) {
     console.error('createLead error:', error);
