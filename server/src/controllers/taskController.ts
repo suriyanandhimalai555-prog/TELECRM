@@ -29,10 +29,10 @@ export const getTasks = async (req: AuthRequest, res: Response) => {
     }
 
     // Role-based filtering
-    if (req.user.role === 'MANAGER') {
+    if (req.user.role === 'MANAGER' || req.user.role === 'manager') {
       whereClauses.push(`(t.user_id = $${queryParams.length + 1} OR u.reporting_to = $${queryParams.length + 2})`);
       queryParams.push(req.user.id, req.user.id);
-    } else if (req.user.role === 'employee') {
+    } else if (req.user.role === 'EMPLOYEE') {
       whereClauses.push(`(t.user_id = $${queryParams.length + 1} OR t.project_id IN (SELECT project_id FROM user_projects WHERE user_id = $${queryParams.length + 2}))`);
       queryParams.push(req.user.id, req.user.id);
     }
