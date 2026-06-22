@@ -5,12 +5,24 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 
 export default function Layout() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 768);
   const location = useLocation();
 
   return (
     <div className="flex h-screen bg-[#daeaf8] overflow-hidden selection:bg-aura-red selection:text-white">
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-40 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-40 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
       
       <div className="flex-1 flex flex-col overflow-hidden relative">
         {/* Background glow for the whole app */}

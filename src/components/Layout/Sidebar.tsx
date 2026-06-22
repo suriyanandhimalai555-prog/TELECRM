@@ -76,7 +76,12 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     <motion.aside
       initial={false}
       animate={{ width: isOpen ? 240 : 80 }}
-      className="bg-white border-r border-gray-100 flex flex-col h-full relative z-20 shadow-sm"
+      className={cn(
+        "bg-white border-r border-gray-100 flex flex-col h-full shadow-sm",
+        "fixed inset-y-0 left-0 z-50 md:relative md:z-20",
+        "transition-transform duration-300",
+        isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+      )}
     >
       {/* Logo */}
       <div className="h-16 flex items-center justify-between px-6 border-b border-gray-100">
