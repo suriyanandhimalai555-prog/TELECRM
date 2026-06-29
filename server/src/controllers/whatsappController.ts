@@ -688,6 +688,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
           const companyId = accountRes.rows[0]?.company_id || null;
 
           let lead = await findLeadByPhone(from, companyId);
+          let isNewLead = false;
           // Auto-reply for existing leads who haven't been replied to yet
           // Auto-assign lead to employee based on project
           const projectAssignMap: Record<number, number> = {
@@ -699,7 +700,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
           if (lead?.project_id && projectAssignMap[lead.project_id] && !lead.assigned_to) {
             await db.query('UPDATE leads SET assigned_to = $1 WHERE id = $2', [projectAssignMap[lead.project_id], lead.id]);
           }
-          if (lead && (companyId === 11 || companyId === 12 || companyId === 3)) {
+          if (lead && !isNewLead && (companyId === 11 || companyId === 12 || companyId === 3)) {
             try {
               const lastOutbound = await db.query(
                 `SELECT id FROM whatsapp_messages WHERE to_number = $1 AND direction = 'outbound' AND phone_number_id = $2 ORDER BY timestamp DESC LIMIT 1`,
@@ -803,6 +804,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
               [name, from, from, assignedOwnerId, companyId, detectedProjectId]
             );
             lead = newLeadRows[0];
+            isNewLead = true;
             console.log(`[WA] ✅ Auto-created lead #${lead?.id} for ${from} in company #${companyId} project #${detectedProjectId}`);
             // Send one-time welcome message to new leads
             if (companyId === 11 || companyId === 12 || companyId === 3) {

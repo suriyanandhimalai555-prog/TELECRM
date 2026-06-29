@@ -773,7 +773,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
       });
       setShowTemplateModal(false);
       setSelectedTemplate(null);
-    } catch { } finally { setSending(false); }
+    } catch { } finally { setSending(false); setTimeout(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, 100); }
   };
 
   const handleMessage = useCallback((newMsg: Message) => {
@@ -910,7 +910,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
       // Remove temp message on failure
       setMessages(prev => prev.filter(m => m.message_id !== tempMsg.message_id));
       setInput(text);
-    } finally { setSending(false); }
+    } finally { setSending(false); setTimeout(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, 100); }
   };
 
   const handleResolve = () => {
