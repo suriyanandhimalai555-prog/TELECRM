@@ -693,9 +693,9 @@ export const handleWebhook = async (req: Request, res: Response) => {
           // Auto-assign lead to employee based on project
           const projectAssignMap: Record<number, number> = {
             9: 66,  // Crypto Exchange -> Syed
-            10: 68, // Web Development -> Nithin
-            11: 67, // Digital Marketing -> Hemanshi
-            13: 69, // Trading -> Jathin
+            10: 67, // Web Development -> Himanshi (was Nithin)
+            11: 67, // Digital Marketing -> Himanshi
+            13: 69, // Trading -> Jatin
           };
           if (lead?.project_id && projectAssignMap[lead.project_id] && !lead.assigned_to) {
             await db.query('UPDATE leads SET assigned_to = $1 WHERE id = $2', [projectAssignMap[lead.project_id], lead.id]);
@@ -742,6 +742,30 @@ export const handleWebhook = async (req: Request, res: Response) => {
               console.log(`[WA] ❌ Auto-reply failed:`, e);
             }
           }
+          // ─── Auto-detect project from Meta ad referral (Click-to-WhatsApp ads) ───
+          let referralProjectId: number | null = null;
+          const referral = (msg as any).referral;
+          if (referral && companyId) {
+            const campaignName = (referral.headline || referral.source_id || '').trim();
+            if (campaignName) {
+              const existingProj = await db.query(
+                'SELECT id FROM projects WHERE company_id = $1 AND LOWER(name) = LOWER($2) LIMIT 1',
+                [companyId, campaignName]
+              );
+              if (existingProj.rows.length > 0) {
+                referralProjectId = existingProj.rows[0].id;
+              } else {
+                const newProj = await db.query(
+                  `INSERT INTO projects (name, description, status, company_id, created_at, updated_at)
+                   VALUES ($1, $2, 'active', $3, NOW(), NOW()) RETURNING id`,
+                  [campaignName, `Auto-created from Meta ad: ${referral.source_url || referral.ad_id || ''}`, companyId]
+                );
+                referralProjectId = newProj.rows[0].id;
+                console.log(`[WA] 🆕 Auto-created project "${campaignName}" (id ${referralProjectId}) for company #${companyId} from ad referral`);
+              }
+            }
+          }
+
           if (!lead) {
             const adminId = await getAdminUserId(companyId);
             // Auto-detect project from message keywords
@@ -792,9 +816,10 @@ export const handleWebhook = async (req: Request, res: Response) => {
               9: 66,  // Crypto Exchange → Syed
               10: 69, // Web Development → Jatin
               11: 67, // Digital Marketing → Himanshi
-              12: 68, // Video Editing → Nithin
-              13: 68, // Trading → Nithin
+              12: 67, // Video Editing → Himanshi (was Nithin)
+              13: 69, // Trading → Jatin (was Nithin)
             };
+            if (referralProjectId) detectedProjectId = referralProjectId;
             const assignedOwnerId = detectedProjectId ? (projectOwnerMap[detectedProjectId] || adminId) : adminId;
             const { rows: newLeadRows } = await db.query(
               `INSERT INTO leads
