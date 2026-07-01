@@ -584,6 +584,23 @@ export const verifyWebhook = (req: Request, res: Response) => {
 
 // ─── Incoming webhook (POST) ──────────────────────────────────────────────────
 
+// ─── Keyword-based owner guess for brand-new auto-created projects ───
+const AD_KEYWORD_OWNER_MAP: { keyword: string; ownerId: number }[] = [
+  { keyword: 'telecaller', ownerId: 69 },   // Jatin
+  { keyword: 'tele caller', ownerId: 69 },  // Jatin
+  { keyword: 'sales head', ownerId: 69 },   // Jatin
+  { keyword: 'sales', ownerId: 69 },        // Jatin
+  { keyword: 'video editing', ownerId: 67 },// Himanshi
+  { keyword: 'video editor', ownerId: 67 }, // Himanshi
+];
+function guessOwnerFromCampaignName(name: string): number | null {
+  const lower = name.toLowerCase();
+  for (const { keyword, ownerId } of AD_KEYWORD_OWNER_MAP) {
+    if (lower.includes(keyword)) return ownerId;
+  }
+  return null;
+}
+
 export const handleWebhook = async (req: Request, res: Response) => {
   res.sendStatus(200);
 
@@ -697,8 +714,12 @@ export const handleWebhook = async (req: Request, res: Response) => {
             11: 67, // Digital Marketing -> Himanshi
             13: 69, // Trading -> Jatin
           };
-          if (lead?.project_id && projectAssignMap[lead.project_id] && !lead.assigned_to) {
-            await db.query('UPDATE leads SET assigned_to = $1 WHERE id = $2', [projectAssignMap[lead.project_id], lead.id]);
+          if (lead?.project_id && !lead.assigned_to) {
+            const projOwnerRes2 = await db.query('SELECT default_owner_id FROM projects WHERE id = $1', [lead.project_id]);
+            const ownerId2 = projOwnerRes2.rows[0]?.default_owner_id || projectAssignMap[lead.project_id];
+            if (ownerId2) {
+              await db.query('UPDATE leads SET assigned_to = $1 WHERE id = $2', [ownerId2, lead.id]);
+            }
           }
           if (lead && !isNewLead && (companyId === 11 || companyId === 12 || companyId === 3)) {
             try {
@@ -744,24 +765,28 @@ export const handleWebhook = async (req: Request, res: Response) => {
           }
           // ─── Auto-detect project from Meta ad referral (Click-to-WhatsApp ads) ───
           let referralProjectId: number | null = null;
+          let referralOwnerId: number | null = null;
           const referral = (msg as any).referral;
           if (referral && companyId) {
             const campaignName = (referral.headline || referral.source_id || '').trim();
             if (campaignName) {
               const existingProj = await db.query(
-                'SELECT id FROM projects WHERE company_id = $1 AND LOWER(name) = LOWER($2) LIMIT 1',
+                'SELECT id, default_owner_id FROM projects WHERE company_id = $1 AND LOWER(name) = LOWER($2) LIMIT 1',
                 [companyId, campaignName]
               );
               if (existingProj.rows.length > 0) {
                 referralProjectId = existingProj.rows[0].id;
+                referralOwnerId = existingProj.rows[0].default_owner_id || null;
               } else {
+                const guessedOwnerId = guessOwnerFromCampaignName(campaignName);
                 const newProj = await db.query(
-                  `INSERT INTO projects (name, description, status, company_id, created_at, updated_at)
-                   VALUES ($1, $2, 'active', $3, NOW(), NOW()) RETURNING id`,
-                  [campaignName, `Auto-created from Meta ad: ${referral.source_url || referral.ad_id || ''}`, companyId]
+                  `INSERT INTO projects (name, description, status, company_id, default_owner_id, created_at, updated_at)
+                   VALUES ($1, $2, 'active', $3, $4, NOW(), NOW()) RETURNING id`,
+                  [campaignName, `Auto-created from Meta ad: ${referral.source_url || referral.ad_id || ''}`, companyId, guessedOwnerId]
                 );
                 referralProjectId = newProj.rows[0].id;
-                console.log(`[WA] 🆕 Auto-created project "${campaignName}" (id ${referralProjectId}) for company #${companyId} from ad referral`);
+                referralOwnerId = guessedOwnerId;
+                console.log(`[WA] 🆕 Auto-created project "${campaignName}" (id ${referralProjectId}) for company #${companyId}, guessed owner ${guessedOwnerId}`);
               }
             }
           }
@@ -820,7 +845,14 @@ export const handleWebhook = async (req: Request, res: Response) => {
               13: 69, // Trading → Jatin (was Nithin)
             };
             if (referralProjectId) detectedProjectId = referralProjectId;
-            const assignedOwnerId = detectedProjectId ? (projectOwnerMap[detectedProjectId] || adminId) : adminId;
+            let assignedOwnerId = adminId;
+            if (referralOwnerId) {
+              assignedOwnerId = referralOwnerId;
+            } else if (detectedProjectId) {
+              const projOwnerRes = await db.query('SELECT default_owner_id FROM projects WHERE id = $1', [detectedProjectId]);
+              const projDefaultOwner = projOwnerRes.rows[0]?.default_owner_id;
+              assignedOwnerId = projDefaultOwner || projectOwnerMap[detectedProjectId] || adminId;
+            }
             const { rows: newLeadRows } = await db.query(
               `INSERT INTO leads
                  (contact_name, mobile, whatsapp, source, stage, owner_id, revenue, created_at, updated_at, company_id, project_id)
