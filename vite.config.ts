@@ -12,8 +12,8 @@ export default defineConfig(({ mode }) => {
       outDir: 'dist',
       rollupOptions: {
         output: {
-          entryFileNames: 'assets/index.js',
-          chunkFileNames: 'assets/[name].js',
+          entryFileNames: 'assets/index-[hash].js',
+          chunkFileNames: 'assets/[name]-[hash].js',
         },
       },
     },

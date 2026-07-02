@@ -484,7 +484,7 @@ export const getConversations = async (req: Request, res: Response) => {
           wm.status,
           ROW_NUMBER() OVER (
             PARTITION BY (CASE WHEN wm.direction = 'inbound' THEN wm.from_number ELSE wm.to_number END)
-            ORDER BY wm.timestamp DESC
+            ORDER BY wm.timestamp DESC, l.id DESC
           ) AS rn,
           COUNT(CASE WHEN wm.direction = 'inbound' AND wm.is_read = false THEN 1 END) OVER (
             PARTITION BY (CASE WHEN wm.direction = 'inbound' THEN wm.from_number ELSE wm.to_number END)
@@ -495,12 +495,15 @@ export const getConversations = async (req: Request, res: Response) => {
           l.project_id   AS lead_project_id
         FROM whatsapp_messages wm
         LEFT JOIN leads l
-          ON RIGHT(l.mobile,   10) = RIGHT(
-               CASE WHEN wm.direction = 'inbound' THEN wm.from_number ELSE wm.to_number END, 10
-             )
-          OR RIGHT(l.whatsapp, 10) = RIGHT(
-               CASE WHEN wm.direction = 'inbound' THEN wm.from_number ELSE wm.to_number END, 10
-             )
+          ON l.company_id = wm.company_id
+          AND (
+            RIGHT(l.mobile,   10) = RIGHT(
+                 CASE WHEN wm.direction = 'inbound' THEN wm.from_number ELSE wm.to_number END, 10
+               )
+            OR RIGHT(l.whatsapp, 10) = RIGHT(
+                 CASE WHEN wm.direction = 'inbound' THEN wm.from_number ELSE wm.to_number END, 10
+               )
+          )
         WHERE 1=1
     `;
 
