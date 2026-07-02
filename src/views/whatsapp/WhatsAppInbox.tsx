@@ -645,19 +645,22 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
     try { return JSON.parse(localStorage.getItem('wa3_campaigns') || '{}'); } catch { return {}; }
   });
 
-  const AD_CAMPAIGNS = [
-    { id: 'website', label: 'Website Development', emoji: '🌐', keywords: ['website', 'web development', 'web design', 'landing page', 'wordpress'] },
-    { id: 'mobileapp', label: 'App Development', emoji: '📱', keywords: ['app', 'mobile app', 'android', 'ios', 'flutter', 'application'] },
-    { id: 'playstore', label: 'Play Store & App Store Listing', emoji: '🚀', keywords: ['play store', 'app store', 'publish', 'listing', 'store listing'] },
-    { id: 'web3', label: 'Web3 Development', emoji: '⛓️', keywords: ['web3', 'blockchain', 'smart contract', 'nft', 'defi', 'dao', 'solidity'] },
-    { id: 'coinlisting', label: 'Crypto Coin Listing', emoji: '🪙', keywords: ['coin listing', 'token listing', 'list coin', 'list token', 'exchange listing'] },
-    { id: 'exchange', label: 'Crypto Exchange Development', emoji: '💱', keywords: ['exchange', 'crypto exchange', 'trading platform', 'dex', 'cex', 'p2p'] },
-  ];
-
+  const [projectList, setProjectList] = useState<{ id: number; name: string }[]>([]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.get('/projects');
+        setProjectList(res.data?.projects || res.data || []);
+      } catch (e) {
+        console.error('[WA] Failed to load projects for filter dropdown:', e);
+      }
+    })();
+  }, []);
+  const AD_CAMPAIGNS = projectList.map(p => ({ id: String(p.id), label: p.name, emoji: '🏷️' }));
   const autoDetectCampaign = (message: string): string => {
     const lower = message.toLowerCase();
-    for (const ad of AD_CAMPAIGNS) {
-      if (ad.keywords.some(k => lower.includes(k))) return ad.id;
+    for (const p of projectList) {
+      if (lower.includes(p.name.toLowerCase())) return String(p.id);
     }
     return '';
   };
@@ -953,7 +956,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
 
   const filteredConversations = conversations
     .filter(c => activeFilter === 'unread' ? c.unread_count > 0 : true)
-    .filter(c => campaignFilter !== 'all' ? contactCampaigns[c.contact_number] === campaignFilter : true)
+    .filter(c => campaignFilter !== 'all' ? String(c.project_id ?? '') === campaignFilter : true)
     .filter(c =>
       c.contact_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.contact_number.includes(searchTerm)
@@ -1123,13 +1126,10 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
             ))}
             <select value={campaignFilter} onChange={e => setCampaignFilter(e.target.value)}
               className="text-[10px] font-black bg-white border-2 border-blue-200 rounded-full px-2 py-1 focus:outline-none focus:border-blue-500 text-gray-700 cursor-pointer uppercase">
-              <option value="all">🎯 All Ads</option>
-              <option value="website">🌐 Website Dev</option>
-              <option value="mobileapp">📱 App Dev</option>
-              <option value="playstore">🚀 Play Store</option>
-              <option value="web3">⛓️ Web3</option>
-              <option value="coinlisting">🪙 Coin Listing</option>
-              <option value="exchange">💱 Crypto Exchange</option>
+              <option value="all">🎯 All Projects</option>
+              {projectList.map(p => (
+                <option key={p.id} value={String(p.id)}>{p.name}</option>
+              ))}
             </select>
           </div>
         </div>
