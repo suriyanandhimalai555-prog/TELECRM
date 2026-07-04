@@ -494,16 +494,17 @@ export const getConversations = async (req: Request, res: Response) => {
           l.stage        AS lead_stage,
           l.project_id   AS lead_project_id
         FROM whatsapp_messages wm
-        LEFT JOIN leads l
-          ON l.company_id = wm.company_id
-          AND (
-            RIGHT(l.mobile,   10) = RIGHT(
-                 CASE WHEN wm.direction = 'inbound' THEN wm.from_number ELSE wm.to_number END, 10
-               )
-            OR RIGHT(l.whatsapp, 10) = RIGHT(
-                 CASE WHEN wm.direction = 'inbound' THEN wm.from_number ELSE wm.to_number END, 10
-               )
-          )
+        LEFT JOIN LATERAL (
+          SELECT l2.id, l2.contact_name, l2.stage, l2.project_id
+          FROM leads l2
+          WHERE l2.company_id = wm.company_id
+            AND (
+              RIGHT(l2.mobile,   10) = RIGHT(CASE WHEN wm.direction = 'inbound' THEN wm.from_number ELSE wm.to_number END, 10)
+              OR RIGHT(l2.whatsapp, 10) = RIGHT(CASE WHEN wm.direction = 'inbound' THEN wm.from_number ELSE wm.to_number END, 10)
+            )
+          ORDER BY (l2.project_id IS NOT NULL) DESC, l2.id DESC
+          LIMIT 1
+        ) l ON true
         WHERE 1=1
     `;
 
