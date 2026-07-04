@@ -805,21 +805,21 @@ export const handleWebhook = async (req: Request, res: Response) => {
             const keywordMapByCompany: Record<number, Record<string, number>> = {
               8: { // ALMANZAR (legacy, kept for safety)
                 'crypto': 9, 'bitcoin': 9, 'exchange': 9, 'token': 9, 'coin': 9, 'blockchain': 9,
-                'web': 10, 'website': 10, 'development': 10, 'app': 10, 'software': 10,
+                'web development': 10, 'website': 10, 'web design': 10, 'landing page': 10,
                 'marketing': 11, 'digital': 11, 'seo': 11, 'ads': 11, 'social media': 11, 'instagram': 11, 'facebook': 11,
                 'video': 12, 'editing': 12, 'reel': 12, 'youtube': 12, 'content': 12,
                 'trading': 13, 'forex': 13, 'stock': 13, 'invest': 13,
               },
               11: { // Almanzar Digital
                 'crypto': 9, 'bitcoin': 9, 'exchange': 9, 'token': 9, 'coin': 9, 'blockchain': 9,
-                'web': 10, 'website': 10, 'development': 10, 'app': 10, 'software': 10,
+                'web development': 10, 'website': 10, 'web design': 10, 'landing page': 10,
                 'marketing': 11, 'digital': 11, 'seo': 11, 'ads': 11, 'social media': 11, 'instagram': 11, 'facebook': 11,
                 'video': 12, 'editing': 12, 'reel': 12, 'youtube': 12, 'content': 12,
                 'trading': 13, 'forex': 13, 'stock': 13, 'invest': 13,
               },
               12: { // Almanzar Primetech LLC
                 'crypto': 9, 'bitcoin': 9, 'exchange': 9, 'token': 9, 'coin': 9, 'blockchain': 9,
-                'web': 10, 'website': 10, 'development': 10, 'app': 10, 'software': 10,
+                'web development': 10, 'website': 10, 'web design': 10, 'landing page': 10,
                 'marketing': 11, 'digital': 11, 'seo': 11, 'ads': 11, 'social media': 11, 'instagram': 11, 'facebook': 11,
                 'video': 12, 'editing': 12, 'reel': 12, 'youtube': 12, 'content': 12,
                 'trading': 13, 'forex': 13, 'stock': 13, 'invest': 13,
