@@ -850,6 +850,12 @@ export const handleWebhook = async (req: Request, res: Response) => {
               12: 67, // Video Editing → Himanshi (was Nithin)
               13: 69, // Trading → Jatin (was Nithin)
             };
+            // If the only content is a document (likely a resume/CV), default to Job Placement
+            const isResumeLike = (msg as any).type === 'document' &&
+              /resume|cv|\.pdf|\.docx/i.test((msg as any).document?.filename || '');
+            if (!detectedProjectId && !referralProjectId && isResumeLike) {
+              detectedProjectId = 16; // Job Placement
+            }
             if (referralProjectId) detectedProjectId = referralProjectId;
             let assignedOwnerId = adminId;
             if (referralOwnerId) {
