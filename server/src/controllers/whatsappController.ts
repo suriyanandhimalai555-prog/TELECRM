@@ -376,18 +376,29 @@ export const sendMessage = async (req: Request, res: Response) => {
   const { to, message, contactName, account } = req.body;
   const userId = (req as any).user?.id;
   const companyId = (req as any).user?.company_id;
+  const userRole = (req as any).user?.role;
 
   if (!to || !message) return res.status(400).json({ error: 'to and message required' });
 
   try {
+    const phone = to.replace(/[^0-9]/g, '');
+
+    if (userRole === 'EMPLOYEE') {
+      const ownerCheck = await db.query(
+        `SELECT 1 FROM leads WHERE company_id = $1 AND owner_id = $2 AND (RIGHT(mobile,10) = RIGHT($3,10) OR RIGHT(whatsapp,10) = RIGHT($3,10)) LIMIT 1`,
+        [companyId, userId, phone]
+      );
+      if (ownerCheck.rows.length === 0) {
+        return res.status(403).json({ error: 'You do not have access to send to this lead' });
+      }
+    }
+
     const { token, phoneId } = await getUserWACredentials(userId, account);
     if (!token) {
       return res.status(500).json({
         error: 'WhatsApp Access Token missing. Please configure it in Settings.',
       });
     }
-
-    const phone = to.replace(/[^0-9]/g, '');
 
     const waRes = await fetch(`https://graph.facebook.com/v25.0/${phoneId}/messages`, {
       method: 'POST',
@@ -429,7 +440,18 @@ export const getHistory = async (req: Request, res: Response) => {
   const phone = req.params.phone.replace(/[^0-9]/g, '');
   const companyId = (req as any).user?.company_id;
   const userRole = (req as any).user?.role;
+  const userId = (req as any).user?.id;
   try {
+    if (userRole === 'EMPLOYEE') {
+      const ownerCheck = await db.query(
+        `SELECT 1 FROM leads WHERE company_id = $1 AND owner_id = $2 AND (RIGHT(mobile,10) = RIGHT($3,10) OR RIGHT(whatsapp,10) = RIGHT($3,10)) LIMIT 1`,
+        [companyId, userId, phone]
+      );
+      if (ownerCheck.rows.length === 0) {
+        return res.status(403).json({ error: 'You do not have access to this conversation' });
+      }
+    }
+
     let queryStr = `
       SELECT * FROM whatsapp_messages
       WHERE (from_number = $1 OR to_number = $1)
