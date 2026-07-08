@@ -120,18 +120,15 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
             return (
               <div key="whatsapp-group">
                 {isEmployee ? (
-                  <NavLink
-                    to={user?.company_id === 11 ? "/app/whatsapp3" : user?.company_id === 12 ? "/app/whatsapp4" : "/app/whatsapp"}
-                    className={({ isActive }) => cn(
-                      "flex items-center px-4 py-2.5 rounded-xl transition-all",
-                      isActive ? "bg-green-50 text-green-600 font-bold" : "text-gray-500 hover:bg-green-50 hover:text-green-600"
-                    )}
+                  <button
+                    onClick={() => window.open('https://web.whatsapp.com', '_blank')}
+                    className="w-full flex items-center px-4 py-2.5 rounded-xl transition-all group text-gray-500 hover:bg-blue-50 hover:text-blue-600"
                   >
                     <div className={cn("min-w-[20px]", isOpen ? "mr-3" : "mx-auto")}>
                       <MessageSquare size={18} />
                     </div>
                     {isOpen && <span className="font-black uppercase tracking-widest text-[9px]">WhatsApp</span>}
-                  </NavLink>
+                  </button>
                 ) : hasWA2 ? (
                   <>
                     {/* Dropdown trigger */}
