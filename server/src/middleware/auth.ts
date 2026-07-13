@@ -27,7 +27,7 @@ export const requireMasterAdmin = (req: AuthRequest, res: Response, next: NextFu
   next();
 };
 export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
-  if (!['master_admin','company_admin'].includes(req.user?.role || ''))
+  if (!['master_admin','company_admin','ADMIN','MANAGER'].includes(req.user?.role || ''))
     return res.status(403).json({ message: 'Forbidden' });
   next();
 };
