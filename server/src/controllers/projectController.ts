@@ -16,6 +16,11 @@ export const getProjects = async (req: AuthRequest, res: Response) => {
       queryParams.push(parseInt(req.query.company_id as string));
       whereClauses.push(`p.company_id = $${queryParams.length}`);
     }
+    // ── NEW: employees only see their assigned projects ──────────────────
+    if (req.user?.role === 'EMPLOYEE') {
+      queryParams.push(req.user?.id);
+      whereClauses.push(`p.id IN (SELECT project_id FROM user_projects WHERE user_id = ${queryParams.length})`);
+    }
 
     if (search) {
       queryParams.push(`%${search}%`);

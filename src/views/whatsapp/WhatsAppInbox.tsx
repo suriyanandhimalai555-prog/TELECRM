@@ -5,7 +5,7 @@ import {
   Eye, FileText, Download, Image as ImageIcon, Music, MapPin,
   ExternalLink, Phone, Clock, Trash2, Archive,
   ZoomIn, Play, SortDesc, Inbox, Info,
-  AlertCircle, XCircle, Star, ShieldAlert
+  AlertCircle, XCircle, Star, ShieldAlert, ArrowLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import api from '../../services/api';
@@ -1041,7 +1041,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
 
   return (
     <div className="flex h-[calc(100vh-140px)] bg-white rounded-[2rem] shadow-2xl border border-gray-100 overflow-hidden">
-      <div className="w-80 lg:w-96 border-r border-gray-100 flex flex-col bg-gray-50/50 shrink-0">
+      <div className={cn("w-full md:w-80 lg:w-96 border-r border-gray-100 flex flex-col bg-gray-50/50 shrink-0", selectedContact && "hidden md:flex")}>
         <div className="p-4 border-b border-gray-100 bg-white">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -1190,11 +1190,15 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
           )}
         </div>
       </div>
-      <div className="flex-1 flex min-w-0">
+      <div className={cn("flex-1 flex min-w-0", !selectedContact && "hidden md:flex")}>
         {selectedContact ? (
           <div className="flex-1 flex flex-col min-w-0">
             <div className="px-4 py-3 bg-white border-b border-gray-100 flex items-center justify-between shadow-sm z-10 shrink-0">
               <div className="flex items-center gap-3">
+                <button onClick={() => setSelectedContact(null)} className="md:hidden p-1.5 -ml-1 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
+                  <ArrowLeft size={18} />
+                </button>
+                
                 <div className="w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center text-white font-black text-sm">
                   {selectedContact.contact_name?.[0]?.toUpperCase() || selectedContact.contact_number.slice(-1)}
                 </div>

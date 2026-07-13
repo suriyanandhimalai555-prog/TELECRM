@@ -75,7 +75,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   return (
     <motion.aside
       initial={false}
-      animate={{ width: isOpen ? 240 : 80 }}
+      animate={{ width: isOpen ? 240 : (typeof window !== 'undefined' && window.innerWidth < 768 ? 0 : 80) }}
       className={cn(
         "bg-white border-r border-gray-100 flex flex-col h-full shadow-sm",
         "fixed inset-y-0 left-0 z-50 md:relative md:z-20",
