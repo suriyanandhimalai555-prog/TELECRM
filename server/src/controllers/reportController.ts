@@ -37,8 +37,8 @@ export const getAllReports = async (req: AuthRequest, res: Response) => {
       ? `AND (agent_id = ${userId} OR agent_id IN (SELECT id FROM users WHERE reporting_to = ${userId}))`
       : `AND agent_id = ${userId}`;
     const projectScope = isAdmin ? '' : `AND owner_id = ${userId}`;
-    const teamScope    = isAdmin ? '' : isManager
-      ? `AND u.id IN (SELECT id FROM users WHERE reporting_to = ${userId})`
+    const teamScope    = isAdmin ? (companyId ? `AND u.company_id = ${companyId}` : '') : isManager
+      ? `AND u.id IN (SELECT id FROM users WHERE reporting_to = ${userId}) AND u.company_id = ${companyId}`
       : `AND u.id = ${userId}`;
 
     const [statsLeads, statsCalls, statsWa] = await Promise.all([
@@ -238,6 +238,9 @@ export const getProjectStats = async (req: AuthRequest, res: Response) => {
 export const getTeamPerformance = async (req: AuthRequest, res: Response) => {
   if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
   try {
+    const companyId = req.user.company_id;
+    const role = req.user.role;
+    const companyClause = (companyId && role !== 'master_admin') ? `AND u.company_id = ${companyId}` : '';
     const result = await db.query(`
       SELECT u.id, u.name, u.role,
         COUNT(DISTINCT l.id) AS total_leads,
@@ -247,7 +250,7 @@ export const getTeamPerformance = async (req: AuthRequest, res: Response) => {
       FROM users u
       LEFT JOIN leads l ON l.owner_id = u.id
       LEFT JOIN calls c ON c.agent_id = u.id
-      WHERE u.role != 'ADMIN'
+      WHERE u.role != 'ADMIN' ${companyClause}
       GROUP BY u.id, u.name, u.role ORDER BY total_calls DESC`);
     return res.json(result.rows);
   } catch (err) {
