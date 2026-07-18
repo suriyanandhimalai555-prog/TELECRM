@@ -859,6 +859,16 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
     }
   }, [selectedContact, fetchMessages]);
 
+  // Deduplicate messages before display
+  const deduplicatedMessages = messages.filter((msg, index, self) =>
+    index === self.findIndex(m => 
+      m.message_id === msg.message_id || 
+      (m.message_text === msg.message_text && 
+       m.direction === msg.direction &&
+       Math.abs(new Date(m.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 60000)
+    )
+  );
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -1242,10 +1252,10 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
               </div>
             </div>
             <div className="flex-1 overflow-y-auto p-5 space-y-3 bg-[#f0f2f5]">
-              {messages.map((m, idx) => {
+              {deduplicatedMessages.map((m, idx) => {
                 const isOut = m.direction === 'outbound';
                 const parsed = parseMessage(m.message_text);
-                const showDate = idx === 0 || new Date(m.timestamp).toDateString() !== new Date(messages[idx-1].timestamp).toDateString();
+                const showDate = idx === 0 || new Date(m.timestamp).toDateString() !== new Date(deduplicatedMessages[idx-1].timestamp).toDateString();
                 return (
                   <div key={m.id}>
                     {showDate && (

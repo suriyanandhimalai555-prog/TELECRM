@@ -216,7 +216,7 @@ export default function Dashboard() {
           </h3>
           <div className="h-48 sm:h-64">
             {callTypeBreakdown.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={150}>
                 <BarChart data={callTypeBreakdown}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                   <XAxis dataKey="type" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 900, fill: '#6b7280' }} />
@@ -303,8 +303,8 @@ export default function Dashboard() {
                <div className="w-1.5 h-1.5 rounded-full bg-gray-200" />
             </div>
           </div>
-          <div className="h-48 sm:h-64 relative flex-1">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-48 sm:h-64 relative">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={150}>
               <PieChart>
                 <Pie
                   data={[

@@ -29,11 +29,15 @@ export default function FieldForce() {
     }).catch(() => {});
 
     api.get("/attendance/history").then(r => {
-      setHistory(r.data?.history || r.data || []);
+      const data = r.data;
+      const list = Array.isArray(data) ? data : Array.isArray(data?.history) ? data.history : [];
+      setHistory(list);
     }).catch(() => {});
 
     api.get("/attendance/all").then(r => {
-      setAllAttendance(r.data?.attendance || r.data || []);
+      const data = r.data;
+      const list = Array.isArray(data) ? data : Array.isArray(data?.attendance) ? data.attendance : [];
+      setAllAttendance(list);
     }).catch(() => {});
   }, []);
 
