@@ -869,6 +869,16 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
     )
   );
 
+  // Deduplicate messages before display
+  const deduplicatedMessages = messages.filter((msg, index, self) =>
+    index === self.findIndex(m => 
+      m.message_id === msg.message_id || 
+      (m.message_text === msg.message_text && 
+       m.direction === msg.direction &&
+       Math.abs(new Date(m.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 60000)
+    )
+  );
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
