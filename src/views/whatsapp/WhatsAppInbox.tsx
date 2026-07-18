@@ -127,6 +127,7 @@ interface Conversation {
   last_status: string;
   unread_count: number;
   lead_id?: number;
+  project_id?: number;
 }
 
 interface WhatsAppTemplate {

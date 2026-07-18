@@ -495,6 +495,7 @@ export const getConversations = async (req: Request, res: Response) => {
         lead_id,
         lead_name,
         lead_stage,
+        project_id,
         lead_project_id AS project_id
       FROM (
         SELECT
@@ -514,6 +515,7 @@ export const getConversations = async (req: Request, res: Response) => {
           l.id           AS lead_id,
           l.contact_name AS lead_name,
           l.stage        AS lead_stage,
+          l.project_id   AS project_id,
           l.project_id   AS lead_project_id
         FROM whatsapp_messages wm
         LEFT JOIN LATERAL (
