@@ -66,6 +66,7 @@ export default function Attendance() {
   };
 
   const formatTime = (ts: string) => ts ? new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "-";
+  const formatDate = (d: string) => d ? new Date(d).toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" }) : "-";
   const getDuration = (checkIn: string, checkOut: string) => {
     if (!checkIn || !checkOut) return "-";
     const diff = new Date(checkOut).getTime() - new Date(checkIn).getTime();
@@ -130,6 +131,7 @@ export default function Attendance() {
                 <tr className="border-b border-gray-100">
                   <th className="text-left text-[9px] font-black uppercase tracking-widest text-gray-400 pb-3">Employee</th>
                   <th className="text-left text-[9px] font-black uppercase tracking-widest text-gray-400 pb-3">Role</th>
+                  <th className="text-left text-[9px] font-black uppercase tracking-widest text-gray-400 pb-3">Date</th>
                   <th className="text-left text-[9px] font-black uppercase tracking-widest text-gray-400 pb-3">Check In</th>
                   <th className="text-left text-[9px] font-black uppercase tracking-widest text-gray-400 pb-3">Check Out</th>
                   <th className="text-left text-[9px] font-black uppercase tracking-widest text-gray-400 pb-3">Duration</th>
@@ -151,6 +153,7 @@ export default function Attendance() {
                       </div>
                     </td>
                     <td className="py-3"><span className="text-[9px] font-black uppercase px-2 py-1 bg-blue-50 text-blue-600 rounded-full">{att.role}</span></td>
+                    <td className="py-3"><span className="text-[11px] font-bold text-gray-600">{formatDate(att.date)}</span></td>
                     <td className="py-3"><span className="text-[11px] font-bold text-green-600">{formatTime(att.check_in)}</span></td>
                     <td className="py-3"><span className="text-[11px] font-bold text-red-600">{formatTime(att.check_out)}</span></td>
                     <td className="py-3"><span className="text-[11px] font-bold text-blue-600">{getDuration(att.check_in, att.check_out)}</span></td>
