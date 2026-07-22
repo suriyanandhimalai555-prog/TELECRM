@@ -58,7 +58,6 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     { name: 'Custom Fields', path: '/app/custom-fields',icon: Sliders,    roles: ['company_admin','ADMIN'] },
     { name: 'Roles',         path: '/app/roles',         icon: ShieldCheck,roles: ['company_admin','ADMIN'] },
     { name: 'Attendance',    path: '/app/attendance',    icon: Clock,      roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
-    { name: 'Ad Campaigns', path: '/app/adcampaigns', icon: Target, roles: ['company_admin','ADMIN','MANAGER'] },
     { name: 'Field Force',   path: '/app/fieldforce',    icon: MapPin,     roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
     { name: 'Settings',     path: '/app/settings',      icon: Settings,   roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
   ];

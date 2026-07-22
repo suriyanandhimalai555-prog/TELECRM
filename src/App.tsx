@@ -23,7 +23,6 @@ import Workflow from './views/workflow/Workflow';
 import AdminPanel from './views/admin/AdminPanel';
 import Attendance from './views/attendance/Attendance';
 import Landing from './views/landing/Landing';
-import AdCampaigns from './views/adcampaigns/AdCampaigns';
 import Reminders from './views/reminders/Reminders';
 import LeadScoring from './views/leadscoring/LeadScoring';
 import CustomFields from './views/customfields/CustomFields';
@@ -112,7 +111,6 @@ export default function App() {
                 <Route path="lead-scoring" element={<BlockMasterAdmin><LeadScoring /></BlockMasterAdmin>} />
                 <Route path="custom-fields" element={<RequireRole roles={['company_admin','ADMIN']}><CustomFields /></RequireRole>} />
                 <Route path="roles" element={<RequireRole roles={['company_admin','ADMIN']}><RolePermissions /></RequireRole>} />
-                <Route path="adcampaigns" element={<BlockMasterAdmin><AdCampaigns /></BlockMasterAdmin>} />
                 <Route path="fieldforce" element={<BlockMasterAdmin><FieldForce /></BlockMasterAdmin>} />
 
               </Route>
