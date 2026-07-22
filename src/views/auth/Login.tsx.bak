@@ -9,7 +9,6 @@ const COMPANIES = [
   { id: 3, name: 'AVG Prime Tech Bangalore' },
   { id: 11, name: 'Almanzar Digital' },
   { id: 12, name: 'Almanzar Primetech LLC' },
-  { id: -1, name: 'Master Admin (No Company)' },
 ];
 
 export default function Login() {
@@ -24,12 +23,10 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (companyId === '') { setError('Please select your company'); return; }
+    if (!companyId) { setError('Please select your company'); return; }
     setLoading(true);
     try {
-      const payload: any = { email, password };
-      if (companyId !== -1) { payload.company_id = companyId; }
-      const res = await api.post('/auth/login', payload);
+      const res = await api.post('/auth/login', { email, password, company_id: companyId });
       login(res.data.token, res.data.user);
       useAuthStore.getState().setUser({ ...res.data.user, token: res.data.token });
       localStorage.setItem('company_id', res.data.user.company_id);
