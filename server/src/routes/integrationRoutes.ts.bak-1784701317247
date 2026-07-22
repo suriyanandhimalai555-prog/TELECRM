@@ -107,19 +107,15 @@ router.get('/webhook/info', authenticate, (req, res) => {
 });
 
 // ─── Workflow automation — auto assign leads ───────────────────────────────────
-router.post('/workflow/auto-assign', authenticate, async (req: any, res) => {
+router.post('/workflow/auto-assign', authenticate, async (req, res) => {
   try {
-    var companyId = req.user && req.user.company_id;
-    if (!companyId) return res.status(400).json({ error: 'No company context for this user' });
-    // Get all unassigned leads, scoped to this company only
+    // Get all unassigned leads
     const { rows: leads } = await db.query(
-      'SELECT id FROM leads WHERE (owner_id IS NULL OR owner_id = 0) AND company_id = ' + '$1' + ' ORDER BY created_at ASC',
-      [companyId]
+      "SELECT id FROM leads WHERE owner_id IS NULL OR owner_id = 0 ORDER BY created_at ASC"
     );
-    // Get all active employees in round-robin, scoped to this company only
+    // Get all active employees in round-robin
     const { rows: users } = await db.query(
-      'SELECT id FROM users WHERE role IN (\'EMPLOYEE\', \'employee\', \'MANAGER\') AND company_id = ' + '$1' + ' ORDER BY id',
-      [companyId]
+      "SELECT id FROM users WHERE role IN ('EMPLOYEE', 'employee', 'MANAGER') ORDER BY id"
     );
     if (!users.length) return res.json({ message: 'No employees to assign to', assigned: 0 });
     let assigned = 0;
