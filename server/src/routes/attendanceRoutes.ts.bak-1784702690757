@@ -78,16 +78,14 @@ router.get('/today', authenticate, async (req: any, res) => {
 // Get all attendance (admin)
 router.get('/all', authenticate, async (req: any, res) => {
   const { date } = req.query;
-  const companyId = req.user && req.user.company_id;
   try {
     const { rows } = await db.query(
       `SELECT a.*, u.name, u.email, u.role 
        FROM attendance a 
        LEFT JOIN users u ON a.user_id = u.id 
        WHERE ($1::date IS NULL OR a.date = $1::date)
-       AND u.company_id = $2
        ORDER BY a.check_in DESC`,
-      [date || null, companyId]
+      [date || null]
     );
     res.json({ attendance: rows });
   } catch (err: any) {

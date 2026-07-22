@@ -6,7 +6,7 @@ export default function Attendance() {
   const [allAttendance, setAllAttendance] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [tracking, setTracking] = useState(false);
-  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
 
   useEffect(() => {
     fetchToday();
@@ -27,8 +27,7 @@ export default function Attendance() {
 
   const fetchAll = async () => {
     try {
-      const url = selectedDate ? `/attendance/all?date=${selectedDate}` : '/attendance/all';
-      const res = await api.get(url);
+      const res = await api.get(`/attendance/all?date=${selectedDate}`);
       setAllAttendance(res.data.attendance || []);
     } catch {}
   };
@@ -116,7 +115,6 @@ export default function Attendance() {
           <h2 className="text-[11px] font-black uppercase tracking-widest text-gray-500">Team Attendance</h2>
           <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)}
             className="text-[11px] border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-400" />
-            {selectedDate && (<button onClick={() => setSelectedDate("")} className="text-[10px] font-black uppercase text-blue-500 hover:text-blue-700 px-2 ml-2">Show All</button>)}
         </div>
         {allAttendance.length === 0 ? (
           <div className="text-center py-8 text-gray-400">
