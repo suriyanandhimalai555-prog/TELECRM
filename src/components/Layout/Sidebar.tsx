@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Users, CheckSquare, StickyNote, MessageSquare, 
   Target, BarChart3, Settings, ChevronLeft, ChevronRight,
   Briefcase, Building2, UserCog, ChevronDown, Phone,
-  GitBranch, Contact, Plug, Bell, BellRing, Workflow, Shield, ShieldCheck, MapPin, Clock, TrendingUp, Sliders,
+  GitBranch, Contact, Plug, Bell, BellRing, Shield, ShieldCheck, MapPin, Clock, TrendingUp, Sliders,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { clsx, type ClassValue } from 'clsx';
@@ -48,8 +48,6 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     { name: 'Reports',    path: '/app/reports',   icon: BarChart3,       roles: ['company_admin','ADMIN','MANAGER'] },
     { name: 'Pipeline',     path: '/app/pipeline',      icon: GitBranch,  roles: ['company_admin','ADMIN','MANAGER'] },
     { name: 'Contacts',     path: '/app/contacts',      icon: Contact,    roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
-    { name: 'Workflow',     path: '/app/workflow',      icon: Workflow,   roles: ['company_admin','ADMIN'] },
-    { name: 'Integrations', path: '/app/integrations',  icon: Plug,       roles: ['company_admin','ADMIN'] },
     { name: 'Notifications',path: '/app/notifications', icon: Bell,       roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
     { name: 'Admin',        path: '/app/admin',         icon: Shield,     roles: ['company_admin','ADMIN'] },
     { name: 'Team',          path: '/app/team',          icon: Users,      roles: ['company_admin','ADMIN','MANAGER'] },

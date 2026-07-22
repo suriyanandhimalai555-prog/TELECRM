@@ -17,9 +17,7 @@ import CallHistory from './views/calls/CallHistory';
 import Settings from './views/settings/Settings';
 import Pipeline from './views/pipeline/Pipeline';
 import Contacts from './views/contacts/Contacts';
-import Integrations from './views/integrations/Integrations';
 import Notifications from './views/notifications/Notifications';
-import Workflow from './views/workflow/Workflow';
 import AdminPanel from './views/admin/AdminPanel';
 import Attendance from './views/attendance/Attendance';
 import Landing from './views/landing/Landing';
@@ -100,9 +98,7 @@ export default function App() {
                 <Route path="whatsapp4" element={<BlockMasterAdmin><WhatsAppInbox accountIndex={3} /></BlockMasterAdmin>} />
                 <Route path="pipeline" element={<BlockMasterAdmin><Pipeline /></BlockMasterAdmin>} />
                 <Route path="contacts" element={<BlockMasterAdmin><Contacts /></BlockMasterAdmin>} />
-                <Route path="integrations" element={<BlockMasterAdmin><Integrations /></BlockMasterAdmin>} />
                 <Route path="notifications" element={<BlockMasterAdmin><Notifications /></BlockMasterAdmin>} />
-                <Route path="workflow" element={<BlockMasterAdmin><Workflow /></BlockMasterAdmin>} />
                 <Route path="admin" element={<RequireRole roles={['company_admin','ADMIN']}><AdminPanel /></RequireRole>} />
                 <Route path="team" element={<RequireRole roles={['company_admin','ADMIN','MANAGER']}><TeamManagement /></RequireRole>} />
                 <Route path="attendance" element={<BlockMasterAdmin><Attendance /></BlockMasterAdmin>} />
