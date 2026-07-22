@@ -54,7 +54,6 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
     { name: 'Admin',        path: '/app/admin',         icon: Shield,     roles: ['company_admin','ADMIN'] },
     { name: 'Team',          path: '/app/team',          icon: Users,      roles: ['company_admin','ADMIN','MANAGER'] },
     { name: 'Reminders',     path: '/app/reminders',    icon: BellRing,   roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
-    { name: 'Lead Scoring',  path: '/app/lead-scoring', icon: TrendingUp, roles: ['company_admin','ADMIN','MANAGER'] },
     { name: 'Custom Fields', path: '/app/custom-fields',icon: Sliders,    roles: ['company_admin','ADMIN'] },
     { name: 'Roles',         path: '/app/roles',         icon: ShieldCheck,roles: ['company_admin','ADMIN'] },
     { name: 'Attendance',    path: '/app/attendance',    icon: Clock,      roles: ['company_admin','ADMIN','MANAGER','employee','EMPLOYEE'] },
