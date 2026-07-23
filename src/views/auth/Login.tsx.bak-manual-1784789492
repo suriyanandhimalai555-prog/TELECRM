@@ -1,17 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../services/api';
 import { LogIn } from 'lucide-react';
 
+const COMPANIES = [
+  { id: 3, name: 'AVG Prime Tech Bangalore' },
+  { id: 11, name: 'Almanzar Digital' },
+  { id: 12, name: 'Almanzar Primetech LLC' },
+  { id: -1, name: 'Master Admin (No Company)' },
+];
 
 export default function Login() {
   const [email, setEmail] = useState('');
-  const [companies, setCompanies] = useState<{ id: number; company_name: string }[]>([]);
-  useEffect(() => {
-    api.get("/auth/companies").then(res => setCompanies(res.data)).catch(() => {});
-  }, []);
   const [password, setPassword] = useState('');
   const [companyId, setCompanyId] = useState<number | ''>('');
   const [error, setError] = useState('');
@@ -63,9 +65,8 @@ export default function Login() {
               <select value={companyId} onChange={e => setCompanyId(Number(e.target.value))} required
                 className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-400 bg-white">
                 <option value="">Select your company...</option>
-                <option value={-1}>Master Admin (No Company)</option>
-                {companies.map(c => (
-                  <option key={c.id} value={c.id}>{c.company_name}</option>
+                {COMPANIES.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
             </div>
