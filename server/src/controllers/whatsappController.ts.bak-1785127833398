@@ -1065,10 +1065,6 @@ export const deleteMessage = async (req: Request, res: Response) => {
   const { id } = req.params;
   const companyId = (req as any).user?.company_id;
   const userRole = (req as any).user?.role;
-  var idNum = parseInt(id, 10);
-  if (!Number.isInteger(idNum) || idNum > 2147483647 || idNum < 1) {
-    return res.json({ success: true });
-  }
   try {
     if (userRole !== 'master_admin') {
       const check = await db.query('SELECT company_id FROM whatsapp_messages WHERE id = $1', [id]);

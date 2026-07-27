@@ -954,7 +954,6 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
 
   const handleDeleteMessage = async (msgId: number | string) => {
     setMessages(prev => prev.filter(m => m.id !== msgId));
-    if (typeof msgId === "number" && msgId > 2147483647) return;
     try { await api.delete(`/whatsapp/message/${msgId}`); } catch {}
   };
 
