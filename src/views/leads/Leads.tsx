@@ -55,6 +55,10 @@ export default function Leads() {
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const PAGE_SIZE = 50;
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [allLeadsData, setAllLeadsData] = useState<any[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('ALL');
   const [selectedStage, setSelectedStage] = useState<string>('ALL');
   const [selectedUser, setSelectedUser] = useState<string>('ALL');
@@ -111,22 +115,53 @@ export default function Leads() {
     setTimeout(() => setFlash(null), 300);
   };
 
-  const fetchLeads = useCallback(async (search?: string) => {
+  const fetchLeads = useCallback(async (search?: string, pageNum: number = 1) => {
     try {
+      setLoading(true);
       const res = await api.get('/leads', { params: { search } });
-      let allLeads = res.data;
+      let newLeads = res.data;
       if (user?.role === 'MANAGER') {
         if (!['ADMIN', 'master_admin', 'company_admin'].includes(user.role)) {
-          allLeads = allLeads.filter((l: any) => l.owner_id === user.id);
+          newLeads = newLeads.filter((l: any) => l.owner_id === user.id);
         }
       }
-      setLeads(allLeads);
+      setAllLeadsData(newLeads);
+      setTotalCount(newLeads.length);
+      const start = (pageNum - 1) * PAGE_SIZE;
+      setLeads(newLeads.slice(start, start + PAGE_SIZE));
+      setPage(pageNum);
     } catch (error) {
       console.error('Failed to fetch leads');
     } finally {
       setLoading(false);
     }
   }, [user]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > totalPages || newPage === page) return;
+    const start = (newPage - 1) * PAGE_SIZE;
+    setLeads(allLeadsData.slice(start, start + PAGE_SIZE));
+    setPage(newPage);
+  };
+
+  const getPageNumbers = (): (number | string)[] => {
+    const pages: (number | string)[] = [];
+    const maxVisible = 5;
+    if (totalPages <= maxVisible + 2) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+      return pages;
+    }
+    pages.push(1);
+    const start = Math.max(2, page - 1);
+    const end = Math.min(totalPages - 1, page + 1);
+    if (start > 2) pages.push('...');
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (end < totalPages - 1) pages.push('...');
+    pages.push(totalPages);
+    return pages;
+  };
 
   const fetchUsers = useCallback(async () => {
     if (user?.role === 'ADMIN' || user?.role === 'MANAGER') {
@@ -719,6 +754,46 @@ export default function Leads() {
           </table>
         </div>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-2 py-2">
+          <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+            Page {page} of {totalPages} &middot; {totalCount} leads
+          </span>
+          <div className="flex items-center space-x-1">
+            <button
+              onClick={() => handlePageChange(page - 1)}
+              disabled={page <= 1 || loading}
+              className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Prev
+            </button>
+            {getPageNumbers().map((p, idx) =>
+              p === '...' ? (
+                <span key={`ellipsis-${idx}`} className="px-2 text-[10px] font-black text-gray-300">...</span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => handlePageChange(p as number)}
+                  className={cn(
+                    "px-3 py-1.5 text-[10px] font-black rounded-lg transition-colors",
+                    p === page ? "bg-aura-red text-white" : "text-gray-600 bg-white border border-gray-200 hover:bg-gray-50"
+                  )}
+                >
+                  {p}
+                </button>
+              )
+            )}
+            <button
+              onClick={() => handlePageChange(page + 1)}
+              disabled={page >= totalPages || loading}
+              className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Lead Modal */}
       <AnimatePresence>
