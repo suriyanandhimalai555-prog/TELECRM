@@ -637,12 +637,8 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
   const PINNED_KEY = `wa_pinned_chats_${accountIndex}`;
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [convPage, setConvPage] = useState(1);
-  const [convTotal, setConvTotal] = useState<number | null>(null);
-  const [loadingMoreConvs, setLoadingMoreConvs] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [visibleMessageCount, setVisibleMessageCount] = useState(50);
   const [input, setInput] = useState('');
   const [selectedAd, setSelectedAd] = useState<string>('');
   const [campaignFilter, setCampaignFilter] = useState<string>('all');
@@ -721,37 +717,25 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
     } catch { }
   }, []);
 
-  const fetchConversations = useCallback(async (page: number = 1) => {
+  const fetchConversations = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (searchTerm) params.set('search', searchTerm);
       params.set('account', String(accountIndex));
-      params.set('page', String(page));
-      params.set('pageSize', '50');
       const res = await api.get(`/whatsapp/conversations?${params.toString()}`);
       const newConvs = Array.isArray(res.data) ? res.data : (res.data.conversations || []);
-      var totalHeader = res.headers && res.headers['x-total-count'];
-      if (totalHeader) setConvTotal(parseInt(totalHeader, 10));
       setConversations(prev => {
-        const merged = newConvs.map((c: any) => {
+        // Merge: keep selected contact's unread count at 0 if currently selected
+        return newConvs.map((c: any) => {
           const existing = prev.find(p => p.contact_number === c.contact_number);
           if (existing && existing.unread_count === 0) {
             return { ...c, unread_count: 0 };
           }
           return c;
         });
-        if (page === 1) return merged;
-        const existingNumbers = new Set(prev.map((p: any) => p.contact_number));
-        const onlyNew = merged.filter((c: any) => !existingNumbers.has(c.contact_number));
-        return [...prev, ...onlyNew];
       });
-      setConvPage(page);
-    } catch { } finally { setLoading(false); setLoadingMoreConvs(false); }
+    } catch { } finally { setLoading(false); }
   }, [searchTerm, accountIndex]);
-  const handleLoadMoreConversations = () => {
-    setLoadingMoreConvs(true);
-    fetchConversations(convPage + 1);
-  };
 
   const urlAutoSelectedRef = useRef(false);
   useEffect(() => {
@@ -771,7 +755,6 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
     try {
       const res = await api.get(`/whatsapp/history/${phone}?account=${accountIndex}`);
       setMessages(Array.isArray(res.data) ? res.data : (res.data.messages || []));
-      setVisibleMessageCount(50);
     } catch { }
   }, [accountIndex]);
 
@@ -886,9 +869,6 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
        Math.abs(new Date(m.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 60000)
     )
   );
-
-  const displayedMessages = deduplicatedMessages.slice(-visibleMessageCount);
-  const hasOlderMessages = deduplicatedMessages.length > visibleMessageCount;
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -1220,14 +1200,6 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
               );
             })
           )}
-          {convTotal !== null && conversations.length < convTotal && (
-            <div className="p-4 flex justify-center">
-              <button onClick={handleLoadMoreConversations} disabled={loadingMoreConvs}
-                className="px-4 py-2 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-blue-100 disabled:opacity-50">
-                {loadingMoreConvs ? 'Loading...' : `Load More (${conversations.length} of ${convTotal})`}
-              </button>
-            </div>
-          )}
         </div>
       </div>
       <div className={cn("flex-1 flex min-w-0", !selectedContact && "hidden md:flex")}>
@@ -1282,20 +1254,10 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
               </div>
             </div>
             <div className="flex-1 overflow-y-auto p-5 space-y-3 bg-[#f0f2f5]">
-              {hasOlderMessages && (
-                <div className="flex justify-center pb-2">
-                  <button
-                    onClick={() => setVisibleMessageCount(c => c + 50)}
-                    className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-gray-500 bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50"
-                  >
-                    Load Earlier Messages
-                  </button>
-                </div>
-              )}
-              {displayedMessages.map((m, idx) => {
+              {deduplicatedMessages.map((m, idx) => {
                 const isOut = m.direction === 'outbound';
                 const parsed = parseMessage(m.message_text);
-                const showDate = idx === 0 || new Date(m.timestamp).toDateString() !== new Date(displayedMessages[idx-1].timestamp).toDateString();
+                const showDate = idx === 0 || new Date(m.timestamp).toDateString() !== new Date(deduplicatedMessages[idx-1].timestamp).toDateString();
                 return (
                   <div key={m.id}>
                     {showDate && (

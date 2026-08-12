@@ -58,6 +58,7 @@ export default function Leads() {
   const PAGE_SIZE = 50;
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [allLeadsData, setAllLeadsData] = useState<any[]>([]);
   const [selectedProject, setSelectedProject] = useState<string>('ALL');
   const [selectedStage, setSelectedStage] = useState<string>('ALL');
   const [selectedUser, setSelectedUser] = useState<string>('ALL');
@@ -117,16 +118,17 @@ export default function Leads() {
   const fetchLeads = useCallback(async (search?: string, pageNum: number = 1) => {
     try {
       setLoading(true);
-      const res = await api.get('/leads', { params: { search, page: pageNum, pageSize: PAGE_SIZE } });
+      const res = await api.get('/leads', { params: { search } });
       let newLeads = res.data;
       if (user?.role === 'MANAGER') {
         if (!['ADMIN', 'master_admin', 'company_admin'].includes(user.role)) {
           newLeads = newLeads.filter((l: any) => l.owner_id === user.id);
         }
       }
-      var totalHeader = res.headers && res.headers['x-total-count'];
-      setTotalCount(totalHeader ? parseInt(totalHeader, 10) : newLeads.length);
-      setLeads(newLeads);
+      setAllLeadsData(newLeads);
+      setTotalCount(newLeads.length);
+      const start = (pageNum - 1) * PAGE_SIZE;
+      setLeads(newLeads.slice(start, start + PAGE_SIZE));
       setPage(pageNum);
     } catch (error) {
       console.error('Failed to fetch leads');
@@ -134,10 +136,14 @@ export default function Leads() {
       setLoading(false);
     }
   }, [user]);
+
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > totalPages || newPage === page) return;
-    fetchLeads(searchTerm, newPage);
+    const start = (newPage - 1) * PAGE_SIZE;
+    setLeads(allLeadsData.slice(start, start + PAGE_SIZE));
+    setPage(newPage);
   };
 
   const getPageNumbers = (): (number | string)[] => {
