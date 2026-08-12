@@ -66,20 +66,6 @@ export const getLeads = async (req: AuthRequest, res: Response) => {
     }
 
     baseQuery += ` ORDER BY l.created_at DESC`;
-    var page = parseInt(req.query.page as string, 10);
-    var pageSize = parseInt(req.query.pageSize as string, 10);
-    if (page && pageSize) {
-      var countQuery = 'SELECT COUNT(*) FROM leads l LEFT JOIN users u ON l.owner_id = u.id' + (whereClauses.length > 0 ? ' WHERE ' + whereClauses.join(' AND ') : '');
-      var countResult = await db.query(countQuery, queryParams);
-      var total = parseInt(countResult.rows[0].count, 10);
-      var offset = (page - 1) * pageSize;
-      var pagedParams = queryParams.slice();
-      pagedParams.push(pageSize, offset);
-      var pagedQuery = baseQuery + ' LIMIT $' + (pagedParams.length - 1) + ' OFFSET $' + pagedParams.length;
-      var pagedResult = await db.query(pagedQuery, pagedParams);
-      res.set('X-Total-Count', String(total));
-      return res.json(pagedResult.rows);
-    }
 
     const leadsResult = await db.query(baseQuery, queryParams);
     res.json(leadsResult.rows);

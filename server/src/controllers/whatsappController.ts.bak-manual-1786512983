@@ -568,21 +568,8 @@ export const getConversations = async (req: Request, res: Response) => {
       query += ` AND (lead_name ILIKE $${params.length + 1} OR contact_name ILIKE $${params.length + 1} OR contact_number ILIKE $${params.length + 1} OR message_text ILIKE $${params.length + 1})`;
       params.push(`%${search}%`);
     }
-    query += ` ORDER BY last_timestamp DESC`;
-    var page = parseInt(req.query.page as string, 10);
-    var pageSize = parseInt(req.query.pageSize as string, 10);
-    if (page && pageSize) {
-      var countResult = await db.query('SELECT COUNT(*) FROM (' + query + ') as countsub', params);
-      var total = parseInt(countResult.rows[0].count, 10);
-      var offset = (page - 1) * pageSize;
-      var pagedParams = params.slice();
-      pagedParams.push(pageSize, offset);
-      var pagedQuery = query + ' LIMIT $' + (pagedParams.length - 1) + ' OFFSET $' + pagedParams.length;
-      var pagedRows = await db.query(pagedQuery, pagedParams);
-      res.set('X-Total-Count', String(total));
-      return res.json({ conversations: pagedRows.rows });
-    }
 
+    query += ` ORDER BY last_timestamp DESC`;
 
     const { rows } = await db.query(query, params);
     res.json({ conversations: rows });
