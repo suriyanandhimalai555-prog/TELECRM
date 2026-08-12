@@ -2,7 +2,6 @@ import nodeFetch from 'node-fetch';
 import FormDataNode from 'form-data';
 import { Request, Response } from 'express';
 import db from '../config/database';
-import { sendMetaLeadEvent } from '../utils/metaPixel';
 import fs from 'fs';
 import path from 'path';
 
@@ -906,7 +905,6 @@ export const handleWebhook = async (req: Request, res: Response) => {
             lead = newLeadRows[0];
             isNewLead = true;
             console.log(`[WA] ✅ Auto-created lead #${lead?.id} for ${from} in company #${companyId} project #${detectedProjectId}`);
-            sendMetaLeadEvent({ phone: from, eventName: "Lead" }).catch(() => {});
             // Send one-time welcome message to new leads
             if (companyId === 11 || companyId === 12 || companyId === 3) {
               try {

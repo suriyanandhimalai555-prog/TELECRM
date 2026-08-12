@@ -907,6 +907,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
             isNewLead = true;
             console.log(`[WA] ✅ Auto-created lead #${lead?.id} for ${from} in company #${companyId} project #${detectedProjectId}`);
             sendMetaLeadEvent({ phone: from, eventName: "Lead" }).catch(() => {});
+            sendMetaLeadEvent({ phone: from, eventName: "Lead" }).catch(() => {});
             // Send one-time welcome message to new leads
             if (companyId === 11 || companyId === 12 || companyId === 3) {
               try {
