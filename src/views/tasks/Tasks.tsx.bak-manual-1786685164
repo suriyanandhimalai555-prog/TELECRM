@@ -29,10 +29,6 @@ function cn(...inputs: ClassValue[]) {
 
 export default function Tasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [tasksPage, setTasksPage] = useState(1);
-  const [tasksTotal, setTasksTotal] = useState<number | null>(null);
-  const [loadingMoreTasks, setLoadingMoreTasks] = useState(false);
-  const TASKS_PAGE_SIZE = 50;
   const [leads, setLeads] = useState<Lead[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -66,28 +62,16 @@ export default function Tasks() {
     setTimeout(() => setFlash(null), 300);
   };
 
-  const fetchTasks = useCallback(async (search?: string, pageNum: number = 1) => {
+  const fetchTasks = useCallback(async (search?: string) => {
     try {
-      const res = await api.get('/tasks', { params: { search, page: pageNum, pageSize: TASKS_PAGE_SIZE } });
-      var totalHeader = res.headers && res.headers['x-total-count'];
-      setTasksTotal(totalHeader ? parseInt(totalHeader, 10) : res.data.length);
-      if (pageNum === 1) {
-        setTasks(res.data);
-      } else {
-        setTasks(prev => [...prev, ...res.data]);
-      }
-      setTasksPage(pageNum);
+      const res = await api.get('/tasks', { params: { search } });
+      setTasks(res.data);
     } catch (error) {
       console.error('Failed to fetch tasks');
     } finally {
       setLoading(false);
-      setLoadingMoreTasks(false);
     }
   }, []);
-  const handleLoadMoreTasks = () => {
-    setLoadingMoreTasks(true);
-    fetchTasks(undefined, tasksPage + 1);
-  };
 
   const fetchLeads = useCallback(async () => {
     try {
@@ -148,8 +132,7 @@ export default function Tasks() {
     try {
       await api.delete(`/tasks/${taskToDelete}`);
       triggerFlash('red');
-      setTasks(prev => prev.filter(t => t.id !== taskToDelete));
-      setTasksTotal(prev => (prev !== null ? prev - 1 : prev));
+      fetchTasks();
     } catch (error) {
       console.error('Failed to delete task');
     }
@@ -415,14 +398,6 @@ export default function Tasks() {
           {tasks.length === 0 && (
             <div className="p-10 border-2 border-dashed border-gray-100 rounded-2xl text-center">
               {loading ? <div className="ui-standard-spinner mx-auto" /> : <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">No tasks assigned</p>}
-            </div>
-          )}
-          {tasksTotal !== null && tasks.length < tasksTotal && (
-            <div className="p-4 flex justify-center">
-              <button onClick={handleLoadMoreTasks} disabled={loadingMoreTasks}
-                className="px-4 py-2 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-blue-100 disabled:opacity-50">
-                {loadingMoreTasks ? 'Loading...' : `Load More (${tasks.length} of ${tasksTotal})`}
-              </button>
             </div>
           )}
         </div>

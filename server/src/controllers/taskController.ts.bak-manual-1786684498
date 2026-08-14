@@ -53,22 +53,8 @@ export const getTasks = async (req: AuthRequest, res: Response) => {
     if (whereClauses.length > 0) {
       baseQuery += ` WHERE ${whereClauses.join(' AND ')}`;
     }
-    baseQuery += ` ORDER BY t.due_date ASC`;
-    var page = parseInt(req.query.page as string, 10);
-    var pageSize = parseInt(req.query.pageSize as string, 10);
-    if (page && pageSize) {
-      var countQuery = 'SELECT COUNT(*) FROM tasks t JOIN users u ON t.user_id = u.id JOIN leads l ON t.lead_id = l.id LEFT JOIN projects p ON t.project_id = p.id' + (whereClauses.length > 0 ? ' WHERE ' + whereClauses.join(' AND ') : '');
-      var countResult = await db.query(countQuery, queryParams);
-      var total = parseInt(countResult.rows[0].count, 10);
-      var offset = (page - 1) * pageSize;
-      var pagedParams = queryParams.slice();
-      pagedParams.push(pageSize, offset);
-      var pagedQuery = baseQuery + ' LIMIT $' + (pagedParams.length - 1) + ' OFFSET $' + pagedParams.length;
-      var pagedResult = await db.query(pagedQuery, pagedParams);
-      res.set('X-Total-Count', String(total));
-      return res.json(pagedResult.rows);
-    }
 
+    baseQuery += ` ORDER BY t.due_date ASC`;
 
     const tasksResult = await db.query(baseQuery, queryParams);
     res.json(tasksResult.rows);
