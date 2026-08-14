@@ -206,6 +206,18 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                             Almanzar Primetech LLC
                           </NavLink>
                           )}
+                          {(user?.company_id === 12) && (
+                          <NavLink
+                            to="/app/whatsapp5"
+                            className={({ isActive }) => cn(
+                              "flex items-center px-4 py-2 rounded-xl transition-all text-[9px] font-black uppercase tracking-widest mt-1",
+                              isActive ? "bg-green-100 text-green-700" : "text-gray-500 hover:bg-green-50 hover:text-green-600"
+                            )}
+                          >
+                            <span className="w-2 h-2 rounded-full bg-pink-400 mr-2" />
+                            Almanzar Dubai
+                          </NavLink>
+                          )}
                         </motion.div>
                       )}
                     </AnimatePresence>

@@ -17,15 +17,20 @@ const PHONE_NUMBER_ID_3 = process.env.WHATSAPP_PHONE_NUMBER_ID_3 || '';
 const PHONE_NUMBER_ID_4 = process.env.WHATSAPP_PHONE_NUMBER_ID_4 || '';
 const WHATSAPP_TOKEN_2  = process.env.WA_ACCESS_TOKEN_2 || process.env.WHATSAPP_ACCESS_TOKEN_2 || WHATSAPP_TOKEN;
 const WHATSAPP_TOKEN_4  = process.env.WA_ACCESS_TOKEN_4 || '';
+const PHONE_NUMBER_ID_5 = process.env.WHATSAPP_PHONE_NUMBER_ID_5 || '';
+const WHATSAPP_TOKEN_5  = process.env.WA_ACCESS_TOKEN_5 || WHATSAPP_TOKEN_4 || '';
+const WABA_ID_5         = process.env.WHATSAPP_BUSINESS_ACCOUNT_ID_5 || '';
 
 // ─── Helper: pick phone ID by account index ───────────────────────────────────
 function getPhoneId(account?: string | number): string {
+  if (String(account) === '4' && PHONE_NUMBER_ID_5) return PHONE_NUMBER_ID_5;
   if (String(account) === '3' && PHONE_NUMBER_ID_4) return PHONE_NUMBER_ID_4;
   if (String(account) === '2' && PHONE_NUMBER_ID_3) return PHONE_NUMBER_ID_3;
   if (String(account) === '1' && PHONE_NUMBER_ID_2) return PHONE_NUMBER_ID_2;
   return PHONE_NUMBER_ID;
 }
 function getToken(account?: string | number): string {
+  if (String(account) === '4' && WHATSAPP_TOKEN_5) return WHATSAPP_TOKEN_5;
   if (String(account) === '3' && WHATSAPP_TOKEN_4) return WHATSAPP_TOKEN_4;
   if (String(account) === '2' && WHATSAPP_TOKEN_3) return WHATSAPP_TOKEN_3;
   if (String(account) === '1' && WHATSAPP_TOKEN_2) return WHATSAPP_TOKEN_2;
@@ -117,7 +122,7 @@ async function getUserWACredentials(userId: number, account?: string | number) {
   return {
     token:   getToken(account) || u.whatsapp_token || WHATSAPP_TOKEN,
     phoneId: getPhoneId(account) || u.whatsapp_phone_id || PHONE_NUMBER_ID,
-    wabaId:  String(account) === '2' ? WABA_ID_3 : u.whatsapp_waba_id || WABA_ID,
+    wabaId:  String(account) === '4' ? WABA_ID_5 : String(account) === '2' ? WABA_ID_3 : u.whatsapp_waba_id || WABA_ID,
   };}
 
 // ─── Helper: fetch media URL + mime_type from Meta ───────────────────────────
