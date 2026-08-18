@@ -644,6 +644,8 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
   const [selectedContact, setSelectedContact] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [visibleMessageCount, setVisibleMessageCount] = useState(100);
+  const [hasMoreHistory, setHasMoreHistory] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const [input, setInput] = useState('');
   const [selectedAd, setSelectedAd] = useState<string>('');
   const [campaignFilter, setCampaignFilter] = useState<string>('all');
@@ -728,6 +730,8 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
     try {
       const params = new URLSearchParams();
       if (searchTerm) params.set('search', searchTerm);
+      if (campaignFilter && campaignFilter !== 'all') params.set('project_id', campaignFilter);
+      if (activeFilter === 'unread') params.set('unread', 'true');
       params.set('account', String(accountIndex));
       params.set('page', String(page));
       params.set('pageSize', '50');
@@ -736,6 +740,9 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
       var totalHeader = res.headers && res.headers['x-total-count'];
       if (totalHeader) setConvTotal(parseInt(totalHeader, 10));
       setConversations(prev => {
+        if (page === 1 && (searchTerm || (campaignFilter && campaignFilter !== 'all') || activeFilter === 'unread')) {
+          return newConvs;
+        }
         if (page === 1) {
           // Refresh data for conversations we already know about, without discarding
           // any extra pages the user loaded via "Load More".
@@ -760,9 +767,15 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
         const onlyNew = merged.filter((c: any) => !existingNumbers.has(c.contact_number));
         return [...prev, ...onlyNew];
       });
-      setConvPage(page);
+      setConvPage(prev => (page > prev ? page : prev));
     } catch { } finally { setLoading(false); setLoadingMoreConvs(false); }
-  }, [searchTerm, accountIndex]);
+  }, [searchTerm, accountIndex, campaignFilter, activeFilter]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchConversations(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchTerm, campaignFilter, activeFilter]);
   const handleLoadMoreConversations = () => {
     setLoadingMoreConvs(true);
     fetchConversations(convPage + 1);
@@ -784,11 +797,26 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
 
   const fetchMessages = useCallback(async (phone: string) => {
     try {
-      const res = await api.get(`/whatsapp/history/${phone}?account=${accountIndex}`);
-      setMessages(Array.isArray(res.data) ? res.data : (res.data.messages || []));
-      setVisibleMessageCount(100);
+      const res = await api.get(`/whatsapp/history/${phone}?account=${accountIndex}&limit=100`);
+      const msgs = Array.isArray(res.data) ? res.data : (res.data.messages || []);
+      setMessages(msgs);
+      setHasMoreHistory(Array.isArray(res.data) ? false : !!res.data.hasMore);
     } catch { }
   }, [accountIndex]);
+  const loadOlderMessages = useCallback(async () => {
+    if (!selectedContact || loadingOlder || !hasMoreHistory) return;
+    const oldest = messages[0];
+    if (!oldest) return;
+    setLoadingOlder(true);
+    try {
+      const phone = selectedContact.contact_number;
+      const res = await api.get(`/whatsapp/history/${phone}?account=${accountIndex}&limit=100&before=${encodeURIComponent(oldest.timestamp)}`);
+      const older = Array.isArray(res.data) ? res.data : (res.data.messages || []);
+      setMessages(prev => [...older, ...prev]);
+      setHasMoreHistory(Array.isArray(res.data) ? false : !!res.data.hasMore);
+    } catch { }
+    finally { setLoadingOlder(false); }
+  }, [accountIndex, selectedContact, messages, loadingOlder, hasMoreHistory]);
 
   const handleSyncTemplates = async () => {
     setSyncingTemplates(true);
@@ -911,8 +939,8 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
     return result;
   }, [messages]);
 
-  const displayedMessages = deduplicatedMessages.slice(-visibleMessageCount);
-  const hasOlderMessages = deduplicatedMessages.length > visibleMessageCount;
+  const displayedMessages = deduplicatedMessages;
+  const hasOlderMessages = hasMoreHistory;
 
   useEffect(() => {
     if (isNearBottomRef.current) {
@@ -1015,10 +1043,6 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
   const filteredConversations = conversations
     .filter(c => activeFilter === 'unread' ? c.unread_count > 0 : true)
     .filter(c => campaignFilter !== 'all' ? String(c.project_id ?? '') === campaignFilter : true)
-    .filter(c =>
-      c.contact_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.contact_number.includes(searchTerm)
-    )
     .sort((a, b) => {
       const ap = pinnedChats.includes(a.contact_number);
       const bp = pinnedChats.includes(b.contact_number);
@@ -1324,10 +1348,11 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
               {hasOlderMessages && (
                 <div className="flex justify-center pb-2">
                   <button
-                    onClick={() => setVisibleMessageCount(c => c + 100)}
-                    className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-gray-500 bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50"
+                    onClick={loadOlderMessages}
+                    disabled={loadingOlder}
+                    className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-gray-500 bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50 disabled:opacity-50"
                   >
-                    Load Earlier Messages
+                    {loadingOlder ? 'Loading...' : 'Load Earlier Messages'}
                   </button>
                 </div>
               )}

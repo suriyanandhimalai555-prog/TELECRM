@@ -453,6 +453,8 @@ export const getHistory = async (req: Request, res: Response) => {
   const companyId = (req as any).user?.company_id;
   const userRole = (req as any).user?.role;
   const userId = (req as any).user?.id;
+  const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
+  const before = req.query.before as string | undefined;
   try {
     if (userRole === 'EMPLOYEE') {
       const ownerCheck = await db.query(
@@ -463,23 +465,27 @@ export const getHistory = async (req: Request, res: Response) => {
         return res.status(403).json({ error: 'You do not have access to this conversation' });
       }
     }
-
     let queryStr = `
       SELECT * FROM whatsapp_messages
       WHERE (from_number = $1 OR to_number = $1)
     `;
-    const params = [phone];
+    const params: any[] = [phone];
     if (userRole !== 'master_admin') {
-      queryStr += ` AND company_id = $2`;
+      queryStr += ` AND company_id = $${params.length + 1}`;
       params.push(companyId);
     } else if (req.query.company_id) {
-      queryStr += ` AND company_id = $2`;
+      queryStr += ` AND company_id = $${params.length + 1}`;
       params.push(String(parseInt(req.query.company_id as string)));
     }
-    
-    const wrappedQuery = `SELECT * FROM (${queryStr} ORDER BY timestamp DESC LIMIT 200) recent ORDER BY timestamp ASC`;
+    if (before) {
+      queryStr += ` AND timestamp < $${params.length + 1}`;
+      params.push(before);
+    }
+    const limitPlaceholder = `$${params.length + 1}`;
+    const wrappedQuery = `SELECT * FROM (${queryStr} ORDER BY timestamp DESC LIMIT ${limitPlaceholder}) recent ORDER BY timestamp ASC`;
+    params.push(limit);
     const { rows } = await db.query(wrappedQuery, params);
-    res.json({ messages: rows });
+    res.json({ messages: rows, hasMore: rows.length === limit });
   } catch (err) {
     console.error('[WA] getHistory error:', err);
     res.status(500).json({ error: 'Database error' });
@@ -489,7 +495,7 @@ export const getHistory = async (req: Request, res: Response) => {
 // ─── Get all conversations ────────────────────────────────────────────────────
 
 export const getConversations = async (req: Request, res: Response) => {
-  const { search, account } = req.query;
+  const { search, account, project_id, unread } = req.query;
   const companyId = (req as any).user?.company_id;
   const role = (req as any).user?.role || 'EMPLOYEE';
   const uid = (req as any).user?.id || 0;
@@ -572,6 +578,13 @@ export const getConversations = async (req: Request, res: Response) => {
     if (search) {
       query += ` AND (lead_name ILIKE $${params.length + 1} OR contact_name ILIKE $${params.length + 1} OR contact_number ILIKE $${params.length + 1} OR message_text ILIKE $${params.length + 1})`;
       params.push(`%${search}%`);
+    }
+    if (project_id && project_id !== 'all') {
+      query += ` AND project_id = $${params.length + 1}`;
+      params.push(String(project_id));
+    }
+    if (unread === 'true') {
+      query += ` AND unread_count > 0`;
     }
     query += ` ORDER BY last_timestamp DESC`;
     var page = parseInt(req.query.page as string, 10);
