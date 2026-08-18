@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   Search, MessageSquare, MoreVertical, Send, Check, CheckCheck,
   Filter, User, Smile, Paperclip, Layout, RefreshCw, X, Mic, MicOff,
@@ -643,7 +643,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
   const [loadingMoreConvs, setLoadingMoreConvs] = useState(false);
   const [selectedContact, setSelectedContact] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [visibleMessageCount, setVisibleMessageCount] = useState(50);
+  const [visibleMessageCount, setVisibleMessageCount] = useState(100);
   const [input, setInput] = useState('');
   const [selectedAd, setSelectedAd] = useState<string>('');
   const [campaignFilter, setCampaignFilter] = useState<string>('all');
@@ -680,6 +680,8 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const isNearBottomRef = useRef(true);
 
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showContactInfo, setShowContactInfo] = useState(false);
@@ -734,6 +736,19 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
       var totalHeader = res.headers && res.headers['x-total-count'];
       if (totalHeader) setConvTotal(parseInt(totalHeader, 10));
       setConversations(prev => {
+        if (page === 1) {
+          // Refresh data for conversations we already know about, without discarding
+          // any extra pages the user loaded via "Load More".
+          const newByNumber = new Map<string, any>(newConvs.map((c: any) => [c.contact_number, c]));
+          const updatedExisting = prev.map((p: any) => {
+            const fresh = newByNumber.get(p.contact_number);
+            if (!fresh) return p;
+            newByNumber.delete(p.contact_number);
+            return p.unread_count === 0 ? { ...fresh, unread_count: 0 } : fresh;
+          });
+          const brandNew = Array.from(newByNumber.values());
+          return [...brandNew, ...updatedExisting];
+        }
         const merged = newConvs.map((c: any) => {
           const existing = prev.find(p => p.contact_number === c.contact_number);
           if (existing && existing.unread_count === 0) {
@@ -741,7 +756,6 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
           }
           return c;
         });
-        if (page === 1) return merged;
         const existingNumbers = new Set(prev.map((p: any) => p.contact_number));
         const onlyNew = merged.filter((c: any) => !existingNumbers.has(c.contact_number));
         return [...prev, ...onlyNew];
@@ -772,7 +786,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
     try {
       const res = await api.get(`/whatsapp/history/${phone}?account=${accountIndex}`);
       setMessages(Array.isArray(res.data) ? res.data : (res.data.messages || []));
-      setVisibleMessageCount(50);
+      setVisibleMessageCount(100);
     } catch { }
   }, [accountIndex]);
 
@@ -878,21 +892,32 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
     }
   }, [selectedContact, fetchMessages]);
 
-  // Deduplicate messages before display
-  const deduplicatedMessages = messages.filter((msg, index, self) =>
-    index === self.findIndex(m => 
-      m.message_id === msg.message_id || 
-      (m.message_text === msg.message_text && 
-       m.direction === msg.direction &&
-       Math.abs(new Date(m.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 60000)
-    )
-  );
+  // Deduplicate messages before display (single pass, O(n) instead of O(n^2))
+  const deduplicatedMessages = useMemo(() => {
+    const seenIds = new Set<string>();
+    const seenFuzzy = new Set<string>();
+    const result: typeof messages = [];
+    for (const msg of messages) {
+      if (msg.message_id) {
+        if (seenIds.has(msg.message_id)) continue;
+        seenIds.add(msg.message_id);
+      }
+      const bucket = Math.floor(new Date(msg.timestamp).getTime() / 60000);
+      const fuzzyKey = `${msg.direction}|${msg.message_text}|${bucket}`;
+      if (seenFuzzy.has(fuzzyKey)) continue;
+      seenFuzzy.add(fuzzyKey);
+      result.push(msg);
+    }
+    return result;
+  }, [messages]);
 
   const displayedMessages = deduplicatedMessages.slice(-visibleMessageCount);
   const hasOlderMessages = deduplicatedMessages.length > visibleMessageCount;
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (isNearBottomRef.current) {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages]);
 
   const selectContact = async (conv: Conversation) => {
@@ -1287,11 +1312,19 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
                 </div>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-5 space-y-3 bg-[#f0f2f5]">
+            <div
+              ref={chatContainerRef}
+              onScroll={() => {
+                const el = chatContainerRef.current;
+                if (!el) return;
+                const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+                isNearBottomRef.current = distanceFromBottom < 150;
+              }}
+              className="flex-1 overflow-y-auto p-5 space-y-3 bg-[#f0f2f5]">
               {hasOlderMessages && (
                 <div className="flex justify-center pb-2">
                   <button
-                    onClick={() => setVisibleMessageCount(c => c + 50)}
+                    onClick={() => setVisibleMessageCount(c => c + 100)}
                     className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-gray-500 bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50"
                   >
                     Load Earlier Messages

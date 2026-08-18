@@ -59,6 +59,7 @@ export default function Leads() {
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [selectedProject, setSelectedProject] = useState<string>('ALL');
+  const [showProjectDropdown, setShowProjectDropdown] = useState(false);
   const [selectedStage, setSelectedStage] = useState<string>('ALL');
   const [selectedUser, setSelectedUser] = useState<string>('ALL');
   const [startDate, setStartDate] = useState<string>('');
@@ -588,11 +589,36 @@ export default function Leads() {
               {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
             </select>
 
-            <select value={selectedProject} onChange={(e) => setSelectedProject(e.target.value)}
-              className="px-3 py-2 bg-gray-50/50 border border-transparent focus:border-aura-red rounded-lg text-[10px] font-black uppercase appearance-none">
-              <option value="ALL">All Projects</option>
-              {Array.isArray(projects) && projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
+            <div className="relative">
+              <button type="button" onClick={() => setShowProjectDropdown(v => !v)}
+                className="px-3 py-2 bg-gray-50/50 border border-transparent focus:border-aura-red rounded-lg text-[10px] font-black uppercase appearance-none text-left min-w-[140px]">
+                {selectedProject === 'ALL' ? 'All Projects' : (projects.find(p => p.id.toString() === selectedProject)?.name || 'All Projects')}
+              </button>
+              <AnimatePresence>
+                {showProjectDropdown && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowProjectDropdown(false)} />
+                    <motion.div
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      className="absolute left-0 top-full mt-1 bg-white border border-gray-100 rounded-lg shadow-xl z-50 w-56 max-h-64 overflow-y-auto py-1"
+                    >
+                      <button type="button" onClick={() => { setSelectedProject('ALL'); setShowProjectDropdown(false); }}
+                        className="w-full text-left px-3 py-2 text-[10px] font-black uppercase hover:bg-gray-50">
+                        All Projects
+                      </button>
+                      {Array.isArray(projects) && projects.map(p => (
+                        <button key={p.id} type="button" onClick={() => { setSelectedProject(p.id.toString()); setShowProjectDropdown(false); }}
+                          className="w-full text-left px-3 py-2 text-[10px] font-black uppercase hover:bg-gray-50">
+                          {p.name}
+                        </button>
+                      ))}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
             
             <select value={selectedStage} onChange={(e) => setSelectedStage(e.target.value)}
               className="px-3 py-2 bg-gray-50/50 border border-transparent focus:border-aura-red rounded-lg text-[10px] font-black uppercase appearance-none">
