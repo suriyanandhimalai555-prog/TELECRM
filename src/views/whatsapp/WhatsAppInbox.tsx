@@ -684,6 +684,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const isNearBottomRef = useRef(true);
+  const isLoadingOlderRef = useRef(false);
 
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showContactInfo, setShowContactInfo] = useState(false);
@@ -726,7 +727,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
     } catch { }
   }, []);
 
-  const fetchConversations = useCallback(async (page: number = 1) => {
+  const fetchConversations = useCallback(async (page: number = 1, reset: boolean = false) => {
     try {
       const params = new URLSearchParams();
       if (searchTerm) params.set('search', searchTerm);
@@ -740,7 +741,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
       var totalHeader = res.headers && res.headers['x-total-count'];
       if (totalHeader) setConvTotal(parseInt(totalHeader, 10));
       setConversations(prev => {
-        if (page === 1 && (searchTerm || (campaignFilter && campaignFilter !== 'all') || activeFilter === 'unread')) {
+        if (page === 1 && reset) {
           return newConvs;
         }
         if (page === 1) {
@@ -751,7 +752,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
             const fresh = newByNumber.get(p.contact_number);
             if (!fresh) return p;
             newByNumber.delete(p.contact_number);
-            return p.unread_count === 0 ? { ...fresh, unread_count: 0 } : fresh;
+            return p.unread_count === 0 ? { ...fresh, unread_count: 0 } :fresh;
           });
           const brandNew = Array.from(newByNumber.values());
           return [...brandNew, ...updatedExisting];
@@ -767,12 +768,16 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
         const onlyNew = merged.filter((c: any) => !existingNumbers.has(c.contact_number));
         return [...prev, ...onlyNew];
       });
-      setConvPage(prev => (page > prev ? page : prev));
+      if (reset) {
+        setConvPage(1);
+      } else {
+        setConvPage(prev => (page > prev ? page : prev));
+      }
     } catch { } finally { setLoading(false); setLoadingMoreConvs(false); }
   }, [searchTerm, accountIndex, campaignFilter, activeFilter]);
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchConversations(1);
+      fetchConversations(1, true);
     }, 400);
     return () => clearTimeout(timer);
   }, [searchTerm, campaignFilter, activeFilter]);
@@ -808,13 +813,23 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
     const oldest = messages[0];
     if (!oldest) return;
     setLoadingOlder(true);
+    const el = chatContainerRef.current;
+    const prevScrollHeight = el ? el.scrollHeight : 0;
     try {
       const phone = selectedContact.contact_number;
       const res = await api.get(`/whatsapp/history/${phone}?account=${accountIndex}&limit=100&before=${encodeURIComponent(oldest.timestamp)}`);
       const older = Array.isArray(res.data) ? res.data : (res.data.messages || []);
+      isLoadingOlderRef.current = true;
       setMessages(prev => [...older, ...prev]);
       setHasMoreHistory(Array.isArray(res.data) ? false : !!res.data.hasMore);
-    } catch { }
+      requestAnimationFrame(() => {
+        if (el) {
+          const newScrollHeight = el.scrollHeight;
+          el.scrollTop = newScrollHeight - prevScrollHeight;
+        }
+        isLoadingOlderRef.current = false;
+      });
+    } catch { isLoadingOlderRef.current = false; }
     finally { setLoadingOlder(false); }
   }, [accountIndex, selectedContact, messages, loadingOlder, hasMoreHistory]);
 
@@ -943,7 +958,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
   const hasOlderMessages = hasMoreHistory;
 
   useEffect(() => {
-    if (isNearBottomRef.current) {
+    if (isNearBottomRef.current && !isLoadingOlderRef.current) {
       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
