@@ -1,0 +1,343 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion, useMotionValue, useTransform, animate } from 'motion/react';
+import api from '../../services/api';
+import { DashboardStats } from '../../types';
+import {
+  Phone,
+  PhoneIncoming,
+  PhoneOutgoing,
+  PhoneMissed,
+  MessageSquare,
+  TrendingUp,
+  Calendar,
+  CheckSquare,
+  Zap,
+  History,
+  Users,
+  Activity
+} from 'lucide-react';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts';
+
+const COLORS = ['#2a85cc', '#7ec8f7', '#fbbf24', '#8b5cf6'];
+
+// Faster, lighter count-up. No infinite loop, runs once.
+const PowerCounter = ({ value }: { value: number }) => {
+  const count = useMotionValue(0);
+  const rounded = useTransform(count, (latest) => Math.round(latest));
+
+  useEffect(() => {
+    const controls = animate(count, value, { duration: 0.8, ease: 'easeOut' });
+    return controls.stop;
+  }, [value, count]);
+
+  return (
+    <motion.span className="text-2xl sm:text-4xl font-black bg-gradient-to-br from-aura-red to-gray-500 bg-clip-text text-transparent tracking-tighter">
+      {rounded}
+    </motion.span>
+  );
+};
+
+export default function Dashboard() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const fetchStats = useCallback(async () => {
+    try {
+      setRefreshing(true);
+      setError(null);
+      const res = await api.get('/reports/dashboard-stats');
+      setStats(res.data);
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || error?.message || 'Unknown error';
+      console.error('Failed to fetch stats:', msg);
+      setError(msg);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center h-screen space-y-4 bg-gray-50">
+      <div className="ui-standard-spinner" />
+      <p className="text-[10px] font-black text-aura-red uppercase tracking-widest animate-pulse">
+        Initializing AVG CRM Interface...
+      </p>
+    </div>
+  );
+
+  if (!stats) return (
+    <div className="flex flex-col items-center justify-center h-screen space-y-6 bg-gray-50 px-6">
+      <Activity className="text-aura-red" size={48} />
+      <div className="text-center">
+        <h2 className="text-xl font-black text-gray-900 uppercase tracking-tighter">Connection Lost</h2>
+        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-2">Operational Data Stream Interrupted</p>
+        {error && (
+          <p className="text-[10px] font-bold text-red-400 mt-2 max-w-sm mx-auto break-words">
+            Error: {error}
+          </p>
+        )}
+      </div>
+      <button
+        onClick={() => fetchStats()}
+        className="px-6 py-2 bg-aura-red text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg hover:bg-[#2a85cc] transition-colors"
+      >
+        Retry Connection
+      </button>
+    </div>
+  );
+
+  const statCards = [
+    { name: 'Total Contacts', value: stats.totalContacts || 0, icon: Users, color: 'bg-aura-red', path: '/leads' },
+    { name: 'Sent Today', value: stats.messagesToday || 0, icon: PhoneOutgoing, color: 'bg-[#2a85cc]', path: '/app/whatsapp' },
+    { name: 'Unread WA', value: stats.unreadWhatsAppCount || 0, icon: MessageSquare, color: 'bg-[#2a85cc]', path: '/app/whatsapp' },
+    { name: 'Calls Made', value: stats.totalCalls || 0, icon: Phone, color: 'bg-aura-red', path: '/calls' },
+  ];
+
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const recentCalls = Array.isArray(stats.recentCalls) ? stats.recentCalls : [];
+  const callTypeBreakdown = Array.isArray(stats.callTypeBreakdown) ? stats.callTypeBreakdown : [];
+
+  return (
+    <div className="space-y-5 sm:space-y-8 relative pb-8 sm:pb-12">
+      {refreshing && (
+        <div className="fixed top-0 left-0 w-full h-0.5 z-50 overflow-hidden">
+          <motion.div
+            initial={{ x: '-100%' }}
+            animate={{ x: '100%' }}
+            transition={{ duration: 1, ease: 'linear' }}
+            className="h-full bg-aura-red"
+          />
+        </div>
+      )}
+
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-4xl font-black text-gray-900 border-l-4 border-aura-red pl-3 sm:pl-4 uppercase tracking-tighter">
+            AVG <span className="text-aura-red">DASHBOARD</span>
+          </h1>
+          <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] sm:tracking-[0.3em] mt-1.5 sm:mt-2 ml-1">
+            Live Operational Framework
+          </p>
+        </div>
+
+        <div className="flex items-center space-x-2 bg-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl border border-gray-100 shadow-sm self-start sm:self-auto">
+          <Calendar className="text-aura-red" size={14} />
+          <span className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest">
+            {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          </span>
+        </div>
+      </div>
+
+      {/* Stats Cards — 2 columns on mobile, compact */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+        {statCards.map((card) => (
+          <div
+            key={card.name}
+            onClick={() => navigate(card.path)}
+            className="bg-white p-3 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 active:scale-[0.98] transition-transform cursor-pointer"
+          >
+            <div className="flex items-center justify-between mb-3 sm:mb-6">
+              <div className={cn(card.color, "p-2 sm:p-4 rounded-lg sm:rounded-xl text-white")}>
+                <card.icon size={16} className="sm:hidden" />
+                <card.icon size={24} className="hidden sm:block" />
+              </div>
+            </div>
+            <p className="text-[8px] sm:text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{card.name}</p>
+            <PowerCounter value={card.value} />
+            <div className="mt-1.5 sm:mt-2 hidden sm:flex items-center">
+              <Activity size={10} className="text-aura-red mr-2" />
+              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em]">Operational Logic Verified</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-6">
+        {/* Call Duration Stats */}
+        <div className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 lg:col-span-1">
+          <h3 className="text-xs font-black text-gray-900 mb-4 sm:mb-6 uppercase tracking-[0.2em] border-b border-gray-50 pb-3 sm:pb-4 flex items-center">
+            <TrendingUp className="mr-3 text-aura-red" size={18} /> Performance Metrics
+          </h3>
+          <div className="space-y-2 sm:space-y-3">
+            {[
+              { label: 'Total Engagement Time', value: formatDuration(stats.totalDuration || 0), icon: History, color: 'text-aura-red' },
+              { label: 'Average Signal Strength', value: formatDuration(stats.avgDuration || 0), icon: Zap, color: 'text-aura-red' },
+              { label: 'Pending Directives', value: stats.dailyTasks || 0, icon: CheckSquare, color: 'text-blue-600' }
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="flex items-center justify-between p-3 sm:p-4 rounded-xl bg-gray-50/50 border border-transparent"
+              >
+                <div className="flex items-center min-w-0">
+                  <item.icon className={cn(item.color, "mr-3 flex-shrink-0")} size={18} />
+                  <span className="text-[9px] sm:text-[10px] font-extrabold text-gray-400 uppercase tracking-tighter truncate">{item.label}</span>
+                </div>
+                <span className="text-sm font-black text-gray-900 font-mono flex-shrink-0 ml-2">{item.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Pulse Chart */}
+        <div className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 lg:col-span-2">
+          <h3 className="text-xs font-black text-gray-900 mb-4 sm:mb-6 uppercase tracking-[0.2em] flex items-center">
+            <Activity className="mr-3 text-aura-red" size={18} /> Engagement Velocity
+          </h3>
+          <div className="h-48 sm:h-64">
+            {callTypeBreakdown.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={150}>
+                <BarChart data={callTypeBreakdown}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                  <XAxis dataKey="type" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 900, fill: '#6b7280' }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 900, fill: '#6b7280' }} />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(239, 68, 68, 0.05)' }}
+                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #f3f4f6', borderRadius: '12px', color: '#111827', fontSize: '10px', fontWeight: 900 }}
+                  />
+                  <Bar dataKey="count" fill="#2a85cc" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full space-y-3">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-aura-red/10 flex items-center justify-center border border-aura-red/20">
+                  <Activity className="text-aura-red" size={22} />
+                </div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">No call data available</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-6">
+        {/* Recent Events */}
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-4 sm:p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+            <h3 className="text-[9px] sm:text-[10px] font-black text-gray-900 uppercase tracking-[0.2em] flex items-center">
+              <History className="mr-2 sm:mr-3 text-aura-red" size={16} /> Extraction Logs
+            </h3>
+            <button
+              onClick={() => navigate('/app/calls')}
+              className="text-[9px] font-black text-aura-red uppercase hover:underline tracking-widest"
+            >
+              Full Access View
+            </button>
+          </div>
+          <div className="divide-y divide-gray-50 max-h-[350px] overflow-y-auto no-scrollbar">
+            {recentCalls.length > 0 ? recentCalls.map((call) => (
+              <div
+                key={call.id}
+                className="p-3 sm:p-5 hover:bg-gray-50/50 transition-colors flex items-center justify-between"
+              >
+                <div className="flex items-center min-w-0">
+                  <div className={cn(
+                    "w-9 h-9 sm:w-10 sm:h-10 rounded-xl mr-3 sm:mr-4 flex items-center justify-center border flex-shrink-0",
+                    call.type === 'INCOMING' ? "bg-aura-red/5 border-aura-red/20 text-aura-red" :
+                    call.type === 'OUTGOING' ? "bg-[#2a85cc]/5 border-blue-600/20 text-blue-600" : "bg-gray-100 border-gray-200 text-gray-400"
+                  )}>
+                    {call.type === 'INCOMING' ? <PhoneIncoming size={16} /> :
+                     call.type === 'OUTGOING' ? <PhoneOutgoing size={16} /> : <PhoneMissed size={16} />}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-black text-gray-900 leading-tight uppercase truncate">{call.lead_name || 'Classified Identity'}</p>
+                    <p className="text-[9px] text-gray-400 font-bold uppercase mt-1 tracking-widest truncate">{call.caller}</p>
+                  </div>
+                </div>
+                <div className="text-right flex-shrink-0 ml-2">
+                  <p className="text-xs font-black text-gray-900 font-mono tracking-tighter uppercase">{formatDuration(call.duration_seconds)}</p>
+                  <span className={cn(
+                    "text-[8px] font-black uppercase px-2 py-0.5 rounded-md mt-2 inline-block border",
+                    call.status === 'CONNECTED' ? "bg-[#2a85cc]/10 text-blue-600 border-blue-600/20" : "bg-aura-red/10 text-aura-red border-aura-red/20"
+                  )}>{call.status}</span>
+                </div>
+              </div>
+            )) : (
+              <div className="flex flex-col items-center justify-center py-12 sm:py-16 space-y-3">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-aura-red/10 flex items-center justify-center border border-aura-red/20">
+                  <History className="text-aura-red" size={22} />
+                </div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">No recent calls</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* mini Pie */}
+        <div className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+          <div className="flex items-center justify-between mb-5 sm:mb-8">
+            <h3 className="text-[9px] sm:text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">Operational Distribution</h3>
+            <div className="flex space-x-1">
+               <div className="w-1.5 h-1.5 rounded-full bg-aura-red" />
+               <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+               <div className="w-1.5 h-1.5 rounded-full bg-gray-200" />
+            </div>
+          </div>
+          <div className="h-48 sm:h-64 relative">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={150}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'Success', value: 40 },
+                    { name: 'Engaged', value: 30 },
+                    { name: 'Pending', value: 20 },
+                    { name: 'Failed', value: 10 },
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={80}
+                  paddingAngle={8}
+                  dataKey="value"
+                  stroke="none"
+                  isAnimationActive={false}
+                >
+                  {COLORS.map((color, index) => (
+                    <Cell key={`cell-${index}`} fill={color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                   contentStyle={{ backgroundColor: '#fff', border: '1px solid #f3f4f6', borderRadius: '12px', color: '#111827' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+               <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase">Core Logic</p>
+               <p className="text-lg sm:text-xl font-black text-gray-900">SUCCESS</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
