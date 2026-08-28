@@ -289,12 +289,14 @@ export const sendTemplate = async (req: Request, res: Response) => {
     });
 
     const data = await waRes.json();
+    console.log('[WA] send attempt to', phone, 'via phoneId', phoneId, '-> status', waRes.status, JSON.stringify(data));
     if (data.error) {
       console.error('[WA] Meta API error:', JSON.stringify(data.error));
       return res.status(400).json({ error: data.error.message, details: data.error });
     }
 
     const msgId = data.messages?.[0]?.id;
+    console.log('[WA] send SUCCESS, message_id =', msgId);
 
     await db.query(
       `INSERT INTO whatsapp_messages
@@ -348,9 +350,11 @@ export const bulkSendMessage = async (req: Request, res: Response) => {
         });
 
         const data = await waRes.json();
+    console.log('[WA] send attempt to', phone, 'via phoneId', phoneId, '-> status', waRes.status, JSON.stringify(data));
 
         if (!data.error) {
           const msgId = data.messages?.[0]?.id;
+    console.log('[WA] send SUCCESS, message_id =', msgId);
           await db.query(
             `INSERT INTO whatsapp_messages
                (message_id, from_number, to_number, message_text, direction, status, contact_name, is_read, company_id, phone_number_id)
@@ -418,12 +422,14 @@ export const sendMessage = async (req: Request, res: Response) => {
     });
 
     const data = await waRes.json();
+    console.log('[WA] send attempt to', phone, 'via phoneId', phoneId, '-> status', waRes.status, JSON.stringify(data));
     if (data.error) {
       console.error('[WA] Meta API error:', JSON.stringify(data.error));
       return res.status(400).json({ error: data.error.message, details: data.error });
     }
 
     const msgId = data.messages?.[0]?.id;
+    console.log('[WA] send SUCCESS, message_id =', msgId);
 
     const { rows: savedRows } = await db.query(
       `INSERT INTO whatsapp_messages
