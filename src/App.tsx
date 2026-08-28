@@ -4,6 +4,31 @@ import { SearchProvider } from './context/SearchContext';
 import { NotificationProvider } from './context/NotificationContext';
 import Layout from './components/Layout/Layout';
 import Login from './views/auth/Login';
+import StateLogin from './views/auth/StateLogin';
+import StateLayout from './components/StateLayout/StateLayout';
+import StateDashboardHome from './views/state-crm/StateDashboardHome';
+import StateUsers from './views/state-crm/StateUsers';
+import StateStatesPage from './views/state-crm/StateStatesPage';
+import StateLeads from './views/state-crm/StateLeads';
+import StateTasks from './views/state-crm/StateTasks';
+import StateProjects from './views/state-crm/StateProjects';
+import StateNotes from './views/state-crm/StateNotes';
+import StateCalls from './views/state-crm/StateCalls';
+import StateWhatsApp from './views/state-crm/StateWhatsApp';
+import StateCampaigns from './views/state-crm/StateCampaigns';
+import StateReports from './views/state-crm/StateReports';
+import StatePipeline from './views/state-crm/StatePipeline';
+import StateContacts from './views/state-crm/StateContacts';
+import StateNotifications from './views/state-crm/StateNotifications';
+import StateAdmin from './views/state-crm/StateAdmin';
+import StateTeam from './views/state-crm/StateTeam';
+import StateReminders from './views/state-crm/StateReminders';
+import StateCustomFields from './views/state-crm/StateCustomFields';
+import StateRoles from './views/state-crm/StateRoles';
+import StateAttendance from './views/state-crm/StateAttendance';
+import StateWorkSprint from './views/state-crm/StateWorkSprint';
+import StateFieldForce from './views/state-crm/StateFieldForce';
+import StateSettings from './views/state-crm/StateSettings';
 import Register from './views/auth/Register';
 import Dashboard from './views/dashboard/Dashboard';
 import Leads from './views/leads/Leads';
@@ -70,6 +95,32 @@ export default function App() {
           <Router>
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route path="/state-login" element={<StateLogin />} />
+              <Route path="/state-crm" element={<StateLayout />}>
+                <Route index element={<StateDashboardHome />} />
+                <Route path="users" element={<StateUsers />} />
+                <Route path="states" element={<StateStatesPage />} />
+                <Route path="leads" element={<StateLeads />} />
+                <Route path="tasks" element={<StateTasks />} />
+                <Route path="projects" element={<StateProjects />} />
+                <Route path="notes" element={<StateNotes />} />
+                <Route path="calls" element={<StateCalls />} />
+                <Route path="whatsapp" element={<StateWhatsApp />} />
+                <Route path="campaigns" element={<StateCampaigns />} />
+                <Route path="reports" element={<StateReports />} />
+                <Route path="pipeline" element={<StatePipeline />} />
+                <Route path="contacts" element={<StateContacts />} />
+                <Route path="notifications" element={<StateNotifications />} />
+                <Route path="admin" element={<StateAdmin />} />
+                <Route path="team" element={<StateTeam />} />
+                <Route path="reminders" element={<StateReminders />} />
+                <Route path="custom-fields" element={<StateCustomFields />} />
+                <Route path="roles" element={<StateRoles />} />
+                <Route path="attendance" element={<StateAttendance />} />
+                <Route path="worksprint" element={<StateWorkSprint />} />
+                <Route path="fieldforce" element={<StateFieldForce />} />
+                <Route path="settings" element={<StateSettings />} />
+              </Route>
               <Route path="/register" element={<Register />} />
               <Route path="/" element={<Landing />} />
               <Route path="/app" element={<PrivateRoute><Layout /></PrivateRoute>}>

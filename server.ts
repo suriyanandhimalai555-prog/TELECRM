@@ -7,7 +7,14 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import fs from 'fs';
 import db, { initDb } from './server/src/config/database';
+import jwt from 'jsonwebtoken';
+import { JWT_SECRET as STATE_JWT_SECRET } from './server/src/middleware/stateAuth';
 import authRoutes from './server/src/routes/authRoutes';
+import stateAuthRoutes from './server/src/routes/state/stateAuthRoutes';
+import stateRoutes from './server/src/routes/state/stateRoutes';
+import stateReminderRoutes from './server/src/routes/state/stateReminderRoutes';
+import stateCampaignRoutes from './server/src/routes/state/stateCampaignRoutes';
+import stateCustomFieldRoutes from './server/src/routes/state/stateCustomFieldRoutes';
 import leadRoutes from './server/src/routes/leadRoutes';
 import taskRoutes from './server/src/routes/taskRoutes';
 import campaignRoutes from './server/src/routes/campaignRoutes';
@@ -20,7 +27,7 @@ import whatsappRoutes from './server/src/routes/whatsappRoutes';
 import companyRoutes from './server/src/routes/companyRoutes';
 import userRoutes from './server/src/routes/userRoutes';
 import integrationRoutes from './server/src/routes/integrationRoutes';
-import attendanceRoutes from './server/src/routes/attendanceRoutes';
+import attendanceRoutes, { initAttendance } from './server/src/routes/attendanceRoutes';
 import reminderRoutes from './server/src/routes/reminderRoutes';
 import leadScoringRoutes from './server/src/routes/leadScoringRoutes';
 import customFieldRoutes from './server/src/routes/customFieldRoutes';
@@ -104,6 +111,32 @@ if (!isVercel) {
     },
   });
   io.on('connection', (socket: any) => {
+    // Optional state-CRM auth: if a state JWT is passed in the handshake, join
+    // this socket to only the WhatsApp number rooms it's authorized to see.
+    // No token = behaves exactly as before (used by the regular, non-state CRM).
+    const stateToken = socket.handshake.auth?.token;
+    if (stateToken) {
+      (async () => {
+        try {
+          const decoded: any = jwt.verify(stateToken, STATE_JWT_SECRET);
+          if (decoded.crm === 'state') {
+            if (decoded.role === 'master' || decoded.role === 'admin') {
+              socket.join('wa:all');
+            } else {
+              const { rows } = await db.query(
+                'SELECT phone_number_id FROM state_crm_whatsapp_numbers WHERE state_head_user_id = $1',
+                [decoded.id]
+              );
+              for (const row of rows) {
+                socket.join(`wa:${row.phone_number_id}`);
+              }
+            }
+          }
+        } catch (err) {
+          console.warn('[Socket] state auth failed, joining no rooms:', (err as any)?.message);
+        }
+      })();
+    }
     socket.on('disconnect', () => {});
   });
 }
@@ -113,6 +146,7 @@ let dbConnected = false;
 const initialize = async () => {
   try {
     await initDb();
+    await initAttendance();
     dbConnected = true;
     console.log('Database initialized successfully');
     // ← REMOVED: demo user seeding block (admin@avgcrm.com etc.)
@@ -143,6 +177,11 @@ app.use((req: any, _res, next) => {
 
 // ─── API routes ───────────────────────────────────────────────────────────────
 app.use('/api/auth',      authRoutes);
+app.use('/api/state/auth', stateAuthRoutes);
+app.use('/api/state', stateRoutes);
+app.use('/api/state/reminders', stateReminderRoutes);
+app.use('/api/state/campaigns', stateCampaignRoutes);
+app.use('/api/state/custom-fields', stateCustomFieldRoutes);
 app.use('/api/leads',     leadRoutes);
 app.use('/api/tasks',     taskRoutes);
 app.use('/api/campaigns', campaignRoutes);

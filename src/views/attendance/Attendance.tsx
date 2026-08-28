@@ -35,17 +35,30 @@ export default function Attendance() {
 
   const handleCheckIn = async () => {
     setTracking(true);
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const isFullDay = (hours === 9 && minutes >= 30 && minutes <= 40);
+
+    if (isFullDay) {
+      alert(`✅ Full Day! You checked in at ${now.toLocaleTimeString()}`);
+    } else {
+      alert(`⚠️ Half Day! You checked in at ${now.toLocaleTimeString()} (Outside 9:30 - 9:40 AM window)`);
+    }
+
     try {
       const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
         navigator.geolocation.getCurrentPosition(resolve, reject)
       );
+
       const res = await api.post("/attendance/checkin", {
         lat: pos.coords.latitude,
         lng: pos.coords.longitude,
+        day_type: isFullDay ? "Full Day" : "Half Day",
       });
+
       setToday(res.data.attendance);
       fetchAll();
-      alert("Checked in successfully at " + new Date().toLocaleTimeString());
     } catch (e: any) {
       alert(e.response?.data?.error || "Check-in failed");
     }
@@ -58,21 +71,49 @@ export default function Attendance() {
       const res = await api.post("/attendance/checkout");
       setToday(res.data.attendance);
       fetchAll();
-      alert("Checked out successfully at " + new Date().toLocaleTimeString());
     } catch (e: any) {
       alert(e.response?.data?.error || "Check-out failed");
     }
     setTracking(false);
   };
 
-  const formatTime = (ts: string) => ts ? new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "-";
-  const formatDate = (d: string) => d ? new Date(d).toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" }) : "-";
+  // FINAL FIX: Adds +5:30 to UTC to show correct local time
+  const fmt = (ts: string | null) => {
+    if (!ts) return '-';
+    const date = new Date(ts);
+    date.setMinutes(date.getMinutes() + 330);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const fmtDate = (ts: string | null) => {
+    if (!ts) return '-';
+    const date = new Date(ts);
+    date.setMinutes(date.getMinutes() + 330);
+    return date.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
   const getDuration = (checkIn: string, checkOut: string) => {
     if (!checkIn || !checkOut) return "-";
-    const diff = new Date(checkOut).getTime() - new Date(checkIn).getTime();
+    const date1 = new Date(checkIn); date1.setMinutes(date1.getMinutes() + 330);
+    const date2 = new Date(checkOut); date2.setMinutes(date2.getMinutes() + 330);
+    const diff = date2.getTime() - date1.getTime();
     const hrs = Math.floor(diff / 3600000);
     const mins = Math.floor((diff % 3600000) / 60000);
     return `${hrs}h ${mins}m`;
+  };
+
+  const getDayType = (checkIn: string | null) => {
+    if (!checkIn) return 'N/A';
+    const date = new Date(checkIn);
+    date.setMinutes(date.getMinutes() + 330);
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+
+    if (hours === 9 && minutes >= 30 && minutes <= 40) {
+      return 'Full Day';
+    } else {
+      return 'Half Day';
+    }
   };
 
   return (
@@ -80,7 +121,6 @@ export default function Attendance() {
       <h1 className="text-2xl font-black uppercase tracking-tighter text-gray-900 mb-2">Attendance</h1>
       <p className="text-gray-400 text-sm mb-6">Track daily attendance and working hours</p>
 
-      {/* My Check In/Out */}
       <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm mb-6">
         <h2 className="text-[11px] font-black uppercase tracking-widest text-gray-500 mb-4">My Attendance Today</h2>
         <div className="flex gap-4 mb-4">
@@ -97,11 +137,11 @@ export default function Attendance() {
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-green-50 rounded-xl p-3 text-center">
               <p className="text-[9px] font-black uppercase tracking-widest text-green-600">Check In</p>
-              <p className="text-lg font-black text-green-700">{formatTime(today.check_in)}</p>
+              <p className="text-lg font-black text-green-700">{fmt(today.check_in)}</p>
             </div>
             <div className="bg-red-50 rounded-xl p-3 text-center">
               <p className="text-[9px] font-black uppercase tracking-widest text-red-600">Check Out</p>
-              <p className="text-lg font-black text-red-700">{formatTime(today.check_out)}</p>
+              <p className="text-lg font-black text-red-700">{fmt(today.check_out)}</p>
             </div>
             <div className="bg-blue-50 rounded-xl p-3 text-center">
               <p className="text-[9px] font-black uppercase tracking-widest text-blue-600">Duration</p>
@@ -111,7 +151,6 @@ export default function Attendance() {
         )}
       </div>
 
-      {/* All Attendance Table */}
       <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-[11px] font-black uppercase tracking-widest text-gray-500">Team Attendance</h2>
@@ -136,6 +175,7 @@ export default function Attendance() {
                   <th className="text-left text-[9px] font-black uppercase tracking-widest text-gray-400 pb-3">Check Out</th>
                   <th className="text-left text-[9px] font-black uppercase tracking-widest text-gray-400 pb-3">Duration</th>
                   <th className="text-left text-[9px] font-black uppercase tracking-widest text-gray-400 pb-3">Status</th>
+                  <th className="text-left text-[9px] font-black uppercase tracking-widest text-gray-400 pb-3">Day Type</th>
                 </tr>
               </thead>
               <tbody>
@@ -153,13 +193,18 @@ export default function Attendance() {
                       </div>
                     </td>
                     <td className="py-3"><span className="text-[9px] font-black uppercase px-2 py-1 bg-blue-50 text-blue-600 rounded-full">{att.role}</span></td>
-                    <td className="py-3"><span className="text-[11px] font-bold text-gray-600">{formatDate(att.date)}</span></td>
-                    <td className="py-3"><span className="text-[11px] font-bold text-green-600">{formatTime(att.check_in)}</span></td>
-                    <td className="py-3"><span className="text-[11px] font-bold text-red-600">{formatTime(att.check_out)}</span></td>
+                    <td className="py-3"><span className="text-[11px] font-bold text-gray-600">{fmtDate(att.date)}</span></td>
+                    <td className="py-3"><span className="text-[11px] font-bold text-green-600">{fmt(att.check_in)}</span></td>
+                    <td className="py-3"><span className="text-[11px] font-bold text-red-600">{fmt(att.check_out)}</span></td>
                     <td className="py-3"><span className="text-[11px] font-bold text-blue-600">{getDuration(att.check_in, att.check_out)}</span></td>
                     <td className="py-3">
                       <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-full ${att.check_out ? "bg-green-50 text-green-600" : "bg-yellow-50 text-yellow-600"}`}>
                         {att.check_out ? "Complete" : "Active"}
+                      </span>
+                    </td>
+                    <td className="py-3">
+                      <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-full ${getDayType(att.check_in) === 'Full Day' ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-600"}`}>
+                        {getDayType(att.check_in)}
                       </span>
                     </td>
                   </tr>

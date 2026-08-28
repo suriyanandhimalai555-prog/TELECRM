@@ -4,8 +4,8 @@ import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
-// Create attendance table
-const initAttendance = async () => {
+// Create attendance table — exported, called AFTER initDb() so `users` exists first.
+export const initAttendance = async () => {
   await db.query(`
     CREATE TABLE IF NOT EXISTS attendance (
       id SERIAL PRIMARY KEY,
@@ -20,7 +20,6 @@ const initAttendance = async () => {
     )
   `);
 };
-initAttendance();
 
 // Check In
 router.post('/checkin', authenticate, async (req: any, res) => {

@@ -1004,6 +1004,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
         }
 
         for (const s of val?.statuses || []) {
+          console.log('[WA] STATUS UPDATE:', JSON.stringify(s));
           await db.query(
             `UPDATE whatsapp_messages SET status = $1 WHERE message_id = $2`,
             [s.status, s.id]
