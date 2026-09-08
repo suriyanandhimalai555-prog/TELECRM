@@ -14,7 +14,13 @@ export default function StateLayout() {
       navigate('/state-login');
       return;
     }
-    setUser(JSON.parse(userStr));
+    try {
+      setUser(JSON.parse(userStr));
+    } catch {
+      localStorage.removeItem('state_crm_token');
+      localStorage.removeItem('state_crm_user');
+      navigate('/state-login');
+    }
   }, [navigate]);
 
   const handleLogout = () => {
