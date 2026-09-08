@@ -196,20 +196,14 @@ export default function StateFieldForce() {
   };
 
   // --- UPDATED TIME FIX (Force +5:30 IST) ---
+  const asUTC = (t: string) => t.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(t) ? t : t + 'Z';
   const fmt = (ts: string | null) => {
     if (!ts) return '-';
-    const date = new Date(ts);
-    // Add 5 hours and 30 minutes
-    date.setMinutes(date.getMinutes() + 330);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return new Date(asUTC(ts)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' });
   };
-  
   const fmtDate = (ts: string | null) => {
     if (!ts) return '-';
-    const date = new Date(ts);
-    // Add 5 hours and 30 minutes
-    date.setMinutes(date.getMinutes() + 330);
-    return date.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' });
+    return new Date(asUTC(ts)).toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' });
   };
   
   const duration = (cin: string, cout: string | null) => {

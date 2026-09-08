@@ -21,15 +21,34 @@ interface AttendanceRecord {
 async function captureSelfie(): Promise<string> {
   const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
   const video = document.createElement('video');
+  video.muted = true;
+  video.playsInline = true;
+  video.setAttribute('playsinline', 'true');
+  video.style.position = 'fixed';
+  video.style.top = '0';
+  video.style.left = '0';
+  video.style.opacity = '0';
+  video.style.pointerEvents = 'none';
   video.srcObject = stream;
+  document.body.appendChild(video);
+
+  await new Promise<void>((resolve, reject) => {
+    video.onloadedmetadata = () => resolve();
+    video.onerror = () => reject(new Error('Video failed to load'));
+    setTimeout(() => reject(new Error('Camera timed out')), 5000);
+  });
   await video.play();
-  await new Promise(r => setTimeout(r, 300));
+  // wait one extra frame to make sure decoding has actually started
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
   const canvas = document.createElement('canvas');
   canvas.width = video.videoWidth || 480;
   canvas.height = video.videoHeight || 640;
   const ctx = canvas.getContext('2d');
   ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+
   stream.getTracks().forEach(t => t.stop());
+  document.body.removeChild(video);
   return canvas.toDataURL('image/jpeg', 0.7);
 }
 

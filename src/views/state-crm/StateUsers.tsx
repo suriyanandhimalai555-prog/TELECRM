@@ -4,6 +4,7 @@ import stateApi from '../../services/stateApi';
 import { Plus, X, Search, Pencil, Trash2 } from 'lucide-react';
 
 interface StateItem { id: number; name: string; }
+interface DistrictItem { id: number; name: string; state_id: number; }
 interface StateUser {
   id: number;
   email: string;
@@ -11,6 +12,7 @@ interface StateUser {
   role: string;
   state_id: number | null;
   coordinator_states?: number[];
+  districts?: number[];
   status: string;
   created_at: string;
 }
@@ -46,13 +48,14 @@ const roleColor = (role: string) => {
 
 const emptyForm = {
   name: '', email: '', password: '', role: 'team_member',
-  state_id: '', coordinator_states: [] as number[], status: 'active',
+  state_id: '', coordinator_states: [] as number[], districts: [] as number[], status: 'active',
 };
 
 export default function StateUsers() {
   const { user } = useOutletContext<{ user: any }>();
   const [users, setUsers] = useState<StateUser[]>([]);
   const [states, setStates] = useState<StateItem[]>([]);
+  const [districtOptions, setDistrictOptions] = useState<DistrictItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -76,6 +79,13 @@ export default function StateUsers() {
       setStates(res.data.states || []);
     } catch { }
   }, []);
+  const fetchDistricts = useCallback(async (stateId: string | number) => {
+    if (!stateId) { setDistrictOptions([]); return; }
+    try {
+      const res = await stateApi.get(`/districts?state_id=${stateId}`);
+      setDistrictOptions(res.data.districts || []);
+    } catch { setDistrictOptions([]); }
+  }, []);
 
   useEffect(() => { fetchUsers(); fetchStates(); }, [fetchUsers, fetchStates]);
 
@@ -91,8 +101,10 @@ export default function StateUsers() {
       role: u.role,
       state_id: u.state_id ? String(u.state_id) : '',
       coordinator_states: u.coordinator_states || [],
+      districts: u.districts || [],
       status: u.status || 'active',
     });
+    if (u.state_id) fetchDistricts(u.state_id);
     setEditingId(u.id);
     setError('');
     setShowModal(true);
@@ -114,6 +126,9 @@ export default function StateUsers() {
         } else {
           payload.state_id = form.state_id === '' ? null : form.state_id;
         }
+        if (['state_head', 'sales_manager'].includes(form.role)) {
+          payload.districts = form.districts;
+        }
         if (form.password) payload.newPassword = form.password;
         await stateApi.put(`/auth/users/${editingId}`, payload);
       } else {
@@ -127,6 +142,9 @@ export default function StateUsers() {
           payload.coordinator_states = form.coordinator_states;
         } else {
           payload.state_id = form.state_id === '' ? null : form.state_id;
+        }
+        if (['state_head', 'sales_manager'].includes(form.role)) {
+          payload.districts = form.districts;
         }
         await stateApi.post('/auth/users', payload);
       }
@@ -157,6 +175,17 @@ export default function StateUsers() {
         coordinator_states: exists
           ? prev.coordinator_states.filter(id => id !== stateId)
           : [...prev.coordinator_states, stateId],
+      };
+    });
+  };
+  const toggleDistrict = (districtId: number) => {
+    setForm(prev => {
+      const exists = prev.districts.includes(districtId);
+      return {
+        ...prev,
+        districts: exists
+          ? prev.districts.filter(id => id !== districtId)
+          : [...prev.districts, districtId],
       };
     });
   };
@@ -295,7 +324,7 @@ export default function StateUsers() {
               </div>
               <div>
                 <label className="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-2">Role</label>
-                <select value={form.role} onChange={e => setForm({ ...form, role: e.target.value, state_id: '', coordinator_states: [] })}
+                <select value={form.role} onChange={e => { setForm({ ...form, role: e.target.value, state_id: '', coordinator_states: [], districts: [] }); setDistrictOptions([]); }}
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-400 bg-white">
                   {ROLES.filter(r => canManageRole(user.role, r)).map(r => <option key={r} value={r}>{r.replace('_', ' ')}</option>)}
                 </select>
@@ -326,11 +355,44 @@ export default function StateUsers() {
               ) : form.role !== 'admin' && (
                 <div>
                   <label className="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-2">State</label>
-                  <select value={form.state_id} onChange={e => setForm({ ...form, state_id: e.target.value })}
+                  <select value={form.state_id} onChange={e => {
+                    const val = e.target.value;
+                    setForm({ ...form, state_id: val, districts: [] });
+                    fetchDistricts(val);
+                  }}
                     className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-400 bg-white">
                     <option value="">Select a state...</option>
                     {states.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
+                </div>
+              )}
+
+              {['state_head', 'sales_manager'].includes(form.role) && form.state_id && (
+                <div>
+                  <label className="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-2">
+                    Districts ({form.districts.length} selected)
+                  </label>
+                  <div className="border border-gray-200 rounded-xl max-h-48 overflow-y-auto p-2 space-y-1">
+                    {districtOptions
+                      .filter(d => user.role !== 'state_head' || (user.assignedDistricts || []).includes(d.id))
+                      .map(d => (
+                        <label key={d.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 cursor-pointer text-xs font-bold text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={form.districts.includes(d.id)}
+                            onChange={() => toggleDistrict(d.id)}
+                            className="w-4 h-4 accent-blue-500"
+                          />
+                          {d.name}
+                        </label>
+                      ))}
+                    {districtOptions.length === 0 && (
+                      <p className="text-[10px] font-bold text-gray-400 px-2 py-1.5">No districts available</p>
+                    )}
+                  </div>
+                  {form.districts.length === 0 && (
+                    <p className="text-[10px] font-bold text-red-500 mt-1">Select at least one district</p>
+                  )}
                 </div>
               )}
 
@@ -346,7 +408,10 @@ export default function StateUsers() {
               )}
 
               <button type="submit"
-                disabled={form.role === 'coordinator' && form.coordinator_states.length === 0}
+                disabled={
+                  (form.role === 'coordinator' && form.coordinator_states.length === 0) ||
+                  (['state_head', 'sales_manager'].includes(form.role) && form.districts.length === 0)
+                }
                 className="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black uppercase tracking-widest text-[11px] py-3 rounded-xl transition-colors">
                 {editingId ? 'Save Changes' : 'Create User'}
               </button>

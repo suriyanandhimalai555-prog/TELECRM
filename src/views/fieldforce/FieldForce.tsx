@@ -74,7 +74,8 @@ export default function FieldForce() {
     setTracking(false);
   };
 
-  const fmt = (ts: string) => ts ? new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "-";
+  const asUTC = (t: string) => t.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(t) ? t : t + 'Z';
+  const fmt = (ts: string) => ts ? new Date(asUTC(ts)).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: 'Asia/Kolkata' }) : "-";
   const fmtDate = (ts: string) => ts ? new Date(ts).toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" }) : "-";
   const duration = (cin: string, cout: string) => {
     if (!cin || !cout) return "-";

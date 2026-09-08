@@ -2,6 +2,19 @@ import pkg from 'pg';
 const { Pool } = pkg;
 import dotenv from 'dotenv';
 dotenv.config();
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname_data = path.dirname(fileURLToPath(import.meta.url));
+function getAllStatesWithDistricts(): { name: string; districts: string[] }[] {
+  const jsonPath = path.join(__dirname_data, '../data/india-districts.json');
+  const raw = fs.readFileSync(jsonPath, 'utf8');
+  const data = JSON.parse(raw);
+  const states = (data.states || []).map((s: any) => ({ name: s.name, districts: s.districts }));
+  const uts = (data.union_territories || []).map((u: any) => ({ name: u.name, districts: u.districts }));
+  return [...states, ...uts];
+}
 
 let pool: InstanceType<typeof Pool>;
 
@@ -625,34 +638,22 @@ export const initDb = async () => {
   await pool.query(`ALTER TABLE state_crm_users ADD COLUMN IF NOT EXISTS district_id INTEGER REFERENCES state_crm_districts(id) ON DELETE SET NULL`);
   await pool.query(`ALTER TABLE state_crm_leads ADD COLUMN IF NOT EXISTS district_id INTEGER REFERENCES state_crm_districts(id) ON DELETE SET NULL`);
 
-  const STATE_DISTRICT_COUNTS: [string, number][] = [
-    ['Andhra Pradesh', 26], ['Arunachal Pradesh', 28], ['Assam', 35], ['Bihar', 38],
-    ['Chhattisgarh', 33], ['Goa', 2], ['Gujarat', 33], ['Haryana', 22],
-    ['Himachal Pradesh', 13], ['Jharkhand', 24], ['Karnataka', 31], ['Kerala', 14],
-    ['Madhya Pradesh', 57], ['Maharashtra', 36], ['Manipur', 16], ['Meghalaya', 12],
-    ['Mizoram', 11], ['Nagaland', 17], ['Odisha', 30], ['Punjab', 23],
-    ['Rajasthan', 55], ['Sikkim', 6], ['Tamil Nadu', 38], ['Telangana', 33],
-    ['Tripura', 8], ['Uttar Pradesh', 75], ['Uttarakhand', 17], ['West Bengal', 30],
-    ['Andaman and Nicobar Islands', 3], ['Chandigarh', 1],
-    ['Dadra and Nagar Haveli and Daman and Diu', 3], ['Delhi', 11],
-    ['Jammu and Kashmir', 20], ['Ladakh', 2], ['Lakshadweep', 1], ['Puducherry', 4],
-  ];
-
   const { rows: districtCountRows } = await pool.query(`SELECT COUNT(*) FROM state_crm_districts`);
   if (parseInt(districtCountRows[0].count, 10) === 0) {
-    for (const [stateName, districtCount] of STATE_DISTRICT_COUNTS) {
+    const allStatesData = getAllStatesWithDistricts();
+    for (const { name: stateName, districts } of allStatesData) {
       await pool.query(`INSERT INTO state_crm_states (name) VALUES ($1) ON CONFLICT (name) DO NOTHING`, [stateName]);
       const stateRow = await pool.query(`SELECT id FROM state_crm_states WHERE name = $1`, [stateName]);
       const stateId = stateRow.rows[0]?.id;
       if (!stateId) continue;
-      for (let i = 1; i <= (districtCount as number); i++) {
+      for (const districtName of districts) {
         await pool.query(
           `INSERT INTO state_crm_districts (state_id, name) VALUES ($1, $2) ON CONFLICT (state_id, name) DO NOTHING`,
-          [stateId, `District ${i}`]
+          [stateId, districtName]
         );
       }
     }
-    console.log('✅ State/UT + district master data seeded');
+    console.log('✅ State/UT + district master data seeded (real names)');
   } else {
     console.log('✅ State/UT + district data already present, skipping seed');
   }

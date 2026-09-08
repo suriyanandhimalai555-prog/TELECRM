@@ -24,6 +24,7 @@
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "form-data": "^4.0.5",
+    "india-states-districts": "^1.8.0",
     "jsonwebtoken": "^9.0.3",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",

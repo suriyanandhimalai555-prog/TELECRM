@@ -13,6 +13,11 @@ const buildToken = async (user: any) => {
     const r = await db.query('SELECT state_id FROM state_crm_coordinator_states WHERE user_id = $1', [user.id]);
     coordinatorStates = r.rows.map((row: any) => row.state_id);
   }
+  let assignedDistricts: number[] = [];
+  if (['state_head', 'sales_manager', 'coordinator'].includes(user.role)) {
+    const dr = await db.query('SELECT district_id FROM state_crm_state_head_districts WHERE user_id = $1', [user.id]);
+    assignedDistricts = dr.rows.map((row: any) => row.district_id);
+  }
   return jwt.sign(
     {
       crm: 'state',
@@ -22,6 +27,7 @@ const buildToken = async (user: any) => {
       role: user.role,
       state_id: user.state_id,
       coordinatorStates,
+      assignedDistricts,
     },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRE as any }
@@ -64,7 +70,17 @@ export const login = async (req: Request, res: Response) => {
     if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
     const token = await buildToken(user);
     delete user.password;
-    res.json({ token, user });
+    let coordinatorStates: number[] = [];
+    if (user.role === 'coordinator') {
+      const r = await db.query('SELECT state_id FROM state_crm_coordinator_states WHERE user_id = $1', [user.id]);
+      coordinatorStates = r.rows.map((row: any) => row.state_id);
+    }
+    let assignedDistricts: number[] = [];
+    if (['state_head', 'sales_manager'].includes(user.role)) {
+      const dr = await db.query('SELECT district_id FROM state_crm_state_head_districts WHERE user_id = $1', [user.id]);
+      assignedDistricts = dr.rows.map((row: any) => row.district_id);
+    }
+    res.json({ token, user: { ...user, coordinatorStates, assignedDistricts } });
   } catch (error) {
     console.error('[StateCRM] login error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -73,45 +89,53 @@ export const login = async (req: Request, res: Response) => {
 
 // Master/Admin create users for any state; Coordinator can create within their assigned states.
 export const createUser = async (req: StateAuthRequest, res: Response) => {
-  const { email, password, name, role, reporting_to, coordinator_states } = req.body;
+  const { email, password, name, role, reporting_to, coordinator_states, districts } = req.body;
   let { state_id } = req.body;
   const requester = req.stateUser!;
   try {
     if (!STATE_ROLES.includes(role)) {
       return res.status(400).json({ message: 'Invalid role' });
     }
-
-    // Hierarchy check: requester must outrank the role they're trying to create
-    // (or hold an explicit exception, e.g. sales_manager -> sales_admin)
     if (!canManage(requester.role, role)) {
       return res.status(403).json({ message: `Your role (${requester.role}) cannot create a ${role}` });
     }
-
-    // State scoping: who can assign users into which state(s)
     if (requester.role === 'coordinator') {
       const allowed = requester.coordinatorStates || [];
       if (!state_id || !allowed.includes(Number(state_id))) {
         return res.status(403).json({ message: 'You can only create users within your assigned states' });
       }
     } else if (['state_head', 'sales_manager', 'sales_admin'].includes(requester.role)) {
-      // Single-state roles: always force their own state, never trust client input
       state_id = requester.state_id;
     }
-    // master / admin / hr: unrestricted, whatever state_id was submitted (or none) is used as-is
-
     if (role === 'coordinator' && (!Array.isArray(coordinator_states) || coordinator_states.length === 0)) {
       return res.status(400).json({ message: 'coordinator_states must be a non-empty array for a coordinator' });
     }
 
+    // District scoping: state_head, sales_manager, and coordinator roles carry a
+    // multi-select district assignment (State + Districts dropdowns on the create form).
+    const districtRoles = ['state_head', 'sales_manager'];
+    let finalDistricts: number[] = [];
+    if (districtRoles.includes(role)) {
+      if (!Array.isArray(districts) || districts.length === 0) {
+        return res.status(400).json({ message: 'districts must be a non-empty array for this role' });
+      }
+      finalDistricts = districts.map((d: any) => Number(d));
+      if (requester.role === 'state_head') {
+        const allowedDistricts = requester.assignedDistricts || [];
+        const outOfScope = finalDistricts.filter((d) => !allowedDistricts.includes(d));
+        if (outOfScope.length > 0) {
+          return res.status(403).json({ message: 'You can only assign districts within your own assigned districts' });
+        }
+      }
+    }
+
     const hashedPassword = bcrypt.hashSync(password, 10);
-    // Coordinators are multi-state, so the single state_id column doesn't apply to them
     const finalStateId = role === 'coordinator' ? null : (state_id || null);
     const result = await db.query(
       `INSERT INTO state_crm_users (email, password, name, role, state_id, reporting_to) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, email, name, role, state_id`,
       [email, hashedPassword, name, role, finalStateId, reporting_to || null]
     );
     const newUser = result.rows[0];
-
     if (role === 'coordinator') {
       for (const sid of coordinator_states) {
         await db.query(
@@ -120,8 +144,15 @@ export const createUser = async (req: StateAuthRequest, res: Response) => {
         );
       }
     }
-
-    res.status(201).json({ user: newUser });
+    if (districtRoles.includes(role)) {
+      for (const did of finalDistricts) {
+        await db.query(
+          `INSERT INTO state_crm_state_head_districts (user_id, district_id) VALUES ($1, $2) ON CONFLICT (user_id, district_id) DO NOTHING`,
+          [newUser.id, did]
+        );
+      }
+    }
+    res.status(201).json({ user: { ...newUser, districts: finalDistricts } });
   } catch (error: any) {
     if (error.code === '23505') return res.status(400).json({ message: 'Email already exists' });
     console.error('[StateCRM] createUser error:', error);

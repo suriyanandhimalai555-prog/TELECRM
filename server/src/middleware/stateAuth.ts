@@ -9,6 +9,7 @@ export interface StateAuthRequest extends Request {
     role: string;
     state_id: number | null;
     coordinatorStates?: number[];
+    assignedDistricts?: number[];
   };
 }
 
@@ -33,6 +34,7 @@ export const authenticateState = (req: StateAuthRequest, res: Response, next: Ne
       role: decoded.role,
       state_id: decoded.state_id ?? null,
       coordinatorStates: decoded.coordinatorStates || [],
+      assignedDistricts: decoded.assignedDistricts || [],
     };
     next();
   } catch {
