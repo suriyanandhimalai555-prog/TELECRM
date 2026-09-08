@@ -1,7 +1,8 @@
 import axios from 'axios';
 
+const STATE_API_URL = (import.meta.env.VITE_API_URL || '/api') + '/state';
 const stateApi = axios.create({
-  baseURL: '/api/state',
+  baseURL: STATE_API_URL,
 });
 
 stateApi.interceptors.request.use((config) => {
@@ -18,7 +19,7 @@ stateApi.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('state_crm_token');
       localStorage.removeItem('state_crm_user');
-      window.location.href = '/login';
+      window.location.href = '/state-login';
     }
     return Promise.reject(error);
   }

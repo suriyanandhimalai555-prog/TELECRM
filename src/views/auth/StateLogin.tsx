@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { LogIn } from 'lucide-react';
 
-const STATE_API_BASE = '/api/state';
+const STATE_API_BASE = (import.meta.env.VITE_API_URL || '/api') + '/state';
 
 export default function StateLogin() {
   const [email, setEmail] = useState('');
