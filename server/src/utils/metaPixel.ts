@@ -9,9 +9,10 @@ export async function sendMetaLeadEvent(params: {
   phone?: string;
   eventName?: string;
 }) {
-  const pixelId = process.env.META_PIXEL_ID;
+  const pixelIdsRaw = process.env.META_PIXEL_IDS || process.env.META_PIXEL_ID || '';
+  const pixelIds = pixelIdsRaw.split(',').map(id => id.trim()).filter(Boolean);
   const accessToken = process.env.META_CAPI_ACCESS_TOKEN;
-  if (!pixelId || !accessToken) return;
+  if (pixelIds.length === 0 || !accessToken) return;
 
   const userData: Record<string, any> = {};
   if (params.email) userData.em = [hash(params.email)];
@@ -28,14 +29,16 @@ export async function sendMetaLeadEvent(params: {
     ],
   };
 
-  try {
-    const resp = await fetch(
-      `https://graph.facebook.com/v19.0/${pixelId}/events?access_token=${accessToken}`,
-      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
-    );
-    const data = await resp.json();
-    console.log('[Meta CAPI] event sent:', data);
-  } catch (err) {
-    console.error('[Meta CAPI] error:', err);
-  }
+  await Promise.all(pixelIds.map(async (pixelId) => {
+    try {
+      const resp = await fetch(
+        `https://graph.facebook.com/v19.0/${pixelId}/events?access_token=${accessToken}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+      );
+      const data = await resp.json();
+      console.log(`[Meta CAPI] event sent to pixel ${pixelId}:`, data);
+    } catch (err) {
+      console.error(`[Meta CAPI] error for pixel ${pixelId}:`, err);
+    }
+  }));
 }
