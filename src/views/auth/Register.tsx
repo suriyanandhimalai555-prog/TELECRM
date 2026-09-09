@@ -21,6 +21,9 @@ export default function Register() {
     try {
       const res = await api.post('/auth/register', { email, password, name });
       login(res.data.token, res.data.user);
+      if (typeof (window as any).fbq === 'function') {
+        (window as any).fbq('track', 'Lead');
+      }
       navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to register');
