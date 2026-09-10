@@ -2,7 +2,7 @@ import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
 import db from '../config/database';
-import { sendMessage, getHistory, getConversations, markAsRead, deleteMessage, deleteConversation, verifyWebhook, handleWebhook, getTemplates, syncTemplates, sendTemplate, bulkSendMessage, proxyMedia, sendMedia } from '../controllers/whatsappController';
+import { sendMessage, getHistory, getConversations, markAsRead, deleteMessage, deleteConversation, verifyWebhook, handleWebhook, getTemplates, syncTemplates, sendTemplate, bulkSendMessage, proxyMedia, sendMedia, checkWindow } from '../controllers/whatsappController';
 import { authenticate } from "../middleware/auth";
 import multer from 'multer';
 
@@ -46,6 +46,7 @@ router.get('/cached-media/:filename', async (req, res) => {
   }
 });
 router.post('/send', authenticate, sendMessage);
+router.get('/window-check', authenticate, checkWindow);
 router.get('/history/:phone', authenticate, getHistory);
 router.get('/conversations', authenticate, getConversations);
 router.put('/mark-read/:phone', authenticate, markAsRead);

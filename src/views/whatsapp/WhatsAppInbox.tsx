@@ -696,6 +696,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
   const [newConvoSelectedLead, setNewConvoSelectedLead] = useState<any>(null);
   const [startingConvo, setStartingConvo] = useState(false);
   const [newConvoMessage, setNewConvoMessage] = useState('');
+  const [newConvoWindowStatus, setNewConvoWindowStatus] = useState<'idle' | 'checking' | 'within' | 'outside'>('idle');
   const [showContactInfo, setShowContactInfo] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
@@ -874,22 +875,53 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
     const t = setTimeout(() => fetchNewConvoLeads(newConvoLeadSearch), 300);
     return () => clearTimeout(t);
   }, [newConvoLeadSearch, newConvoMode, showNewConvoModal, fetchNewConvoLeads]);
+
+  useEffect(() => {
+    if (!showNewConvoModal) { setNewConvoWindowStatus('idle'); return; }
+    const targetPhone = newConvoMode === 'lead' ? newConvoSelectedLead?.mobile : newConvoPhone;
+    if (!targetPhone || targetPhone.replace(/[^0-9]/g, '').length < 8) { setNewConvoWindowStatus('idle'); return; }
+    setNewConvoWindowStatus('checking');
+    const t = setTimeout(async () => {
+      try {
+        const res = await api.get('/whatsapp/window-check', { params: { phone: targetPhone, account: accountIndex } });
+        setNewConvoWindowStatus(res.data?.withinWindow ? 'within' : 'outside');
+      } catch {
+        setNewConvoWindowStatus('idle');
+      }
+    }, 500);
+    return () => clearTimeout(t);
+  }, [newConvoPhone, newConvoSelectedLead, newConvoMode, showNewConvoModal, accountIndex]);
+
   const handleStartNewConversation = async () => {
     const targetPhone = newConvoMode === 'lead' ? newConvoSelectedLead?.mobile : newConvoPhone;
     const targetName = newConvoMode === 'lead' ? newConvoSelectedLead?.contact_name : newConvoName;
-    if (!targetPhone || !newConvoMessage.trim() || startingConvo) return;
+    if (!targetPhone || startingConvo) return;
+    const useTemplate = newConvoWindowStatus === 'outside';
+    if (useTemplate && !selectedTemplate) return;
+    if (!useTemplate && !newConvoMessage.trim()) return;
     setStartingConvo(true);
     try {
-      const res = await api.post('/whatsapp/send', {
-        to: targetPhone,
-        message: newConvoMessage,
-        contactName: targetName || '',
-        account: accountIndex,
-      });
+      if (useTemplate && selectedTemplate) {
+        await api.post('/whatsapp/templates/send', {
+          to: targetPhone,
+          templateName: selectedTemplate.name,
+          languageCode: selectedTemplate.language,
+          components: [],
+          account: accountIndex,
+          contactName: targetName || '',
+        });
+      } else {
+        await api.post('/whatsapp/send', {
+          to: targetPhone,
+          message: newConvoMessage,
+          contactName: targetName || '',
+          account: accountIndex,
+        });
+      }
       const newConv: Conversation = {
         contact_number: targetPhone,
         contact_name: targetName || targetPhone,
-        last_message: newConvoMessage,
+        last_message: useTemplate ? `Template: ${selectedTemplate?.name}` : newConvoMessage,
         last_timestamp: new Date().toISOString(),
         last_direction: 'outbound',
         last_status: 'sent',
@@ -905,6 +937,8 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
       setNewConvoSelectedLead(null);
       setNewConvoLeadSearch('');
       setNewConvoMode('manual');
+      setSelectedTemplate(null);
+      setNewConvoWindowStatus('idle');
     } catch (err: any) {
       alert(err?.response?.data?.error || err?.response?.data?.message || 'Failed to send. This number may need to message you first before you can text them directly (WhatsApp policy).');
     } finally { setStartingConvo(false); }
@@ -1141,6 +1175,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
 
   const StatusIcon = ({ status, direction }: { status: string; direction: string }) => {
     if (direction === 'inbound') return null;
+    if (status === 'failed') return <AlertCircle size={13} className="text-red-400" />;
     if (status === 'read') return <CheckCheck size={13} className="text-blue-400" />;
     if (status === 'delivered') return <CheckCheck size={13} className="text-gray-400" />;
     if (status === 'sent') return <Check size={13} className="text-gray-400" />;
@@ -1447,6 +1482,9 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
                         <MessageContent parsed={parsed} isOut={isOut}
                           onMediaClick={(url, type, filename) => setMediaPreview({ url, type, filename })} />
                         <div className="flex items-center justify-end mt-1 gap-1">
+                          {isOut && m.status === 'failed' && (
+                            <span className="text-[10px] font-bold text-red-400 mr-1">Not delivered</span>
+                          )}
                           <span className={cn("text-[10px]", isOut ? "text-blue-200" : "text-gray-400")}>
                             {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase()}
                           </span>
@@ -1698,18 +1736,50 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
                 </div>
                 <div className="flex-1 bg-gray-50 p-5 flex flex-col overflow-y-auto">
                   <label className="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-2">Message</label>
-                  <p className="text-[9px] text-gray-400 mb-3 leading-relaxed">
-                    Note: if this number has never messaged your business before, WhatsApp may reject this text. In that case, use an approved template instead (Sync Meta from the main Templates modal).
-                  </p>
+                  {newConvoWindowStatus === 'checking' && (
+                    <p className="text-[9px] text-gray-400 mb-3">Checking if this number is reachable...</p>
+                  )}
+                  {newConvoWindowStatus === 'outside' && (
+                    <div className="mb-3 p-2.5 bg-amber-50 border border-amber-200 rounded-xl">
+                      <p className="text-[9px] font-black text-amber-700 uppercase mb-1">Outside 24h window</p>
+                      <p className="text-[9px] text-amber-600 leading-relaxed mb-2">
+                        This contact hasn't messaged you recently, so WhatsApp will block a plain-text message. Pick an approved template instead:
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={selectedTemplate?.id ?? ''}
+                          onChange={e => setSelectedTemplate(templates.find(t => t.id === Number(e.target.value)) || null)}
+                          className="flex-1 text-[10px] font-bold bg-white border border-amber-200 rounded-lg px-2 py-1.5 focus:outline-none">
+                          <option value="">Select a template...</option>
+                          {templates.map(tpl => (
+                            <option key={tpl.id} value={tpl.id}>{tpl.name}</option>
+                          ))}
+                        </select>
+                        <button onClick={handleSyncTemplates} disabled={syncingTemplates}
+                          className="p-1.5 bg-white border border-amber-200 rounded-lg text-amber-600 hover:bg-amber-50 disabled:opacity-50">
+                          <RefreshCw size={12} className={cn(syncingTemplates && "animate-spin")} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {newConvoWindowStatus !== 'outside' && (
+                    <p className="text-[9px] text-gray-400 mb-3 leading-relaxed">
+                      Note: if this number has never messaged your business before, WhatsApp may reject this text.
+                    </p>
+                  )}
                   <textarea value={newConvoMessage} onChange={e => setNewConvoMessage(e.target.value)}
-                    placeholder="Type your message..." rows={8}
+                    placeholder="Type your message..." rows={newConvoWindowStatus === 'outside' ? 4 : 8}
                     className="flex-1 w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-900 focus:outline-none focus:border-blue-400 resize-none" />
                   <div className="mt-4 pt-4 border-t border-gray-200 flex justify-end">
                     <button
-                      disabled={!newConvoMessage.trim() || startingConvo || (newConvoMode === 'manual' ? !newConvoPhone : !newConvoSelectedLead)}
+                      disabled={
+                        startingConvo ||
+                        (newConvoMode === 'manual' ? !newConvoPhone : !newConvoSelectedLead) ||
+                        (newConvoWindowStatus === 'outside' ? !selectedTemplate : !newConvoMessage.trim())
+                      }
                       onClick={handleStartNewConversation}
                       className="flex items-center gap-2 px-5 py-2 bg-blue-500 text-white rounded-xl text-xs font-black disabled:opacity-50 hover:bg-blue-600 transition-colors">
-                      <Send size={13} />{startingConvo ? 'Sending...' : 'Send Message'}
+                      <Send size={13} />{startingConvo ? 'Sending...' : (newConvoWindowStatus === 'outside' ? 'Send Template' : 'Send Message')}
                     </button>
                   </div>
                 </div>

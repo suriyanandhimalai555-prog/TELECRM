@@ -642,6 +642,38 @@ export const markAsRead = async (req: Request, res: Response) => {
   }
 };
 
+// ─── Check 24h re-engagement window for a contact ────────────────────────────
+export const checkWindow = async (req: Request, res: Response) => {
+  const rawPhone = (req.query.phone as string) || '';
+  const phone = rawPhone.replace(/[^0-9]/g, '');
+  const account = req.query.account as string | undefined;
+  const companyId = (req as any).user?.company_id;
+  if (!phone) return res.status(400).json({ error: 'phone is required' });
+  try {
+    const phoneId = getPhoneId(account);
+    let queryStr = `
+      SELECT timestamp FROM whatsapp_messages
+      WHERE direction = 'inbound' AND RIGHT(from_number, 10) = RIGHT($1, 10) AND to_number = $2
+    `;
+    const params: any[] = [phone, phoneId];
+    if (companyId) {
+      queryStr += ` AND company_id = $3`;
+      params.push(companyId);
+    }
+    queryStr += ` ORDER BY timestamp DESC LIMIT 1`;
+    const { rows } = await db.query(queryStr, params);
+    if (rows.length === 0) {
+      return res.json({ withinWindow: false, lastInboundAt: null });
+    }
+    const lastInboundAt = rows[0].timestamp;
+    const hoursSince = (Date.now() - new Date(lastInboundAt).getTime()) / (1000 * 60 * 60);
+    res.json({ withinWindow: hoursSince < 24, lastInboundAt, hoursSince: Math.round(hoursSince * 10) / 10 });
+  } catch (err) {
+    console.error('[WA] checkWindow error:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+};
+
 // ─── Webhook verification (GET) ───────────────────────────────────────────────
 
 export const verifyWebhook = (req: Request, res: Response) => {
