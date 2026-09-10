@@ -5,7 +5,7 @@ import {
   Eye, FileText, Download, Image as ImageIcon, Music, MapPin,
   ExternalLink, Phone, Clock, Trash2, Archive,
   ZoomIn, Play, SortDesc, Inbox, Info,
-  AlertCircle, XCircle, Star, ShieldAlert, ArrowLeft
+  AlertCircle, XCircle, Star, ShieldAlert, ArrowLeft, Plus, UserPlus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import api from '../../services/api';
@@ -687,6 +687,15 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
   const isLoadingOlderRef = useRef(false);
 
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [showNewConvoModal, setShowNewConvoModal] = useState(false);
+  const [newConvoMode, setNewConvoMode] = useState<'manual' | 'lead'>('manual');
+  const [newConvoPhone, setNewConvoPhone] = useState('');
+  const [newConvoName, setNewConvoName] = useState('');
+  const [newConvoLeadSearch, setNewConvoLeadSearch] = useState('');
+  const [newConvoLeads, setNewConvoLeads] = useState<any[]>([]);
+  const [newConvoSelectedLead, setNewConvoSelectedLead] = useState<any>(null);
+  const [startingConvo, setStartingConvo] = useState(false);
+  const [newConvoMessage, setNewConvoMessage] = useState('');
   const [showContactInfo, setShowContactInfo] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
@@ -853,6 +862,52 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
       setShowTemplateModal(false);
       setSelectedTemplate(null);
     } catch { } finally { setSending(false); setTimeout(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, 100); }
+  };
+  const fetchNewConvoLeads = useCallback(async (search: string) => {
+    try {
+      const res = await api.get('/leads', { params: { search, page: 1, pageSize: 20 } });
+      setNewConvoLeads(Array.isArray(res.data) ? res.data : []);
+    } catch { setNewConvoLeads([]); }
+  }, []);
+  useEffect(() => {
+    if (newConvoMode !== 'lead' || !showNewConvoModal) return;
+    const t = setTimeout(() => fetchNewConvoLeads(newConvoLeadSearch), 300);
+    return () => clearTimeout(t);
+  }, [newConvoLeadSearch, newConvoMode, showNewConvoModal, fetchNewConvoLeads]);
+  const handleStartNewConversation = async () => {
+    const targetPhone = newConvoMode === 'lead' ? newConvoSelectedLead?.mobile : newConvoPhone;
+    const targetName = newConvoMode === 'lead' ? newConvoSelectedLead?.contact_name : newConvoName;
+    if (!targetPhone || !newConvoMessage.trim() || startingConvo) return;
+    setStartingConvo(true);
+    try {
+      const res = await api.post('/whatsapp/send', {
+        to: targetPhone,
+        message: newConvoMessage,
+        contactName: targetName || '',
+        account: accountIndex,
+      });
+      const newConv: Conversation = {
+        contact_number: targetPhone,
+        contact_name: targetName || targetPhone,
+        last_message: newConvoMessage,
+        last_timestamp: new Date().toISOString(),
+        last_direction: 'outbound',
+        last_status: 'sent',
+        unread_count: 0,
+        lead_id: newConvoSelectedLead?.id,
+      };
+      setConversations(prev => [newConv, ...prev.filter(c => c.contact_number !== targetPhone)]);
+      setSelectedContact(newConv);
+      setShowNewConvoModal(false);
+      setNewConvoMessage('');
+      setNewConvoPhone('');
+      setNewConvoName('');
+      setNewConvoSelectedLead(null);
+      setNewConvoLeadSearch('');
+      setNewConvoMode('manual');
+    } catch (err: any) {
+      alert(err?.response?.data?.error || err?.response?.data?.message || 'Failed to send. This number may need to message you first before you can text them directly (WhatsApp policy).');
+    } finally { setStartingConvo(false); }
   };
 
   const handleMessage = useCallback((newMsg: Message) => {
@@ -1199,6 +1254,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
                     <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
                       className="absolute right-0 top-full mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-50 w-48 py-1 overflow-hidden">
                       {[
+                        { label: 'New Conversation', icon: UserPlus, action: () => { setShowNewConvoModal(true); fetchTemplates(); } },
                         { label: 'Export Conversations', icon: Download, action: () => { if (!conversations.length) return; const rows = ["Name,Number,Last Message,Last Time,Unread", ...conversations.map(c => '"' + (c.contact_name || '') + '","' + c.contact_number + '","' + (c.last_message || '').replace(/"/g, "'") + '","' + c.last_timestamp + '","' + (Number(c.unread_count) || 0) + '"')].join("\n"); const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([rows], { type: "text/csv" })); a.download = "whatsapp_conversations.csv"; a.click(); } },
                       ].map(({ label, icon: Icon, action }) => (
                         <button key={label} onClick={() => { setShowDotsMenu(false); setTimeout(() => action(), 50); }}
@@ -1567,6 +1623,93 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
                     <button disabled={!selectedTemplate || sending} onClick={handleSendTemplate}
                       className="flex items-center gap-2 px-5 py-2 bg-blue-500 text-white rounded-xl text-xs font-black disabled:opacity-50 hover:bg-blue-600 transition-colors">
                       <Send size={13} />{sending ? 'Sending...' : 'Send Message'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showNewConvoModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowNewConvoModal(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[80vh] overflow-hidden relative z-10 flex flex-col">
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+                <h3 className="text-base font-black text-gray-900 uppercase">New Conversation</h3>
+                <button onClick={() => setShowNewConvoModal(false)} className="text-gray-400 hover:text-gray-700 p-1">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-hidden flex">
+                <div className="w-1/2 border-r border-gray-100 overflow-y-auto p-4">
+                  <div className="flex gap-2 mb-4">
+                    <button onClick={() => setNewConvoMode('manual')}
+                      className={cn("flex-1 px-3 py-2 rounded-xl text-[10px] font-black uppercase transition-colors",
+                        newConvoMode === 'manual' ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200")}>
+                      Enter Number
+                    </button>
+                    <button onClick={() => setNewConvoMode('lead')}
+                      className={cn("flex-1 px-3 py-2 rounded-xl text-[10px] font-black uppercase transition-colors",
+                        newConvoMode === 'lead' ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200")}>
+                      From Leads
+                    </button>
+                  </div>
+                  {newConvoMode === 'manual' ? (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Phone Number</label>
+                        <input type="text" placeholder="e.g. 919876543210" value={newConvoPhone}
+                          onChange={e => setNewConvoPhone(e.target.value)}
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:border-blue-400" />
+                      </div>
+                      <div>
+                        <label className="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-1.5">Name (optional)</label>
+                        <input type="text" placeholder="Contact name" value={newConvoName}
+                          onChange={e => setNewConvoName(e.target.value)}
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:border-blue-400" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={13} />
+                        <input type="text" placeholder="Search leads..." value={newConvoLeadSearch}
+                          onChange={e => setNewConvoLeadSearch(e.target.value)}
+                          className="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:border-blue-400" />
+                      </div>
+                      <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                        {newConvoLeads.length === 0 ? (
+                          <p className="text-[9px] font-black text-gray-400 uppercase text-center py-6">No leads found</p>
+                        ) : newConvoLeads.map((l: any) => (
+                          <div key={l.id} onClick={() => setNewConvoSelectedLead(l)}
+                            className={cn("p-2.5 rounded-xl border cursor-pointer transition-all",
+                              newConvoSelectedLead?.id === l.id ? "bg-blue-50 border-blue-300" : "bg-white border-gray-100 hover:border-blue-200")}>
+                            <p className="text-xs font-black text-gray-900">{l.contact_name}</p>
+                            <p className="text-[9px] font-bold text-gray-400 font-mono">{l.mobile}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 bg-gray-50 p-5 flex flex-col overflow-y-auto">
+                  <label className="block text-[9px] font-black uppercase tracking-widest text-gray-500 mb-2">Message</label>
+                  <p className="text-[9px] text-gray-400 mb-3 leading-relaxed">
+                    Note: if this number has never messaged your business before, WhatsApp may reject this text. In that case, use an approved template instead (Sync Meta from the main Templates modal).
+                  </p>
+                  <textarea value={newConvoMessage} onChange={e => setNewConvoMessage(e.target.value)}
+                    placeholder="Type your message..." rows={8}
+                    className="flex-1 w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-900 focus:outline-none focus:border-blue-400 resize-none" />
+                  <div className="mt-4 pt-4 border-t border-gray-200 flex justify-end">
+                    <button
+                      disabled={!newConvoMessage.trim() || startingConvo || (newConvoMode === 'manual' ? !newConvoPhone : !newConvoSelectedLead)}
+                      onClick={handleStartNewConversation}
+                      className="flex items-center gap-2 px-5 py-2 bg-blue-500 text-white rounded-xl text-xs font-black disabled:opacity-50 hover:bg-blue-600 transition-colors">
+                      <Send size={13} />{startingConvo ? 'Sending...' : 'Send Message'}
                     </button>
                   </div>
                 </div>
