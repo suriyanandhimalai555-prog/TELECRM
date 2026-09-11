@@ -1098,10 +1098,13 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
           return [...withoutTemp, { ...tempMsg, message_id: res.data.message_id, status: 'delivered' }];
         });
       }
-    } catch {
+    } catch (err: any) {
       // Remove temp message on failure
       setMessages(prev => prev.filter(m => m.message_id !== tempMsg.message_id));
       setInput(text);
+      const errMsg = err?.response?.data?.error || err?.response?.data?.message || 'Failed to send message. Please try again.';
+      console.error('[WA] handleSendMessage failed:', err?.response?.data || err);
+      alert(errMsg);
     } finally { setSending(false); setTimeout(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, 100); }
   };
 
