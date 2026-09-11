@@ -19,13 +19,13 @@ export default function StateLogin() {
     try {
       console.log('[DEBUG] Sending login request...');
       const res = await axios.post(`${STATE_API_BASE}/auth/login`, { email, password });
-      console.log('[DEBUG] Login response received:', res.data);
       localStorage.setItem('state_crm_token', res.data.token);
       localStorage.setItem('state_crm_user', JSON.stringify(res.data.user));
-      console.log('[DEBUG] Stored in localStorage. Token:', localStorage.getItem('state_crm_token')?.slice(0, 20), 'User:', localStorage.getItem('state_crm_user'));
-      console.log('[DEBUG] Calling navigate(/state-crm)...');
-      navigate('/state-crm');
-      console.log('[DEBUG] navigate() call completed.');
+      // Force a full page reload (instead of client-side navigate) so every part of the
+      // app re-reads the fresh localStorage token on first load, avoiding a stale-auth
+      // race that previously required a second login attempt to succeed.
+      window.location.href = '/state-crm';
+      return;
     } catch (err: any) {
       console.log('[DEBUG] Login threw an error:', err);
       setError(err.response?.data?.message || 'Failed to login');
