@@ -845,7 +845,7 @@ export default function WhatsAppInbox({ accountIndex = 0 }: WhatsAppInboxProps) 
 
   const handleSyncTemplates = async () => {
     setSyncingTemplates(true);
-    try { await api.post('/whatsapp/templates/sync'); await fetchTemplates(); } catch { }
+    try { await api.post('/whatsapp/templates/sync', { account: accountIndex }); await fetchTemplates(); } catch { }
     finally { setSyncingTemplates(false); }
   };
 

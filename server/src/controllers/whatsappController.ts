@@ -115,7 +115,7 @@ async function getUserWACredentials(userId: number, account?: string | number) {
       return {
         token: waAcc.access_token || WHATSAPP_TOKEN,
         phoneId: waAcc.phone_number_id || PHONE_NUMBER_ID,
-        wabaId: WABA_ID,
+        wabaId: String(account) === '4' ? (WABA_ID_5 || WABA_ID) : String(account) === '2' ? (WABA_ID_3 || WABA_ID) : WABA_ID,
       };
     }
   }
@@ -226,9 +226,11 @@ export const getTemplates = async (req: Request, res: Response) => {
 export const syncTemplates = async (req: Request, res: Response) => {
   const userId = (req as any).user?.id;
   const companyId = (req as any).user?.company_id;
+  const account = (req.query.account as string) ?? (req.body?.account as string);
   try {
-    const { token, wabaId } = await getUserWACredentials(userId);
+    const { token, wabaId } = await getUserWACredentials(userId, account);
     if (!token) return res.status(400).json({ error: 'WhatsApp Token missing' });
+    console.log('[WA] syncTemplates using account', account, '-> wabaId', wabaId);
 
     const waRes = await fetch(
       `https://graph.facebook.com/v25.0/${wabaId}/message_templates`,
