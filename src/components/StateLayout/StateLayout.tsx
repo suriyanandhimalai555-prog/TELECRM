@@ -10,12 +10,16 @@ export default function StateLayout() {
   useEffect(() => {
     const token = localStorage.getItem('state_crm_token');
     const userStr = localStorage.getItem('state_crm_user');
-    if (!token || !userStr) {
+    if (!token || token === 'undefined' || !userStr || userStr === 'undefined') {
+      localStorage.removeItem('state_crm_token');
+      localStorage.removeItem('state_crm_user');
       navigate('/state-login');
       return;
     }
     try {
-      setUser(JSON.parse(userStr));
+      const parsed = JSON.parse(userStr);
+      if (!parsed || typeof parsed !== 'object') throw new Error('Invalid user payload');
+      setUser(parsed);
     } catch {
       localStorage.removeItem('state_crm_token');
       localStorage.removeItem('state_crm_user');

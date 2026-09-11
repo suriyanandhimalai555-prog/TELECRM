@@ -17,8 +17,16 @@ export default function StateLogin() {
     setError('');
     setLoading(true);
     try {
-      console.log('[DEBUG] Sending login request...');
-      const res = await axios.post(`${STATE_API_BASE}/auth/login`, { email, password });
+      let res = await axios.post(`${STATE_API_BASE}/auth/login`, { email, password });
+      // Defensive: if the response is missing a token/user (seen intermittently on
+      // first request after a cold start), retry once automatically before failing.
+      if (!res.data?.token || !res.data?.user) {
+        res = await axios.post(`${STATE_API_BASE}/auth/login`, { email, password });
+      }
+      if (!res.data?.token || !res.data?.user) {
+        setError('Login succeeded but the server response was incomplete. Please try again.');
+        return;
+      }
       localStorage.setItem('state_crm_token', res.data.token);
       localStorage.setItem('state_crm_user', JSON.stringify(res.data.user));
       // Force a full page reload (instead of client-side navigate) so every part of the
@@ -27,7 +35,6 @@ export default function StateLogin() {
       window.location.href = '/state-crm';
       return;
     } catch (err: any) {
-      console.log('[DEBUG] Login threw an error:', err);
       setError(err.response?.data?.message || 'Failed to login');
     } finally {
       setLoading(false);
