@@ -237,6 +237,7 @@ export const syncTemplates = async (req: Request, res: Response) => {
       { headers: { Authorization: `Bearer ${token}` } }
     );
     const data = await waRes.json();
+    console.log('[WA] syncTemplates raw response:', JSON.stringify(data));
     if (data.error) {
       console.error('[WA] Meta API error:', JSON.stringify(data.error));
       return res.status(400).json({ error: data.error.message, details: data.error });
