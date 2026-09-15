@@ -653,7 +653,17 @@ export const checkWindow = async (req: Request, res: Response) => {
   const companyId = (req as any).user?.company_id;
   if (!phone) return res.status(400).json({ error: 'phone is required' });
   try {
-    const phoneId = getPhoneId(account);
+    let phoneId = getPhoneId(account);
+    if (companyId) {
+      const waRes = await db.query(
+        'SELECT phone_number_id FROM whatsapp_accounts WHERE company_id = $1 ORDER BY id ASC',
+        [companyId]
+      );
+      if (waRes.rows.length > 0) {
+        const reqIdx = Math.min(Number(account) || 0, waRes.rows.length - 1);
+        phoneId = waRes.rows[reqIdx]?.phone_number_id || phoneId;
+      }
+    }
     let queryStr = `
       SELECT timestamp FROM whatsapp_messages
       WHERE direction = 'inbound' AND RIGHT(from_number, 10) = RIGHT($1, 10) AND to_number = $2
