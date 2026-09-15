@@ -115,14 +115,14 @@ async function getUserWACredentials(userId: number, account?: string | number) {
       return {
         token: waAcc.access_token || WHATSAPP_TOKEN,
         phoneId: waAcc.phone_number_id || PHONE_NUMBER_ID,
-        wabaId: String(account) === '4' ? (WABA_ID_5 || WABA_ID) : String(account) === '2' ? (WABA_ID_3 || WABA_ID) : WABA_ID,
+        wabaId: String(account) === '4' ? (WABA_ID_5 || WABA_ID) : (String(account) === '2' || String(account) === '3') ? (WABA_ID_3 || WABA_ID) : WABA_ID,
       };
     }
   }
   return {
     token:   getToken(account) || u.whatsapp_token || WHATSAPP_TOKEN,
     phoneId: getPhoneId(account) || u.whatsapp_phone_id || PHONE_NUMBER_ID,
-    wabaId:  String(account) === '4' ? WABA_ID_5 : String(account) === '2' ? WABA_ID_3 : u.whatsapp_waba_id || WABA_ID,
+    wabaId:  String(account) === '4' ? WABA_ID_5 : (String(account) === '2' || String(account) === '3') ? WABA_ID_3 : u.whatsapp_waba_id || WABA_ID,
   };}
 
 // ─── Helper: fetch media URL + mime_type from Meta ───────────────────────────
