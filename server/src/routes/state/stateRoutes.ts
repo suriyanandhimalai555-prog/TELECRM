@@ -21,6 +21,7 @@ import {
   createLeaveRequest, listLeaveRequests, updateLeaveRequestStatus,
   getSalarySummary, listSalarySummaries,
   getAttendanceSettings, updateAttendanceSettings,
+  updateAttendance, deleteAttendance,
 } from '../../controllers/state/stateAttendanceController';
 import { getPermissionMatrix, updatePermission } from '../../controllers/state/statePermissionController';
 
@@ -75,6 +76,8 @@ router.post('/attendance/checkout', authenticateState, checkOut);
 router.get('/attendance/today', authenticateState, todayStatus);
 router.get('/attendance/all', authenticateState, listAttendance);
 router.get('/attendance/history', authenticateState, myHistory);
+router.put('/attendance/:id', authenticateState, requireStateRole('master', 'admin'), updateAttendance);
+router.delete('/attendance/:id', authenticateState, requireStateRole('master', 'admin'), deleteAttendance);
 
 router.post('/leave', authenticateState, createLeaveRequest);
 router.get('/leave', authenticateState, listLeaveRequests);

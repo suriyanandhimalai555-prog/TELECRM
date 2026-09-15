@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import stateApi from '../../services/stateApi';
-import { Clock, Camera } from 'lucide-react';
+import { Clock, Camera, Pencil, Trash2, X } from 'lucide-react';
 
 interface AttendanceRecord {
   id: number;
@@ -61,8 +61,13 @@ export default function StateAttendance() {
   const [error, setError] = useState('');
   const [filterDate, setFilterDate] = useState('');
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
+  const [editingRecord, setEditingRecord] = useState<AttendanceRecord | null>(null);
+  const [editForm, setEditForm] = useState({ check_in: '', check_out: '', status: 'full_day' });
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const canViewAll = user.role === 'master' || user.role === 'admin' || user.role === 'coordinator' || user.role === 'state_head';
+  const canEdit = user.role === 'master' || user.role === 'admin';
 
   const fetchToday = useCallback(async () => {
     try {
@@ -149,6 +154,56 @@ export default function StateAttendance() {
   const asUTC = (t: string) => t.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(t) ? t : t + 'Z';
   const formatTime = (t: string | null) => t ? new Date(asUTC(t)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' }) : '-';
 
+  const IST_OFFSET_MIN = 5 * 60 + 30;
+  const localTimeInputValue = (t: string | null) => {
+    if (!t) return '';
+    return new Date(asUTC(t)).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' });
+  };
+  const istToUtcISO = (dateStr: string, timeStr: string): string | null => {
+    if (!timeStr) return null;
+    const [hh, mm] = timeStr.split(':').map(Number);
+    const utcMs = Date.parse(`${dateStr}T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00Z`) - IST_OFFSET_MIN * 60000;
+    return new Date(utcMs).toISOString();
+  };
+  const openEdit = (rec: AttendanceRecord) => {
+    setEditingRecord(rec);
+    setEditForm({
+      check_in: localTimeInputValue(rec.check_in),
+      check_out: localTimeInputValue(rec.check_out),
+      status: rec.status || 'full_day',
+    });
+  };
+  const handleEditSave = async () => {
+    if (!editingRecord) return;
+    setSaving(true);
+    try {
+      const dateStr = editingRecord.date.slice(0, 10);
+      await stateApi.put(`/attendance/${editingRecord.id}`, {
+        check_in: istToUtcISO(dateStr, editForm.check_in),
+        check_out: editForm.check_out ? istToUtcISO(dateStr, editForm.check_out) : null,
+        status: editForm.status,
+      });
+      setEditingRecord(null);
+      fetchAll();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Update failed');
+    } finally {
+      setSaving(false);
+    }
+  };
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('Delete this attendance record? This cannot be undone.')) return;
+    setDeletingId(id);
+    try {
+      await stateApi.delete(`/attendance/${id}`);
+      fetchAll();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Delete failed');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const statusBadge = (rec: { status?: string }) => {
     if (!rec.status) return null;
     const isHalf = rec.status === 'half_day';
@@ -213,7 +268,7 @@ export default function StateAttendance() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-gray-50/50 border-b border-gray-100">
-                    {['Photo', 'User', 'Role', 'Check In', 'Check Out', 'Status', 'Location', 'Date'].map(h => (
+                    {[...['Photo', 'User', 'Role', 'Check In', 'Check Out', 'Status', 'Location', 'Date'], ...(canEdit ? ['Actions'] : [])].map(h => (
                       <th key={h} className="px-6 py-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">{h}</th>
                     ))}
                   </tr>
@@ -240,11 +295,24 @@ export default function StateAttendance() {
                         ) : '-'}
                       </td>
                       <td className="px-6 py-4 text-[9px] font-bold text-gray-400 uppercase">{new Date(rec.date).toLocaleDateString()}</td>
+                      {canEdit && (
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => openEdit(rec)} className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors">
+                              <Pencil size={13} />
+                            </button>
+                            <button onClick={() => handleDelete(rec.id)} disabled={deletingId === rec.id}
+                              className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors disabled:opacity-40">
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                   {allRecords.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="px-6 py-12 text-center text-[10px] font-black text-gray-300 uppercase">
+                      <td colSpan={canEdit ? 9 : 8} className="px-6 py-12 text-center text-[10px] font-black text-gray-300 uppercase">
                         {loading ? 'Loading...' : 'No attendance records found'}
                       </td>
                     </tr>
@@ -259,6 +327,51 @@ export default function StateAttendance() {
       {previewPhoto && (
         <div onClick={() => setPreviewPhoto(null)} className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 cursor-pointer">
           <img src={previewPhoto} className="max-w-sm max-h-[80vh] rounded-2xl border-4 border-white" />
+        </div>
+      )}
+
+      {editingRecord && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Edit Attendance</h3>
+              <button onClick={() => setEditingRecord(null)} className="text-gray-400 hover:text-gray-600">
+                <X size={18} />
+              </button>
+            </div>
+            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+              {editingRecord.user_full_name || editingRecord.user_name} &middot; {new Date(editingRecord.date).toLocaleDateString()}
+            </p>
+            <div className="space-y-3">
+              <div>
+                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Check In</label>
+                <input type="time" value={editForm.check_in} onChange={e => setEditForm(f => ({ ...f, check_in: e.target.value }))}
+                  className="w-full mt-1 px-3 py-2 bg-gray-50/50 border border-transparent focus:border-blue-400 rounded-lg text-xs font-bold" />
+              </div>
+              <div>
+                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Check Out</label>
+                <input type="time" value={editForm.check_out} onChange={e => setEditForm(f => ({ ...f, check_out: e.target.value }))}
+                  className="w-full mt-1 px-3 py-2 bg-gray-50/50 border border-transparent focus:border-blue-400 rounded-lg text-xs font-bold" />
+              </div>
+              <div>
+                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Status</label>
+                <select value={editForm.status} onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))}
+                  className="w-full mt-1 px-3 py-2 bg-gray-50/50 border border-transparent focus:border-blue-400 rounded-lg text-xs font-bold uppercase">
+                  <option value="full_day">Full Day</option>
+                  <option value="half_day">Half Day</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button onClick={() => setEditingRecord(null)} className="flex-1 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
+                Cancel
+              </button>
+              <button onClick={handleEditSave} disabled={saving}
+                className="flex-1 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-40">
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -173,6 +173,40 @@ export const listAttendance = async (req: StateAuthRequest, res: Response) => {
   }
 };
 
+export const updateAttendance = async (req: StateAuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { check_in, check_out, status } = req.body;
+    const fields: string[] = [];
+    const params: any[] = [];
+    let idx = 1;
+    if (check_in !== undefined) { fields.push(`check_in = $${idx++}`); params.push(check_in); }
+    if (check_out !== undefined) { fields.push(`check_out = $${idx++}`); params.push(check_out); }
+    if (status !== undefined) { fields.push(`status = $${idx++}`); params.push(status); }
+    if (fields.length === 0) return res.status(400).json({ message: 'No fields to update' });
+    params.push(id);
+    const query = `UPDATE state_crm_attendance SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`;
+    const { rows } = await db.query(query, params);
+    if (rows.length === 0) return res.status(404).json({ message: 'Record not found' });
+    res.json({ success: true, attendance: rows[0] });
+  } catch (err: any) {
+    console.error('[StateCRM] updateAttendance error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const deleteAttendance = async (req: StateAuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { rows } = await db.query('DELETE FROM state_crm_attendance WHERE id = $1 RETURNING id', [id]);
+    if (rows.length === 0) return res.status(404).json({ message: 'Record not found' });
+    res.json({ success: true });
+  } catch (err: any) {
+    console.error('[StateCRM] deleteAttendance error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // ── Leave requests ──────────────────────────────────────────────────────
 
 export const createLeaveRequest = async (req: StateAuthRequest, res: Response) => {
