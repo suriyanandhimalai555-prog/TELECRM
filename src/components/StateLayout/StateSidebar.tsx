@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, CheckSquare, StickyNote, MessageSquare,
   Target, BarChart3, Settings, ChevronLeft, ChevronRight, ChevronDown,
   Briefcase, UserCog, Phone, GitBranch, Contact, Bell, BellRing,
-  Shield, ShieldCheck, MapPin, Clock, Sliders, LogOut, Layers,
+  Shield, ShieldCheck, MapPin, Clock, Sliders, LogOut, Layers, FileText,
 } from 'lucide-react';
 
 interface StateSidebarProps {
@@ -46,6 +46,7 @@ const navItems: NavItem[] = [
     children: [
       { name: 'Attendance', path: '/state-crm/attendance', icon: Clock },
       { name: 'Work Sprint', path: '/state-crm/worksprint', icon: Layers },
+      { name: 'Work Tracking', path: '/state-crm/worktracking', icon: FileText },
     ],
   },
   { name: 'Field Force',    path: '/state-crm/fieldforce',       icon: MapPin },

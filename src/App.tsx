@@ -27,6 +27,7 @@ import StateCustomFields from './views/state-crm/StateCustomFields';
 import StateRoles from './views/state-crm/StateRoles';
 import StateAttendance from './views/state-crm/StateAttendance';
 import StateWorkSprint from './views/state-crm/StateWorkSprint';
+import StateWorkTracking from './views/state-crm/StateWorkTracking';
 import StateFieldForce from './views/state-crm/StateFieldForce';
 import StateSettings from './views/state-crm/StateSettings';
 import Register from './views/auth/Register';
@@ -118,6 +119,7 @@ export default function App() {
                 <Route path="roles" element={<StateRoles />} />
                 <Route path="attendance" element={<StateAttendance />} />
                 <Route path="worksprint" element={<StateWorkSprint />} />
+                <Route path="worktracking" element={<StateWorkTracking />} />
                 <Route path="fieldforce" element={<StateFieldForce />} />
                 <Route path="settings" element={<StateSettings />} />
               </Route>

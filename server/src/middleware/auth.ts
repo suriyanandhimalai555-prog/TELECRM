@@ -9,7 +9,7 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ message: 'No token' });
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as any;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'super_secret_key_change_this') as any;
     req.user = decoded;
 
     if (decoded.role !== 'master_admin' && decoded.company_id) {
