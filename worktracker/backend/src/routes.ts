@@ -566,13 +566,5 @@ router.post('/migrate/json-to-pg', authenticateToken, requireRole('super_admin')
   }
 });
 
-router.post('/seed/reset', async (req, res) => {
-  try {
-    await resetAndSeedDb();
-    return res.json({ message: 'Database reset and seeded successfully with default users and work updates' });
-  } catch (err: any) {
-    return res.status(500).json({ message: err.message || 'Reset failed' });
-  }
-});
 
 export default router;
