@@ -1,0 +1,6 @@
+{
+  "name": "Work Tracking System",
+  "description": "Enterprise work tracking system with daily entry, multi-level approval workflows, RBAC user management, attachments, and real-time analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
