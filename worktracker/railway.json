@@ -5,7 +5,6 @@
   },
   "deploy": {
     "startCommand": "npm start",
-    "preDeployCommand": "npm run prisma:migrate:deploy --prefix backend",
     "healthcheckPath": "/api/health",
     "restartPolicyType": "ON_FAILURE"
   }
