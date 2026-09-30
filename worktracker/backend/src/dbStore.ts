@@ -9,7 +9,7 @@ import {
 } from './eodWindow.js';
 
 // Seed Managing Director details (the internal permission role  super_admin)
-export const SEED_ADMIN_EMAIL = 'md@company.com';
+export const SEED_ADMIN_EMAIL = (process.env.SEED_ADMIN_EMAIL || 'you@yourrealdomain.com').toLowerCase();
 export const SEED_ADMIN_PASSWORD = 'md@1230';
 const MANAGING_DIRECTOR_NAME = 'Managing Director';
 const HUMAN_RESOURCES_EMAIL = 'manager@company.com';
