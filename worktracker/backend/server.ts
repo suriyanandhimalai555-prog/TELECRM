@@ -32,7 +32,7 @@ async function startServer() {
   // Security Headers Simulation
   app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('Content-Security-Policy', "frame-ancestors 'self' " + (process.env.FRAME_ANCESTORS || ""));
     res.setHeader('X-XSS-Protection', '1; mode=block');
     next();
   });
