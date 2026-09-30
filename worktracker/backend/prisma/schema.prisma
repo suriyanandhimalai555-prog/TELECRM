@@ -42,7 +42,7 @@ model User {
   @@index([email])
   @@index([managerId])
   @@index([department])
-  @@map("users")
+  @@map("worktracker_users")
 }
 
 model WorkUpdate {
@@ -76,7 +76,7 @@ model WorkUpdate {
   @@index([category])
   @@index([createdAt])
   @@index([reviewerId])
-  @@map("work_updates")
+  @@map("worktracker_work_updates")
 }
 
 model WorkAttachment {
@@ -92,7 +92,7 @@ model WorkAttachment {
   work WorkUpdate @relation(fields: [workId], references: [id], onDelete: Cascade)
 
   @@index([workId])
-  @@map("work_attachments")
+  @@map("worktracker_work_attachments")
 }
 
 model EditHistory {
@@ -108,7 +108,7 @@ model EditHistory {
   editor User       @relation("UserEditHistories", fields: [editedBy], references: [id], onDelete: Cascade)
 
   @@index([workId])
-  @@map("edit_history")
+  @@map("worktracker_edit_history")
 }
 
 model EmployeeQuery {
@@ -136,7 +136,7 @@ model EmployeeQuery {
   @@index([status])
   @@index([queryType])
   @@index([createdAt])
-  @@map("employee_queries")
+  @@map("worktracker_employee_queries")
 }
 
 model Notification {
@@ -154,7 +154,7 @@ model Notification {
 
   @@index([userId, isRead])
   @@index([createdAt])
-  @@map("notifications")
+  @@map("worktracker_notifications")
 }
 
 model EodRecord {
@@ -171,7 +171,7 @@ model EodRecord {
   @@unique([userId, date])
   @@index([date])
   @@index([status])
-  @@map("eod_records")
+  @@map("worktracker_eod_records")
 }
 
 /// HR override allowing an employee to submit EOD outside the 9 AM–7 PM window
@@ -190,5 +190,5 @@ model EodEnablement {
   @@unique([userId, date])
   @@index([date])
   @@index([enabledById])
-  @@map("eod_enablements")
+  @@map("worktracker_eod_enablements")
 }
