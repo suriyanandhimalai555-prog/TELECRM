@@ -1,6 +1,6 @@
 import { ExternalLink } from 'lucide-react';
 
-const WORK_TRACKER_URL = 'https://worktracking-avgprimetech-com.up.railway.app/';
+const WORK_TRACKER_URL = 'https://avgwork.avgprimetech.com/';
 
 export default function StateWorkTracking() {
   return (
