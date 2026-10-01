@@ -263,7 +263,7 @@ function Dashboard({ user, canManageAll }: { user: any; canManageAll: boolean })
   useEffect(() => {
     let alive = true;
     stateApi.get('/work-tracker/eod/employees', { params: { date } })
-      .then(r => { if (!alive) return; setRows(r.data.records || []); setLoadFailed(false); setError(''); })
+      .then(r => { if (!alive) return; setRows(Array.isArray(r.data?.records) ? r.data.records : []); setLoadFailed(false); setError(''); })
       .catch(e => { if (!alive) return; setLoadFailed(true); if (canManageAll) setError(e?.response?.data?.message || 'Failed to load'); });
     return () => { alive = false; };
   }, [date, tick, canManageAll]);
@@ -272,7 +272,7 @@ function Dashboard({ user, canManageAll }: { user: any; canManageAll: boolean })
   const fallback = !canManageAll && date === todayIST()
     ? [{ user_id: user?.id, user_name: user?.name, email: user?.email, department: user?.department, role: user?.role, status: mine?.record?.status || null, note: mine?.record?.note || '', enablement_id: null }]
     : [];
-  const all: any[] = loadFailed && !canManageAll ? fallback : rows;
+  const all: any[] = Array.isArray(loadFailed && !canManageAll ? fallback : rows) ? (loadFailed && !canManageAll ? fallback : rows) : [];
 
   const counts = {
     total: all.length,
