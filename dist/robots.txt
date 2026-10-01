@@ -1,9 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /app
-Disallow: /state-crm
-Disallow: /login
-Disallow: /state-login
-Disallow: /register
-
-Sitemap: https://www.avgcrm.com/sitemap.xml
