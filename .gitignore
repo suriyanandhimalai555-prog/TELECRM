@@ -9,3 +9,6 @@ database.sqlite
 
 *.bak*
 dist/
+
+*.bak*
+dist/
