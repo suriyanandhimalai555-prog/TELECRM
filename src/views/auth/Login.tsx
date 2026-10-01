@@ -13,7 +13,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [companies, setCompanies] = useState<{ id: number; company_name: string }[]>([]);
   useEffect(() => {
-    api.get("/auth/companies").then(res => setCompanies(res.data)).catch(() => {});
+    api.get("/auth/companies").then(res => setCompanies(Array.isArray(res.data) ? res.data : Array.isArray(res.data?.companies) ? res.data.companies : Array.isArray(res.data?.data) ? res.data.data : [])).catch(() => {});
   }, []);
   const [password, setPassword] = useState('');
   const [companyId, setCompanyId] = useState<number | ''>('');
@@ -108,7 +108,7 @@ export default function Login() {
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-400 bg-white">
                   <option value="">Select your company...</option>
                   <option value={-1}>Master Admin (No Company)</option>
-                  {companies.map(c => (
+                  {(Array.isArray(companies) ? companies : []).map(c => (
                     <option key={c.id} value={c.id}>{c.company_name}</option>
                   ))}
                 </select>
