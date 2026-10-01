@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 import { prisma } from './prisma.js';
 import { User, WorkUpdate, WorkAttachment, EditHistory, WorkStatus, WorkStats, WorkFilters, UserRole, EmployeeQuery, QueryFilters, QueryStatus, QueryType, EodRecord, EodReport, EodStatus, EodSubmissionGate, EodEnablement, EodSubmissionStatus, AppNotification, EmployeeQueryDetail } from './types.js';
 import {
@@ -10,7 +11,7 @@ import {
 
 // Seed Managing Director details (the internal permission role  super_admin)
 export const SEED_ADMIN_EMAIL = (process.env.SEED_ADMIN_EMAIL || 'yashaswini@gmail.com').toLowerCase();
-export const SEED_ADMIN_PASSWORD = 'md@1230';
+export const SEED_ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD || randomBytes(24).toString('hex');
 const MANAGING_DIRECTOR_NAME = 'Managing Director';
 const HUMAN_RESOURCES_EMAIL = 'manager@company.com';
 const HUMAN_RESOURCES_NAME = 'Human Resources';

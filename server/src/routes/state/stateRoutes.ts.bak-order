@@ -91,8 +91,8 @@ router.put('/attendance/settings', authenticateState, requireStateRole('master',
 
 import stateWorkTrackerRoutes from "./stateWorkTrackerRoutes";
 import stateWorkEodRoutes from './stateWorkEodRoutes';
-router.use("/work-tracker/eod", stateWorkEodRoutes);
 router.use("/work-tracker", stateWorkTrackerRoutes);
+router.use("/work-tracker/eod", stateWorkEodRoutes);
 
 export default router;
 router.get('/whatsapp/numbers', authenticateState, requireStatePermission('view_whatsapp'), listWhatsappNumbers);

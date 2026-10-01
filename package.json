@@ -10,7 +10,8 @@
     "postinstall": "npm run build",
     "start": "npx tsx server.ts",
     "clean": "rm -rf dist",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "dev:local": "VITE_API_URL=/api tsx server.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.14",
