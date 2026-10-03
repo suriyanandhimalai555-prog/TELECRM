@@ -93,6 +93,10 @@ import stateWorkTrackerRoutes from "./stateWorkTrackerRoutes";
 import stateWorkEodRoutes from './stateWorkEodRoutes';
 router.use("/work-tracker/eod", stateWorkEodRoutes);
 router.use("/work-tracker", stateWorkTrackerRoutes);
+import stateLateRoutes from "./stateLateRoutes";
+router.use("/late", stateLateRoutes);
+import stateHolidayRoutes from "./stateHolidayRoutes";
+router.use("/holidays", stateHolidayRoutes);
 
 export default router;
 router.get('/whatsapp/numbers', authenticateState, requireStatePermission('view_whatsapp'), listWhatsappNumbers);

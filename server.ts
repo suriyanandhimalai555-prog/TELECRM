@@ -236,11 +236,13 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
 export default app;
 
+import { startAutoAbsent } from './server/src/jobs/autoAbsent';
 const isMain = import.meta.url === `file://${process.argv[1]}`;
 if (isMain && process.env.VERCEL !== '1') {
   initializePromise
     .then(() => {
       const PORT = Number(process.env.PORT) || 3000;
+      startAutoAbsent();
       httpServer.listen(PORT, '0.0.0.0', () => {
         console.log(`
 ╔══════════════════════════════════╗

@@ -52,6 +52,14 @@ export const checkIn = async (req: StateAuthRequest, res: Response) => {
   const { lat, lng, photo } = req.body;
   const requester = req.stateUser!;
   try {
+    const hol = await db.query(
+      `SELECT name FROM state_crm_holidays
+       WHERE date = (NOW() AT TIME ZONE 'Asia/Kolkata')::date AND (state_id IS NULL OR state_id = $1) LIMIT 1`,
+      [requester.state_id ?? null]
+    );
+    if (hol.rows.length) {
+      return res.status(400).json({ message: `Today is a holiday (${hol.rows[0].name}). Check-in is not needed.` });
+    }
     const existing = await db.query(
       'SELECT * FROM state_crm_attendance WHERE user_id = $1 AND date = CURRENT_DATE AND check_out IS NULL',
       [requester.id]

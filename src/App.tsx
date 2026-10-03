@@ -28,6 +28,8 @@ import StateRoles from './views/state-crm/StateRoles';
 import StateAttendance from './views/state-crm/StateAttendance';
 import StateWorkSprint from './views/state-crm/StateWorkSprint';
 import StateWorkTracking from './views/state-crm/StateWorkTracking';
+import StateLate from './views/state-crm/StateLate';
+import StateHolidays from './views/state-crm/StateHolidays';
 import StateFieldForce from './views/state-crm/StateFieldForce';
 import StateSettings from './views/state-crm/StateSettings';
 import Register from './views/auth/Register';
@@ -120,6 +122,8 @@ export default function App() {
                 <Route path="attendance" element={<StateAttendance />} />
                 <Route path="worksprint" element={<StateWorkSprint />} />
                 <Route path="worktracking" element={<StateWorkTracking />} />
+                <Route path="late" element={<StateLate />} />
+                <Route path="holidays" element={<StateHolidays />} />
                 <Route path="fieldforce" element={<StateFieldForce />} />
                 <Route path="settings" element={<StateSettings />} />
               </Route>
