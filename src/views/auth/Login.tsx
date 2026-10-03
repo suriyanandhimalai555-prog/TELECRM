@@ -29,7 +29,7 @@ export default function Login() {
     if (mode === 'state') {
       setLoading(true);
       try {
-        const res = await axios.post('/api/state/auth/login', { email, password });
+        const res = await axios.post(`${import.meta.env.VITE_API_URL || '/api'}/state/auth/login`, { email, password });
         localStorage.setItem('state_crm_token', res.data.token);
         localStorage.setItem('state_crm_user', JSON.stringify(res.data.user));
         navigate('/state-crm');
